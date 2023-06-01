@@ -1,6 +1,7 @@
 #!../.venv/bin/python3
 
 import re
+import subprocess
 import sys
 
 from tomlkit.toml_file import TOMLFile
@@ -10,8 +11,8 @@ def update_poetry_project_version(new_tag, toml):
     toml_data = toml.read()
     try:
         # バージョンの更新
-        toml_get_data = toml_data.get('tool')
-        toml_get_data['poetry']['version'] = new_tag
+        toml_get_data = toml_data.get("tool")
+        toml_get_data["poetry"]["version"] = new_tag
         # pyproject.tomlファイルの書き込み
         toml.write(toml_data)
     except Exception as e:
@@ -39,11 +40,11 @@ def get_arg():
 
 def create_ver(arg_ver):
     # pyproject.tomlファイルの読み込み
-    toml = TOMLFile("../pyproject.toml")
+    toml = TOMLFile("pyproject.toml")
     toml_data = toml.read()
-    toml_get_data = toml_data.get('tool')
+    toml_get_data = toml_data.get("tool")
     # バージョンの更新
-    current_data = toml_get_data['poetry']['version']
+    current_data = toml_get_data["poetry"]["version"]
     major, minor, patch = map(int, current_data.split("."))
     create_tag_flag = False
     # 引数指定のデータあり
@@ -83,3 +84,4 @@ if __name__ == "__main__":  # pragma: no cover
     create_tag_flag, new_ver, toml = create_ver(arg_ver)
     if create_tag_flag:
         update_poetry_project_version(new_ver, toml)
+        subprocess.run(["git", "add", "pyproject.toml"])

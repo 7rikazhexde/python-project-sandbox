@@ -62,11 +62,11 @@ def poetry_project_version_checker(new_tag):
         # pyproject.tomlファイルの読み込み
         toml = TOMLFile("../pyproject.toml")
         toml_data = toml.read()
-        toml_get_data = toml_data.get('tool')
+        toml_get_data = toml_data.get("tool")
         # バージョンの更新
-        curent_ver = toml_get_data['poetry']['version']
+        curent_ver = toml_get_data["poetry"]["version"]
         if curent_ver <= new_ver:
-            toml_get_data['poetry']['version'] = new_ver
+            toml_get_data["poetry"]["version"] = new_ver
         else:
             error_message = f"The specified tag '{new_ver}' must be greater than the latest tag 'v{curent_ver}'. Exit the program."
             sys.exit(error_message)
@@ -82,8 +82,8 @@ def read_poetry_project_version():
         # pyproject.tomlファイルの読み込み
         toml = TOMLFile("../pyproject.toml")
         toml_data = toml.read()
-        toml_get_data = toml_data.get('tool')
-        curent_ver = toml_get_data['poetry']['version']
+        toml_get_data = toml_data.get("tool")
+        curent_ver = toml_get_data["poetry"]["version"]
         read_success_flag = True
     except Exception as e:
         error_message = f"Failed to update pyproject.toml. Error: {str(e)}"

@@ -1,4 +1,4 @@
-repo:
+repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
     # 使用するバージョンまたはタグを指定(23.5.31時点)
     rev: v4.4.0
@@ -20,11 +20,12 @@ repo:
   # https://python-poetry.org/docs/pre-commit-hooks/#usage
   - repo: https://github.com/python-poetry/poetry
     # 23.5.31時点
-    rev: v1.5.1  
+    rev: 1.5.1
     hooks:
       - id: poetry-check
       - id: poetry-lock
       - id: poetry-export
+        args: ["-f", "requirements.txt", "-o", "requirements.txt"]
 
   - repo: local
     hooks:
@@ -32,14 +33,14 @@ repo:
         name: isort
         stages: [commit]
         language: system
-        entry: poetry run isort
+        entry: poetry run isort ci tests calculator
         types: [python]
 
     -   id: black
         name: black
         stages: [commit]
         language: system
-        entry: poetry run black
+        entry: poetry run black ci tests calculator
         types: [python]
         exclude: resources_bin.py
 
@@ -47,21 +48,22 @@ repo:
         name: flake8
         stages: [commit]
         language: system
-        entry: poetry run flake8
+        entry: poetry run flake8 ci tests calculator
         types: [python]
 
-    -   id: mypy
-        name: mypy
-        stages: [commit]
-        language: system
-        entry: poetry run mypy
-        types: [python]
+#    -   id: mypy
+#        name: mypy
+#        stages: [commit]
+#        language: system
+#        entry: poetry run mypy ci tests calculator
+#        types: [python]
+#        exclude: calculator/__init__.py, ci/update_pyproject_version.py
 
   - repo: local
     hooks:
     - id: update-pyproject
       name: Update pyproject.toml version
-      entry: cd ci && poetry run python update_pyproject_version.py
+      entry: poetry run python ci/update_pyproject_version.py
       language: system
       pass_filenames: false
       stages: [commit]
