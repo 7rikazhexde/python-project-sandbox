@@ -61,7 +61,7 @@ repo:
     hooks:
     - id: update-pyproject
       name: Update pyproject.toml version
-      entry: cd ci && python update_pyproject_version.py
+      entry: cd ci && poetry run python update_pyproject_version.py
       language: system
       pass_filenames: false
       stages: [commit]
