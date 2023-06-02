@@ -82,9 +82,6 @@ def create_ver(arg_ver: Optional[str]) -> Tuple[bool, str, TOMLFile]:
 
 
 if __name__ == "__main__":  # pragma: no cover
-    remote_to_check = "origin"
-    new_tag = "v0.0.1"
-
     # 正しいデータ形式かチェック
     arg_ver = get_arg()
     # 引数なし：pyproject.tomlのversionをインクリメント
