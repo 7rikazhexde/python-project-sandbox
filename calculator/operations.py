@@ -1,17 +1,17 @@
-import numpy as np
+from typing import Union
 
 
-def add(a, b):
-    return np.add(a, b)
+def add(x: Union[int, float], y: Union[int, float]) -> Union[int, float]:
+    return x + y
 
 
-def subtract(a, b):
-    return np.subtract(a, b)
+def subtract(x: Union[int, float], y: Union[int, float]) -> Union[int, float]:
+    return x - y
 
 
-def multiply(a, b):
-    return np.multiply(a, b)
+def multiply(x: Union[int, float], y: Union[int, float]) -> Union[int, float]:
+    return x * y
 
 
-def divide(a, b):
-    return np.divide(a, b)
+def divide(x: Union[int, float], y: Union[int, float]) -> Union[int, float]:
+    return x / y

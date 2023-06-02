@@ -3,24 +3,29 @@
 import re
 import subprocess
 import sys
+from typing import Optional, Tuple
 
 from tomlkit.toml_file import TOMLFile
 
 
-def update_poetry_project_version(new_tag, toml):
+def update_poetry_project_version(new_tag: str, toml: TOMLFile) -> None:
     toml_data = toml.read()
     try:
         # バージョンの更新
         toml_get_data = toml_data.get("tool")
-        toml_get_data["poetry"]["version"] = new_tag
-        # pyproject.tomlファイルの書き込み
-        toml.write(toml_data)
+        if toml_get_data is not None and "poetry" in toml_get_data:
+            toml_get_data["poetry"]["version"] = new_tag
+            # pyproject.tomlファイルの書き込み
+            toml.write(toml_data)
+        else:
+            raise KeyError("Failed to find 'poetry' section in 'tool'")
+
     except Exception as e:
         error_message = f"Failed to update pyproject.toml. Error: {str(e)}"
         sys.exit(error_message)
 
 
-def get_arg():
+def get_arg() -> Optional[str]:
     if len(sys.argv) == 2:
         new_tag = sys.argv[1]
         pattern = r"^[0-9]+\.[0-9]{1,3}\.[0-9]{1,3}$"
@@ -38,13 +43,16 @@ def get_arg():
     return new_tag
 
 
-def create_ver(arg_ver):
+def create_ver(arg_ver: Optional[str]) -> Tuple[bool, str, TOMLFile]:
     # pyproject.tomlファイルの読み込み
     toml = TOMLFile("pyproject.toml")
     toml_data = toml.read()
     toml_get_data = toml_data.get("tool")
     # バージョンの更新
-    current_data = toml_get_data["poetry"]["version"]
+    if toml_get_data is not None and "poetry" in toml_get_data:
+        current_data = toml_get_data["poetry"].get("version")
+    else:
+        current_data = "0.0.0"
     major, minor, patch = map(int, current_data.split("."))
     create_tag_flag = False
     # 引数指定のデータあり

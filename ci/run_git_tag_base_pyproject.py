@@ -3,12 +3,13 @@
 import re
 import subprocess
 import sys
+from typing import Optional, Tuple
 
+from tomlkit.toml_document import TOMLDocument
 from tomlkit.toml_file import TOMLFile
 
 
-def remote_tag_checker(remote, tag=None):
-    # print('call remote_tag_checker()')
+def remote_tag_checker(remote: str, tag: Optional[str] = None) -> Optional[str]:
     try:
         # リモートブランチのタグを取得
         tags = subprocess.run(
@@ -16,7 +17,7 @@ def remote_tag_checker(remote, tag=None):
         ).stdout.splitlines()
         latest_tag = ""
         for remote_tag in tags:
-            if tag in remote_tag:
+            if tag is not None and tag in remote_tag:
                 latest_tag = remote_tag.split("refs/tags/")[-1]
                 break
         if latest_tag == tag:
@@ -33,7 +34,7 @@ def remote_tag_checker(remote, tag=None):
     return latest_tag
 
 
-def local_tag_checker(tag=None):
+def local_tag_checker(tag: Optional[str] = None) -> str:
     # print('call local_tag_checker()')
     try:
         # タグを降順(n,n-1,n-2)にソートして取得
@@ -55,43 +56,51 @@ def local_tag_checker(tag=None):
     return latest_tag
 
 
-def poetry_project_version_checker(new_tag):
+def poetry_project_version_checker(new_tag: str) -> TOMLDocument:
     # print('update_pyproject_toml()')
     new_ver = new_tag.replace("v", "")
     try:
         # pyproject.tomlファイルの読み込み
-        toml = TOMLFile("../pyproject.toml")
+        toml = TOMLFile("pyproject.toml")
         toml_data = toml.read()
         toml_get_data = toml_data.get("tool")
         # バージョンの更新
-        curent_ver = toml_get_data["poetry"]["version"]
-        if curent_ver <= new_ver:
-            toml_get_data["poetry"]["version"] = new_ver
-        else:
-            error_message = f"The specified tag '{new_ver}' must be greater than the latest tag 'v{curent_ver}'. Exit the program."
-            sys.exit(error_message)
+        if toml_get_data is not None and "poetry" in toml_get_data:
+            curent_ver = toml_get_data["poetry"].get("version")
+            if curent_ver is not None and curent_ver <= new_ver:
+                toml_get_data["poetry"]["version"] = new_ver
+            else:
+                error_message = f"The specified tag '{new_ver}' must be greater than the latest tag 'v{curent_ver}'. Exit the program."
+                sys.exit(error_message)
     except Exception as e:
         error_message = f"Failed to update pyproject.toml. Error: {str(e)}"
         sys.exit(error_message)
     return toml_data
 
 
-def read_poetry_project_version():
+def read_poetry_project_version() -> Tuple[bool, str]:
     read_success_flag = False
+    curent_ver = ""
     try:
         # pyproject.tomlファイルの読み込み
-        toml = TOMLFile("../pyproject.toml")
+        toml = TOMLFile("pyproject.toml")
         toml_data = toml.read()
-        toml_get_data = toml_data.get("tool")
-        curent_ver = toml_get_data["poetry"]["version"]
-        read_success_flag = True
+        toml_get_data = toml_data.get("tool", {})
+        if "poetry" in toml_get_data:
+            curent_ver = toml_get_data["poetry"].get("version", "")
+            read_success_flag = True
+        else:
+            error_message = (
+                "Failed to find 'poetry' section in pyproject.toml. Exit the program."
+            )
+            sys.exit(error_message)
     except Exception as e:
         error_message = f"Failed to update pyproject.toml. Error: {str(e)}"
         sys.exit(error_message)
     return read_success_flag, curent_ver
 
 
-def get_arg():
+def get_arg() -> Optional[str]:
     if len(sys.argv) == 2:
         new_tag = sys.argv[1]
         pattern = r"^v[0-9]+\.[0-9]{1,3}\.[0-9]{1,3}$"
@@ -109,7 +118,7 @@ def get_arg():
     return new_tag
 
 
-def create_tag(new_tag, latest_tag):
+def create_tag(new_tag: str, latest_tag: str) -> Tuple[bool, str]:
     create_tag_flag = False
     # print('create_tag()')
     if not latest_tag:
