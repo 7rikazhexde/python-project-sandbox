@@ -51,13 +51,12 @@ repos:
         entry: poetry run flake8 ci tests calculator
         types: [python]
 
-#    -   id: mypy
-#        name: mypy
-#        stages: [commit]
-#        language: system
-#        entry: poetry run mypy ci tests calculator
-#        types: [python]
-#        exclude: calculator/__init__.py, ci/update_pyproject_version.py
+    -   id: mypy
+        name: mypy
+        stages: [commit]
+        language: system
+        entry: poetry run mypy
+        types: [python]
 
   - repo: local
     hooks:
