@@ -33,12 +33,49 @@ This project is using [pre-commit](https://github.com/pre-commit/pre-commit) via
 
    - [update_pyproject_version.py](ci/update_pyproject_version.py)
 
+   - example
+
+     ```toml
+     [tool.poetry]
+     name = "trial-test"
+     version = "0.1.19" # Automatic increase
+     description = "An experimental project to test out various tools."
+     authors = ["7rikaz_wsl1 <7rikaz.h785.stat2ltas41lcijad@gmail.com>"]
+     license = "MIT"
+     readme = "README.md"
+     packages = [{include = "trial_test"}]
+     ```
+
 ### Usage
 
-Set pre-commit
+> **Note**\
+> **If you are creating a pre-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.**\
+> **Also, pre-commit is applied to staged files. Note that if it is not staged, it will be Skipped.**
+> **First, please run poetry run pre-commit run --all-files to make sure that the operation is OK.**
+
+Set pre-commit\
+The following command will create `.git/hooks/pre-commit`.
 
 ```bash
 poetry run pre-commit install
+```
+
+Add all files that have changed
+
+```bash
+git add -A
+```
+
+git commit
+
+example:
+
+```bash
+git commit -m "feat(search): add fuzzy search to search bar
+
+This commit adds fuzzy search functionality to the search bar component. Fuzzy search allows users to find search results even if they make spelling mistakes or typos. This feature will enhance the user experience and make it easier to find what they are looking for.
+
+Closes #1234"
 ```
 
 If you want to test locally
@@ -56,19 +93,24 @@ If you are committing to a project for the first time, create a post-commit scri
 
 ### Usage
 
+> **Note**\
+> **post-commit depends on the version of the pre-commit script and pyproject.toml.**\
+> **If you are creating a post-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.**\
+> **First, please run .git/hooks/post-commit to make sure that the operation is OK.**
+
 1. Create post-commit
 
    If post-commit.sample exists
 
    ```bash
-   cd ./git/hooks
+   cd .git/hooks
    cp post-commit.sample post-commit
    ```
 
    If post-commit.sample does not exist
 
    ```bash
-   cd ./git/hooks
+   cd .git/hooks
    touch post-commit
    ```
 
@@ -97,8 +139,18 @@ If you are committing to a project for the first time, create a post-commit scri
    chmod +x post-commit
    ```
 
-If you want to test locally
+1. After the entire commit process
 
-```bash
-./git/hooks/post-commit
-```
+   After the entire commit process is complete, refer to [update_pyproject_version.py](ci/update_pyproject_version.py) to update and push the git tag.
+
+   ```bash
+   $ git tag
+   v0.1.8
+   v0.1.9 # git add from ["poetry"]["version"]
+   ```
+
+   If you want to test locally
+
+   ```bash
+   .git/hooks/post-commit
+   ```

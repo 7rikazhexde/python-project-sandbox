@@ -5,80 +5,64 @@ import subprocess
 import sys
 from typing import Optional, Tuple
 
-from tomlkit.toml_document import TOMLDocument
 from tomlkit.toml_file import TOMLFile
 
 
-def remote_tag_checker(remote: str, tag: Optional[str] = None) -> Optional[str]:
+def remote_tag_checker(remote: str, tag: Optional[str]) -> bool:
+    checker = False
     try:
         # リモートブランチのタグを取得
         tags = subprocess.run(
             ["git", "ls-remote", "--tags", remote], capture_output=True, text=True
         ).stdout.splitlines()
-        latest_tag = ""
-        for remote_tag in tags:
-            if tag is not None and tag in remote_tag:
-                latest_tag = remote_tag.split("refs/tags/")[-1]
-                break
-        if latest_tag == tag:
-            error_message = f"Tag '{tag}' already exists in the remote branch. Exit the program. Please check pyproject.toml / version."
+
+        pattern = r"v(\d+\.\d+\.\d+)"
+        match = re.search(pattern, tags[-1])
+        if match:
+            highest_tag = "v" + match.group(1)
+            print(f"highest_tag: {highest_tag}")
+
+        if tag is not None and tag <= highest_tag:
+            print("Invalid tag version")
+            error_message = f"Remote tag '{tag}' is an invalid tag version. Exiting the program. Please check pyproject.toml / version."
             sys.exit(error_message)
+        checker = True
+
     except subprocess.CalledProcessError as e:
         error_code = e.returncode
         error_output = e.stderr
         print(f"error_code:{error_code}")
         print(f"error_output:{error_output}")
-        latest_tag = ""
-        error_message = "Failed to fetch remote tags. Exit the program."
+        error_message = "Failed to fetch remote tags. Exiting the program."
         sys.exit(error_message)
-    return latest_tag
+    return checker
 
 
-def local_tag_checker(tag: Optional[str] = None) -> str:
-    # print('call local_tag_checker()')
+def local_tag_checker(tag: Optional[str]) -> bool:
+    checker = False
     try:
         # タグを降順(n,n-1,n-2)にソートして取得
         tags = subprocess.run(
             ["git", "tag", "--sort", "-v:refname"], capture_output=True, text=True
         ).stdout.splitlines()
-        latest_tag = tags[0] if tags else ""
-        if latest_tag == tag:
-            error_message = f"Tag '{tag}' already exists. Exit the program. Please check pyproject.toml / version."
+        print(f"tags:{tags}")
+
+        if tag is not None and tag <= tags[0]:
+            print("Invalid tag version")
+            error_message = f"Local tag '{tag}' is an invalid tag version. Exiting the program. Please check pyproject.toml / version."
             sys.exit(error_message)
+        checker = True
     except subprocess.CalledProcessError as e:
         error_code = e.returncode
         error_output = e.stderr
         print(f"error_code:{error_code}")
         print(f"error_output:{error_output}")
-        latest_tag = ""
-        error_message = "No tags found. Exit the program."
+        error_message = "No tags found. Exiting the program."
         sys.exit(error_message)
-    return latest_tag
+    return checker
 
 
-def poetry_project_version_checker(new_tag: str) -> TOMLDocument:
-    # print('update_pyproject_toml()')
-    new_ver = new_tag.replace("v", "")
-    try:
-        # pyproject.tomlファイルの読み込み
-        toml = TOMLFile("pyproject.toml")
-        toml_data = toml.read()
-        toml_get_data = toml_data.get("tool")
-        # バージョンの更新
-        if toml_get_data is not None and "poetry" in toml_get_data:
-            curent_ver = toml_get_data["poetry"].get("version")
-            if curent_ver is not None and curent_ver <= new_ver:
-                toml_get_data["poetry"]["version"] = new_ver
-            else:
-                error_message = f"The specified tag '{new_ver}' must be greater than the latest tag 'v{curent_ver}'. Exit the program."
-                sys.exit(error_message)
-    except Exception as e:
-        error_message = f"Failed to update pyproject.toml. Error: {str(e)}"
-        sys.exit(error_message)
-    return toml_data
-
-
-def read_poetry_project_version() -> Tuple[bool, str]:
+def read_poetry_project_version() -> Tuple[bool, Optional[str]]:
     read_success_flag = False
     curent_ver = ""
     try:
@@ -100,7 +84,7 @@ def read_poetry_project_version() -> Tuple[bool, str]:
     return read_success_flag, curent_ver
 
 
-def get_arg() -> Optional[str]:
+def get_arg(tag: str) -> str:
     if len(sys.argv) == 2:
         new_tag = sys.argv[1]
         pattern = r"^v[0-9]+\.[0-9]{1,3}\.[0-9]{1,3}$"
@@ -114,57 +98,22 @@ def get_arg() -> Optional[str]:
         error_message = "Please enter ./create_tag_data.py [vx.x.x] Exit the program."
         sys.exit(error_message)
     else:
-        new_tag = None
+        new_tag = tag
+    print(f"get_arg() return new_tag:{new_tag}")
     return new_tag
-
-
-def create_tag(new_tag: str, latest_tag: str) -> Tuple[bool, str]:
-    create_tag_flag = False
-    # print('create_tag()')
-    if not latest_tag:
-        print(f"not latest_tag. set v{new_tag}")
-        # タグが存在しない場合、初期バージョンを設定する
-        if not new_tag:
-            new_tag = "v0.1.0"
-        create_tag_flag = True
-    else:
-        # タグのバージョンを分割する
-        tag_version = latest_tag[1:] if latest_tag.startswith("v") else latest_tag
-        major, minor, patch = map(int, tag_version.split("."))
-
-        # 引数が指定された場合、引数のバージョンを使用する
-        if len(sys.argv) > 1:
-            new_tag = sys.argv[1]
-            create_tag_flag = True
-            if new_tag.replace("v", "") < tag_version:
-                create_tag_flag = False
-                error_message = f"The specified tag '{new_tag}' must be greater than the latest tag 'v{tag_version}'. Exit the program."
-                sys.exit(error_message)
-        else:
-            # タグのバージョンをインクリメント
-            if patch < 999:
-                patch += 1
-            elif minor < 999:
-                minor += 1
-                patch = 0
-            else:
-                major += 1
-                minor = 0
-                patch = 0
-            new_tag = f"v{major}.{minor}.{patch}"
-            create_tag_flag = True
-    return create_tag_flag, new_tag
 
 
 if __name__ == "__main__":  # pragma: no cover
     remote_to_check = "origin"
-    # new_tag = get_arg()
+    remote_tag_checker_flag = False
+    local_tag_checker_flag = False
     read_success_flag, new_tag = read_poetry_project_version()
-    new_tag = f"v{new_tag}"
-    latest_tag_remote = remote_tag_checker(remote_to_check, new_tag)
-    latest_tag_local = local_tag_checker(new_tag)
-    # create_tag_flag, new_tag = create_tag(new_tag, latest_tag_local)
+    new_tag = f"v{new_tag or ''}"
+    new_tag = get_arg(new_tag)
+    remote_tag_checker_flag = remote_tag_checker(remote_to_check, new_tag)
+    local_tag_checker_flag = local_tag_checker(new_tag)
     # 新しいタグを作成する
-    if read_success_flag:
-        subprocess.run(["git", "tag", new_tag])
-    subprocess.run(["git", "tag"])
+    if remote_tag_checker_flag is True and local_tag_checker_flag is True:
+        print("OK")
+        # subprocess.run(["git", "tag", new_tag])
+    # subprocess.run(["git", "tag"])

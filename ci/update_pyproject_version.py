@@ -1,7 +1,5 @@
 #!.venv/bin/python3
 
-import argparse
-import os
 import re
 import subprocess
 import sys
@@ -43,39 +41,6 @@ def get_arg() -> Optional[str]:
     else:
         new_tag = None
     return new_tag
-
-
-def get_user_input() -> Optional[str]:
-    parser = argparse.ArgumentParser()
-    parser.add_argument(
-        "--tag",
-        required=False,
-        nargs="?",
-        const=None,
-        help="Enter the tag in the format [x.x.x]",
-    )
-    args = parser.parse_args()
-
-    user_input = args.tag
-    pattern = r"^[0-9]+\.[0-9]{1,3}\.[0-9]{1,3}$"
-
-    if user_input is None and not os.isatty(sys.stdin.fileno()):
-        # 標準入力からデータが渡された場合
-        user_input = sys.stdin.read().strip()
-    elif user_input is None:
-        user_input = input("Enter the tag in the format [x.x.x]: ")
-
-    if user_input == "":
-        # 入力が空の場合は処理を適用
-        user_input = None
-    elif not re.match(pattern, user_input):
-        # 入力の形式が正しくない場合
-        error_message = (
-            "Invalid tag format. Please enter in [x.x.x]. Exiting the program."
-        )
-        sys.exit(error_message)
-
-    return user_input
 
 
 def create_ver(input_ver: Optional[str]) -> Tuple[bool, str, TOMLFile]:
