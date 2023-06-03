@@ -58,6 +58,13 @@ repos:
         entry: poetry run mypy
         types: [python]
 
+    -   id: mdformat
+        name: mdformat
+        stages: [commit]
+        language: system
+        entry: poetry run mdformat README.md
+        types: [markdown]
+
   - repo: local
     hooks:
     - id: update-pyproject
