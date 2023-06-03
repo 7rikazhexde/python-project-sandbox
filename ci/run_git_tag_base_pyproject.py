@@ -114,6 +114,5 @@ if __name__ == "__main__":  # pragma: no cover
     local_tag_checker_flag = local_tag_checker(new_tag)
     # 新しいタグを作成する
     if remote_tag_checker_flag is True and local_tag_checker_flag is True:
-        print("OK")
-        # subprocess.run(["git", "tag", new_tag])
-    # subprocess.run(["git", "tag"])
+        subprocess.run(["git", "tag", new_tag])
+    subprocess.run(["git", "tag"])
