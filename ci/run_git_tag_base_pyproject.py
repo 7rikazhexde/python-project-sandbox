@@ -8,6 +8,17 @@ from typing import Optional, Tuple
 from tomlkit.toml_file import TOMLFile
 
 
+def compare_versions(version1: str, version2: str) -> int:
+    v1 = [int(num) for num in version1.split(".")]
+    v2 = [int(num) for num in version2.split(".")]
+    if v1 < v2:
+        return -1
+    elif v1 > v2:
+        return 1
+    else:
+        return 0
+
+
 def remote_tag_checker(remote: str, tag: Optional[str]) -> bool:
     checker = False
     try:
@@ -20,10 +31,11 @@ def remote_tag_checker(remote: str, tag: Optional[str]) -> bool:
         match = re.search(pattern, tags[-1])
         if match:
             highest_tag = "v" + match.group(1)
-            print(f"highest_tag: {highest_tag}")
 
-        if tag is not None and tag <= highest_tag:
-            print("Invalid tag version")
+        if (
+            tag is not None
+            and compare_versions(tag.lstrip("v"), highest_tag.lstrip("v")) <= 0
+        ):
             error_message = f"Remote tag '{tag}' is an invalid tag version. Exiting the program. Please check pyproject.toml / version."
             sys.exit(error_message)
         checker = True
@@ -47,8 +59,10 @@ def local_tag_checker(tag: Optional[str]) -> bool:
         ).stdout.splitlines()
         print(f"tags:{tags}")
 
-        if tag is not None and tag <= tags[0]:
-            print("Invalid tag version")
+        if (
+            tag is not None
+            and compare_versions(tag.lstrip("v"), tags[0].lstrip("v")) <= 0
+        ):
             error_message = f"Local tag '{tag}' is an invalid tag version. Exiting the program. Please check pyproject.toml / version."
             sys.exit(error_message)
         checker = True
