@@ -67,3 +67,13 @@ repos:
       pass_filenames: false
       stages: [commit]
       additional_dependencies: []
+
+#  - repo: local
+#    hooks:
+#    - id: run_scripts
+#      name: Run Python scripts
+#      entry: poetry run python -u ci/input_test.py --
+#      language: system
+#      pass_filenames: false
+#      types:
+#      - python
