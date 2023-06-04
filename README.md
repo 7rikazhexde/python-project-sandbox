@@ -98,46 +98,20 @@ If you are committing to a project for the first time, create a post-commit scri
 > **If you are creating a post-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.**\
 > **First, please run .git/hooks/post-commit to make sure that the operation is OK.**
 
-1. Create post-commit
+1. Set create post-commit
 
-   If post-commit.sample exists
-
-   ```bash
-   cd .git/hooks
-   cp post-commit.sample post-commit
-   ```
-
-   If post-commit.sample does not exist
+   Execute the following command to create post-commit.
 
    ```bash
-   cd .git/hooks
-   touch post-commit
+   chmod +x create_post-commit.sh
+   ./create_post-commit.sh
    ```
 
-1. Scripting
-
-   Copy the following code and write the script.
-
-   ```bash
-   #!/usr/bin/env bash
-
-   source $HOME/develop/git/trial-test/.venv/bin/activate
-   poetry run python ci/run_git_tag_base_pyproject.py
-   if [ $? -ne 0 ]; then
-       printf "Error occurred in run_git_tag_base_pyproject.py. Exiting post-commit.\n"
-       exit 1
-   fi
-
-   git push origin main:main
-   git push --tags
-   printf ".git/hooks/post-commit end!!!\n"
-   ```
-
-1. Grant execute permission.
-
-   ```bash
-   chmod +x post-commit
-   ```
+   > **Note**\
+   > **If post-commit does not exist, create a new post-commit and add execute permission (chmod +x).**
+   > **If post-commit exists, create it as post-commit.second.**
+   > **If you want to use it, merge or rename it to pre-sommit.**
+   > **Execution privileges are not attached to post-commit.second, so grant them as necessary.**
 
 1. After the entire commit process
 
