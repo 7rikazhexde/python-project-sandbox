@@ -1,25 +1,24 @@
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    # 使用するバージョンまたはタグを指定(23.5.31時点)
+    # Specify version or tag to use (as of 23.5.31)
     rev: v4.4.0
     hooks:
-      # markdown 以外の行末スペース削除
+      # Remove spaces at end of lines except markdown
       - id: trailing-whitespace
         args: [--markdown-linebreak-ext=md]
-      # ファイル最終行を改行コードにする
+      # Make the last line of the file a newline code
       - id: end-of-file-fixer
-      # 改行コードを LF に統一
+      # Unify line break code to LF
       - id: mixed-line-ending
         args: [--fix=lf]
-      # toml 構文チェック
+      # toml syntax check
       - id: check-toml
-      # yaml 構文チェック
+      # yaml syntax check
       - id: check-yaml
-      # 他の静的解析ツールやフォーマッタを追加することもできます
 
   # https://python-poetry.org/docs/pre-commit-hooks/#usage
   - repo: https://github.com/python-poetry/poetry
-    # 23.5.31時点ではlocal指定では実行できない
+    # Cannot be executed with local designation (as of 23.5.31)
     rev: 1.5.1
     hooks:
       - id: poetry-check
