@@ -16,7 +16,9 @@ jobs:
       - name: Install poetry
         run: pip install poetry
       - name: Poetry setup
-        run: poetry install
+        run: |
+          pwd
+          poetry install
 
       - name: Build coverage file
         run: |
