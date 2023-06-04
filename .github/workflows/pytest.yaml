@@ -1,0 +1,44 @@
+name: pytest with coverage report
+
+on: [push, pull_request]
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: 3.8
+
+      - name: Install project dependencies
+        run: |
+          python -m pip install --upgrade pip
+          curl -sSL https://install.python-poetry.org | python3 -
+          poetry install
+
+      - name: Run unit tests (pytest)
+        run: |
+          poetry run pytest --cov-report=term-missing:skip-covered --junitxml=/tmp/pytest.xml --cov=src tests/ | tee /tmp/pytest-coverage.txt
+
+      - name: Pytest coverage comment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: /tmp/pytest-coverage.txt
+          junitxml-path: /tmp/pytest.xml
+
+      - name: Update Readme with Coverage Html
+        if: ${{ github.ref == 'refs/heads/main' }}
+        run: |
+          sed -i '/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n\${{ steps.coverageComment.outputs.coverageHtml }}\n<!-- Pytest Coverage Comment:End -->' ./README.md
+
+      - name: Commit & Push changes to Readme
+        if: ${{ github.ref == 'refs/heads/main' }}
+        uses: actions-js/push@master
+        with:
+          message: Update coverage on Readme
+          github_token: ${{ secrets.GITHUB_TOKEN }}
