@@ -1,11 +1,10 @@
 [tool.poetry]
 name = "trial-test"
-version = "0.2.15"
+version = "0.2.16"
 description = "An experimental project to test out various tools."
 authors = ["7rikaz_wsl1 <7rikaz.h785.stat2ltas41lcijad@gmail.com>"]
 license = "MIT"
 readme = "README.md"
-packages = [{include = "trial_test"}]
 
 [tool.poetry.dependencies]
 python = ">=3.8.1,<4.0"
