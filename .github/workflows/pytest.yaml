@@ -18,6 +18,10 @@ jobs:
       - name: Poetry setup
         run: |
           pwd
+          ls
+          pwd
+          cd ../
+          ls
           poetry install
 
       - name: Build coverage file
