@@ -67,18 +67,6 @@ jobs:
           fi
           echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml)" > ./README.md
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.coverage }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.color }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.coverageHtml }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.warnings }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.errors }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.failures }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.skipped }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.tests }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.time }} >> ./README.md
-          echo -e ${{ steps.coverageComment.outputs.notSuccessTestInfo }} >> ./README.md
-
       - name: Commit
         if: ${{ steps.is_main.outputs.flag == '1' }}
         run: |
