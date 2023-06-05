@@ -15,7 +15,7 @@ An experimental project to test out various tools.
   - [post-commit](#post-commit)
     - [Overview](#overview-1)
     - [Usage](#usage-1)
-  - [GitHub Action](#github-action)
+  - [About Test Result And Coverage](#about-test-result-and-coverage)
     - [pytest-coverage-comment](#pytest-coverage-comment)
 
 ## pre-commit
@@ -133,7 +133,19 @@ If you are committing to a project for the first time, create a post-commit scri
    .git/hooks/post-commit
    ```
 
-## GitHub Action
+## About Test Result And Coverage
+
+I'm using Pytest to get test coverage, but currently there is the following problem with GitHub Action which is set in the project, and it is under suspension.
+
+- Specifying options for GitHub Action
+- Test Run
+
+If you want to check the coverage, run the following command to see the results.
+
+```bash
+poetry install
+poetry run task vgmtest
+```
 
 ### pytest-coverage-comment
 
