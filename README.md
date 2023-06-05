@@ -15,6 +15,8 @@ An experimental project to test out various tools.
   - [post-commit](#post-commit)
     - [Overview](#overview-1)
     - [Usage](#usage-1)
+  - [GitHub Action](#github-action)
+    - [pytest-coverage-comment](#pytest-coverage-comment)
 
 ## pre-commit
 
@@ -130,3 +132,10 @@ If you are committing to a project for the first time, create a post-commit scri
    ```bash
    .git/hooks/post-commit
    ```
+
+## GitHub Action
+
+### pytest-coverage-comment
+
+Use the following actions.
+[pytest-coverage-comment](https://github.com/MishaKav/pytest-coverage-comment#example-usage)
