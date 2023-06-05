@@ -131,4 +131,9 @@ If you are committing to a project for the first time, create a post-commit scri
 # pytest-coverage-comment
 
 <!-- Pytest Coverage Comment:Begin -->
+[![pytest](https://github.com/7rikazhexde/trial-test/actions/workflows/pytest.yaml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/pytest.yaml)
+| Tests | Skipped | Failures | Errors | Time |
+| ----- | ------- | -------- | -------- | ------------------ |
+| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.098s :stopwatch: |
+
 <!-- Pytest Coverage Comment:End -->
