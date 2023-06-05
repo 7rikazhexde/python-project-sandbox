@@ -127,3 +127,8 @@ If you are committing to a project for the first time, create a post-commit scri
    ```bash
    .git/hooks/post-commit
    ```
+
+# pytest-coverage-comment
+
+<!-- Pytest Coverage Comment:Begin -->
+<!-- Pytest Coverage Comment:End -->
