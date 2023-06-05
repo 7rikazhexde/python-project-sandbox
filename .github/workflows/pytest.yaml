@@ -49,31 +49,31 @@ jobs:
           hide-comment: true
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
-      - name: Update Readme in coverage branch
-        if: ${{ steps.is_main.outputs.flag == '1' }}
-        run: |
-          coverage=$(git branch -a|grep "remotes/origin/coverage$") || :
-          if [ -z "$coverage" ];then
-            git checkout --orphan coverage
-            git rm -rf .
-          else
-            git checkout coverage
-          fi
-          echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml)" > ./README.md
-          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
-      - name: Commit
-        if: ${{ steps.is_main.outputs.flag == '1' }}
-        run: |
-          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add README.md
-          git commit -m "Update coverage"
-      - name: Push
-        if: ${{ steps.is_main.outputs.flag == '1' }}
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: coverage
+      #- name: Update Readme in coverage branch
+      #  if: ${{ steps.is_main.outputs.flag == '1' }}
+      #  run: |
+      #    coverage=$(git branch -a|grep "remotes/origin/coverage$") || :
+      #    if [ -z "$coverage" ];then
+      #      git checkout --orphan coverage
+      #      git rm -rf .
+      #    else
+      #      git checkout coverage
+      #    fi
+      #    echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml)" > ./README.md
+      #    echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
+      #- name: Commit
+      #  if: ${{ steps.is_main.outputs.flag == '1' }}
+      #  run: |
+      #    git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+      #    git config --local user.name "github-actions[bot]"
+      #    git add README.md
+      #    git commit -m "Update coverage"
+      #- name: Push
+      #  if: ${{ steps.is_main.outputs.flag == '1' }}
+      #  uses: ad-m/github-push-action@master
+      #  with:
+      #    github_token: ${{ secrets.GITHUB_TOKEN }}
+      #    branch: coverage
       - name: Update Readme with Coverage Html
         run: |
           sed -i "/<!-- Pytest Coverage Comment:Begin -->/,/<!-- Pytest Coverage Comment:End -->/c\<!-- Pytest Coverage Comment:Begin -->\n[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml)\n$(echo ${{ steps.coverageComment.outputs.summaryReport }})\n<!-- Pytest Coverage Comment:End -->" ./README.md
