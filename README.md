@@ -43,7 +43,6 @@ This project is using [pre-commit](https://github.com/pre-commit/pre-commit) via
      authors = ["7rikaz_wsl1 <7rikaz.h785.stat2ltas41lcijad@gmail.com>"]
      license = "MIT"
      readme = "README.md"
-     packages = [{include = "trial_test"}]
      ```
 
 ### Usage
