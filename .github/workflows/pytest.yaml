@@ -46,10 +46,37 @@ jobs:
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          hide-comment: true
           pytest-coverage-path: ./pytest-coverage.txt
+          hide-badge: false
+          hide-report: false
+          create-new-comment: false
+          hide-comment: false
+          report-only-changed-files: false
+          remove-link-from-badge: false
+          junitxml-title: My Pytest Result Summary Title
           junitxml-path: ./pytest.xml
-      - name: Write job summary
-        id: check_status
+      - name: Update Readme in coverage branch
+        if: ${{ steps.is_main.outputs.flag == '1' }}
         run: |
-          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
+          coverage=$(git branch -a|grep "remotes/origin/coverage$") || :
+          if [ -z "$coverage" ];then
+            git checkout --orphan coverage
+            git rm -rf .
+          else
+            git checkout coverage
+          fi
+          echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yaml)" > ./README.md
+          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
+      - name: Commit
+        if: ${{ steps.is_main.outputs.flag == '1' }}
+        run: |
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add README.md
+          git commit -m "Update coverage"
+      - name: Push
+        if: ${{ steps.is_main.outputs.flag == '1' }}
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: coverage
