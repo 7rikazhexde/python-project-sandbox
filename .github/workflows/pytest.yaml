@@ -1,26 +1,42 @@
 # This workflow will install dependencies, create coverage tests and run Pytest Coverage Comment
 # For more information see: https://github.com/MishaKav/pytest-coverage-comment/
 name: pytest-coverage-comment
+
 on:
   push:
-    branches:
-      - '*'
+    branches-ignore:
+      - "coverage"
+  pull_request:
+
 jobs:
-  build:
-    runs-on: ubuntu-latest
+  test:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+        python-version: ['3.10']
+    runs-on: ${{ matrix.os }}
+    permissions:
+      contents: write
     steps:
-      - uses: actions/checkout@v3
-
-      - name: Set up Python 3.10
-        uses: actions/setup-python@v4
-        with:
-          python-version: 3.10
-
-      - name: Install dependencies
+      - name: Check is main
+        id: is_main
         run: |
-          curl -sSL https://install.python-poetry.org | python3 -
-          poetry config virtualenvs.in-project true
-          poetry install
+          if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.python-version }}" = "3.10" ];then
+            echo "flag=1" >> $GITHUB_OUTPUT
+          else
+            echo "flag=0" >> $GITHUB_OUTPUT
+          fi
+      - uses: actions/checkout@v3
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@v4
+        with:
+          python-version: ${{matrix.python-version}}
+      - name: Install poetry
+        run: pip install poetry
+      - name: Poetry setup
+        run: poetry install
 
       - name: Build coverage file
         run: |
