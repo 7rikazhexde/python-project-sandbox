@@ -79,14 +79,14 @@ jobs:
         uses: ad-m/github-push-action@master
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
-      - name: Pytest coverage comment
-        id: coverageCommentOnJobStatus
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-            hide-comment: true
-            pytest-coverage-path: ./pytest-coverage.txt
-            junitxml-path: ./pytest.xml
-      - name: Write job summary
-        id: check_status
-        run: |
-          echo -e ${{ steps.coverageCommentOnJobStatus.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
+      #- name: Pytest coverage comment
+      #  id: coverageCommentOnJobStatus
+      #  uses: MishaKav/pytest-coverage-comment@main
+      #  with:
+      #      hide-comment: true
+      #      pytest-coverage-path: ./pytest-coverage.txt
+      #      junitxml-path: ./pytest.xml
+      #- name: Write job summary
+      #  id: check_status
+      #  run: |
+      #    echo -e ${{ steps.coverageCommentOnJobStatus.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
