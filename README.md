@@ -4,5 +4,5 @@
 ## My Pytest Result Summary Title
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.102s :stopwatch: |
+| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.112s :stopwatch: |
 
