@@ -37,22 +37,10 @@ jobs:
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
+          hide-comment: true
           pytest-coverage-path: ./pytest-coverage.txt
-          hide-badge: false
-          hide-report: false
-          create-new-comment: false
-          hide-comment: false
-          report-only-changed-files: false
-          remove-link-from-badge: false
-          junitxml-title: My Pytest Result Summary Title
           junitxml-path: ./pytest.xml
-      - name: Update coverage file
+      - name: Write job summary
+        id: check_status
         run: |
-          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> "${{ matrix.os }}-${{ matrix.python-version }}-COVERAGE.md"
-      - name: Commit and Push changes
-        run: |
-          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add "${{ matrix.os }}-${{ matrix.python-version }}-COVERAGE.md"
-          git commit -m "Update coverage"
-          git push origin coverage
+          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
