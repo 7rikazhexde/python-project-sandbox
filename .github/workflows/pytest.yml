@@ -1,89 +1,74 @@
-# This workflow will install dependencies, create coverage tests and run Pytest Coverage Comment
-# For more information see: https://github.com/MishaKav/pytest-coverage-comment/
-name: pytest-coverage-comment
+---
+  name: python test
 
-on:
-  push:
-    branches-ignore:
-      - "coverage"
-  pull_request:
+  on:
+    push:
+    pull_request:
+    workflow_dispatch:
+      inputs:
+        main_branch:
+          description: "Main branch for coverage/tmate."
+          type: string
+          required: false
+          default: "main"
+        main_os:
+          description: "Main os for coverage/tmate."
+          type: choice
+          default: "ubuntu-latest"
+          options:
+            - "ubuntu-latest"
+            - "macos-latest"
+        main_py_ver:
+          description: "Main python version for coverage/tmate."
+          type: choice
+          default: "3.10"
+          options:
+            - "3.10"
+            - "3.9"
+        tmate:
+          type: boolean
+          description: 'Run the build with tmate debugging enabled (https://github.com/marketplace/actions/debugging-with-tmate). This is only for main strategy and others will be stopped.'
+          required: false
+          default: false
 
-jobs:
-  test:
-    strategy:
-      matrix:
-        os: [macos-12, ubuntu-latest]
-        python-version: ['3.10', '3.9']
-    runs-on: ${{ matrix.os }}
-    permissions:
-      contents: write
-    steps:
-      - name: Check is main
-        id: is_main
-        run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.python-version }}" = "3.10" ];then
-            echo "flag=1" >> $GITHUB_OUTPUT
-          else
-            echo "flag=0" >> $GITHUB_OUTPUT
-          fi
-      - uses: actions/checkout@v3
-        with:
-          persist-credentials: false
-          fetch-depth: 0
-      - uses: actions/setup-python@v4
-        with:
-          python-version: ${{matrix.python-version}}
-      - name: Install FFmpeg (macOS)
-        if: matrix.os == 'macos-12'
-        run: brew install ffmpeg
-      - name: Install FFmpeg (Ubuntu)
-        if: matrix.os == 'ubuntu-latest'
-        run: sudo apt-get update && sudo apt-get install -y ffmpeg
-      - name: Install poetry
-        run: pip install poetry
-      - name: Poetry setup
-        run: poetry install
-      - name: Run test
-        id: pytest
-        continue-on-error: true
-        #run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=. tests/ | tee pytest-coverage.txt
-        run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing --cov=calculator | tee pytest-coverage.txt
-      - name: Pytest coverage comment
-        #if: ${{ steps.is_main.outputs.flag == '1' }}
-        id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@main
-        with:
-          pytest-coverage-path: ./pytest-coverage.txt
-          hide-badge: false
-          hide-report: false
-          create-new-comment: false
-          hide-comment: false
-          report-only-changed-files: false
-          remove-link-from-badge: false
-          junitxml-title: My Pytest Result Summary Title
-          junitxml-path: ./pytest.xml
-      - name: Update Readme in coverage branch
-        #if: ${{ steps.is_main.outputs.flag == '1' }}
-        run: |
-          coverage=$(git branch -a|grep "remotes/origin/coverage$") || :
-          if [ -z "$coverage" ];then
-            git checkout --orphan coverage
-            git rm -rf .
-          else
-            git checkout coverage
-          fi
-          echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yml)" > ./README.md
-          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
-      - name: Commit
-        #if: ${{ steps.is_main.outputs.flag == '1' }}
-        run: |
-          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add README.md
-          git commit -m "Update coverage"
-      - name: Push
-        #if: ${{ steps.is_main.outputs.flag == '1' }}
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: coverage
+  env:
+    main_branch: ${{ inputs.main_branch || 'main' }}
+    main_os: ${{ inputs.main_os || 'ubuntu-latest' }}
+    main_py_ver: ${{ inputs.main_py_ver || '3.10' }}
+    tmate: ${{ inputs.tmate || 'false' }}
+
+  jobs:
+    test_matrix:
+      strategy:
+        matrix:
+          os: [ubuntu-latest,macos-latest]
+          python-version: ["3.10","3.9"]
+      permissions:
+        contents: write
+      runs-on: ${{ matrix.os }}
+      steps:
+        - name: Check is main
+          run: |
+            if [ "${{ github.ref }}" = "refs/heads/${{ env.main_branch }}" ] && [ "${{ matrix.os }}" = "${{ env.main_os }}" ] && [ "${{ matrix.python-version }}" = "${{ env.main_py_ver }}" ];then
+              echo "is_main=1" >> $GITHUB_ENV
+              is_main=1
+            else
+              echo "is_main=0" >> $GITHUB_ENV
+              is_main=0
+            fi
+            if [ "${{ inputs.tmate }}" = "true" ];then
+              if [ "$is_main" = 0 ];then
+                echo "Tmate is enabled and this is not main, skip tests"
+                exit 1
+              fi
+              echo "debug=1" >> $GITHUB_ENV
+            else
+              echo "debug=0" >> $GITHUB_ENV
+            fi
+        - uses: rcmdnk/python-action@v1
+          with:
+            python-version: "${{ matrix.python-version }}"
+            coverage-push: "${{ env.is_main }}"
+            coverage-push-condition: "branch=${{ env.main_branch }}, os=${{ env.main_os }}, python_version=${{ env.main_py_ver }}"
+            pre-commit: "${{ env.is_main }}"
+            tmate: "${{ env.debug }}"
