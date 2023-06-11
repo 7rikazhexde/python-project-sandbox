@@ -1,9 +1,10 @@
 [![pytest](https://github.com/7rikazhexde/trial-test/actions/workflows/pytest_multihost_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/pytest_multihost_summary.yml)
-<a href="https://github.com/7rikazhexde/trial-test/blob/858813b217f30a91be46cd657a8e69614d95e99d/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/858813b217f30a91be46cd657a8e69614d95e99d/__init__.py">\_\_init\_\_.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/858813b217f30a91be46cd657a8e69614d95e99d/operations.py">operations.py</a></td><td>9</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>9</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
+<a href="https://github.com/7rikazhexde/trial-test/blob/2bc33fca2140e9f838a079e37a09a6ed8b3d0cd3/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/2bc33fca2140e9f838a079e37a09a6ed8b3d0cd3/__init__.py">\_\_init\_\_.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/2bc33fca2140e9f838a079e37a09a6ed8b3d0cd3/operations.py">operations.py</a></td><td>9</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>9</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
 
 ## Pytest Result Summary (os: ubuntu-latest / python-version: 3.10)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.104s :stopwatch: |
+| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.099s :stopwatch: |
 
-**Info: Click on the pytest_multihost_summary badge above to see the results of running pytest on multiple hosts.**
+ℹ️ **Note**:  
+Click on the pytest_multihost_summary badge above to see the results of running pytest on multiple hosts.
