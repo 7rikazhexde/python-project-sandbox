@@ -1,6 +1,6 @@
 # This workflow will install dependencies, create coverage tests and run Pytest Coverage Comment
 # For more information see: https://github.com/MishaKav/pytest-coverage-comment/
-name: pytest-coverage-comment
+name: pytest
 
 on:
   push:
@@ -44,16 +44,3 @@ jobs:
         id: check_status
         run: |
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
-          echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yml)" > ./README.md
-          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
-      - name: Commit
-        run: |
-          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add README.md
-          git commit -m "Update coverage"
-      - name: Push
-        uses: ad-m/github-push-action@master
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          branch: coverage
