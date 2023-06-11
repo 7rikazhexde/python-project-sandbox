@@ -21,7 +21,7 @@ jobs:
       - name: Check is main
         id: is_main
         run: |
-          if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.python-version }}" = "3.10" ];then
+          if [ "${{ github.ref }}" = "refs/heads/main" ]; then
             echo "flag=1" >> $GITHUB_OUTPUT
           else
             echo "flag=0" >> $GITHUB_OUTPUT
@@ -40,8 +40,7 @@ jobs:
       - name: Run test
         id: pytest
         continue-on-error: true
-        #run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing:skip-covered --cov=. tests/ | tee pytest-coverage.txt
-        run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing --cov=calculator | tee pytest-coverage.txt
+        run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing --cov=calculator tests/ | tee pytest-coverage.txt
       - name: Pytest coverage comment
         if: ${{ steps.is_main.outputs.flag == '1' }}
         id: coverageComment
@@ -59,8 +58,8 @@ jobs:
       - name: Update Readme in coverage branch
         if: ${{ steps.is_main.outputs.flag == '1' }}
         run: |
-          coverage=$(git branch -a|grep "remotes/origin/coverage$") || :
-          if [ -z "$coverage" ];then
+          coverage=$(git branch -a | grep "remotes/origin/coverage$") || :
+          if [ -z "$coverage" ]; then
             git checkout --orphan coverage
             git rm -rf .
           else
