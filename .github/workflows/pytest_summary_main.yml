@@ -57,7 +57,7 @@ jobs:
           report-only-changed-files: false
           remove-link-from-badge: false
           junitxml-path: ./pytest.xml
-          junitxml-title: Pytest Result Summary
+          junitxml-title: "Pytest Result Summary (os: ubuntu-latest / python-version: 3.10)"
       - name: Update Readme in coverage branch
         if: ${{ steps.is_main.outputs.flag == '1' }}
         run: |

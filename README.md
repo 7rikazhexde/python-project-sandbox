@@ -1,6 +1,6 @@
 # trial-test
 
-[![Test](https://github.com/rcmdnk/homebrew-file/actions/workflows/test.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/pytest_step_summary.yml)
+[![Test](https://github.com/rcmdnk/homebrew-file/actions/workflows/test.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/pytest_summary_main.yml)
 [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
 
 An experimental project to test out various tools.
