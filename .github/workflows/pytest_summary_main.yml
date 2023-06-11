@@ -70,7 +70,8 @@ jobs:
           fi
           echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest_multihost_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/pytest_multihost_summary.yml)" > ./README.md
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
-          echo "**Info: Click on the pytest_multihost_summary badge above to see the results of running pytest on multiple hosts.**" >> ./README.md
+          echo "> **Note**\" >> ./README.md
+          echo "> Click on the pytest_multihost_summary badge above to see the results of running pytest on multiple hosts." >> ./README.md
       - name: Commit
         if: ${{ steps.is_main.outputs.flag == '1' }}
         run: |
