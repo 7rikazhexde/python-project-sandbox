@@ -46,18 +46,9 @@ jobs:
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          #pytest-coverage-path: ./pytest-coverage.txt
-          #hide-badge: false
-          #hide-report: false
-          #create-new-comment: false
-          #hide-comment: false
-          #report-only-changed-files: false
-          #remove-link-from-badge: false
-          #junitxml-title: My Pytest Result Summary Title
-          #junitxml-path: ./pytest.xml
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
-          title: My Coverage Report Title
+          title: Coverage Report
           badge-title: coverage
           hide-badge: false
           hide-report: false
@@ -66,7 +57,7 @@ jobs:
           report-only-changed-files: false
           remove-link-from-badge: false
           junitxml-path: ./pytest.xml
-          junitxml-title: My JUnit Xml Summary Title
+          junitxml-title: Pytest Result Summary
       - name: Update Readme in coverage branch
         if: ${{ steps.is_main.outputs.flag == '1' }}
         run: |
@@ -77,7 +68,7 @@ jobs:
           else
             git checkout coverage
           fi
-          echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest.yml)" > ./README.md
+          echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pytest_step_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/pytest_step_summary.yml)" > ./README.md
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
       - name: Commit
         if: ${{ steps.is_main.outputs.flag == '1' }}
