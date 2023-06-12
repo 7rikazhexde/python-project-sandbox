@@ -70,7 +70,7 @@ jobs:
           fi
           echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml)" > ./README.md
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
-          echo "ℹ️ **Note**:" >> ./README.md
+          echo "ℹ️ **Note**:  " >> ./README.md
           echo "Click on the `test summary` badge above to see the results of running pytest on multiple hosts." >> ./README.md
 
       - name: Commit
