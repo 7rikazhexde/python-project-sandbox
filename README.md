@@ -4,7 +4,7 @@
 ## Pytest Result Summary (os: ubuntu-latest / python-version: 3.10)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.093s :stopwatch: |
+| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.077s :stopwatch: |
 
 ℹ️ **Note**:  
 
