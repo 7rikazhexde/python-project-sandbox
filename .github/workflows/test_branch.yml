@@ -69,6 +69,8 @@ jobs:
           else
             git checkout coverage
           fi
+          commit_hash=$(git rev-parse HEAD)
+          echo "Commit: $commit_hash" > ./README.md
           echo "[![pytest](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml)" > ./README.md
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
           echo "ℹ️ **Note**:  " >> ./README.md
