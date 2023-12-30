@@ -3,6 +3,7 @@
 name: test branch
 
 on:
+  workflow_dispatch:
   push:
     branches-ignore:
       - "coverage"

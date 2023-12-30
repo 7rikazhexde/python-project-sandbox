@@ -3,6 +3,7 @@
 name: test summary
 
 on:
+  workflow_dispatch:
   push:
     branches-ignore:
       - "coverage"
