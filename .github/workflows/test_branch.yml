@@ -8,8 +8,8 @@ on:
     branches-ignore:
       - "coverage"
   pull_request:
-  schedule:
-    - cron: '*/30 * * * *'
+  #schedule:
+  #  - cron: '*/30 * * * *'
 
 jobs:
   test:
