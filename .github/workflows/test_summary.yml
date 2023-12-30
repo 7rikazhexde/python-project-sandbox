@@ -49,9 +49,12 @@ jobs:
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
       # https://github.com/marketplace/actions/line-notify
       # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
-      - uses: snow-actions/line-notify@v1.1.0
+      - name: line-botify
+        if: ${{ matrix.os }} == 'ubuntu-latest' && ${{ matrix.python-version }} == '3.10'
+        uses: snow-actions/line-notify@v1.1.0
         with:
           access_token: ${{ secrets.LINE_ACCESS_TOKEN }}
           message: |
-            Call "test_summary" from Github Action\n
+            Call "test_summary" from Github Action
+            Env: ${{ matrix.os }} / ${{ matrix.python-version }}
             Chack URL: https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml
