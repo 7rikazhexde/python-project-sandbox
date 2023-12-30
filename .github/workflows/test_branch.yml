@@ -92,3 +92,11 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: coverage
+      # https://github.com/marketplace/actions/line-notify
+      # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
+      - uses: snow-actions/line-notify@v1.1.0
+        with:
+          access_token: ${{ secrets.LINE_ACCESS_TOKEN }}
+          message: |
+            Call "test_branch" from Github Action\n
+            Chack URL: https://github.com/7rikazhexde/trial-test/tree/coverage
