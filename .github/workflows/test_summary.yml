@@ -50,7 +50,7 @@ jobs:
       # https://github.com/marketplace/actions/line-notify
       # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
       - name: line-botify
-        if: ${{ matrix.os }} == 'ubuntu-latest' && ${{ matrix.python-version }} == '3.10'
+        if: matrix.os == 'ubuntu-latest' && matrix.python-version[0] == '3.10'
         uses: snow-actions/line-notify@v1.1.0
         with:
           access_token: ${{ secrets.LINE_ACCESS_TOKEN }}
