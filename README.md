@@ -1,9 +1,10 @@
-commit: [12e7cff445f57421b4ee8efae1a41b74d6ded9de](https://github.com/7rikazhexde/trial-test/tree/12e7cff445f57421b4ee8efae1a41b74d6ded9de)
+[![pytest](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml)
+<a href="https://github.com/7rikazhexde/trial-test/blob/f6b3463facd77792970a3ea63feb65559bf87d70/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/f6b3463facd77792970a3ea63feb65559bf87d70/__init__.py">\_\_init\_\_.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/f6b3463facd77792970a3ea63feb65559bf87d70/operations.py">operations.py</a></td><td>9</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>9</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
 
-condition: branch=main, os=macos-12, python_version=3.9
-
-[![test](https://github.com/7rikazhexde/trial-test/actions/workflows/test.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/runs/7363364660)
+## Pytest Result Summary (os: ubuntu-latest / python-version: 3.10)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.154s :stopwatch: |
+| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.077s :stopwatch: |
 
+ℹ️ **Note**:  
+Click on the  badge above to see the results of running pytest on multiple hosts.
