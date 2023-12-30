@@ -29,6 +29,14 @@ jobs:
           else
             echo "flag=0" >> $GITHUB_OUTPUT
           fi
+      - name: Set line-notify flag
+        id: set_lnf
+        run: |
+          if [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.python-version }}" = "3.10" ];then
+            echo "flag=1" >> $GITHUB_OUTPUT
+          else
+            echo "flag=0" >> $GITHUB_OUTPUT
+          fi
       - uses: actions/checkout@v3
         with:
           persist-credentials: false
@@ -95,7 +103,7 @@ jobs:
       # https://github.com/marketplace/actions/line-notify
       # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
       - name: line-notify
-        if: ${{matrix.os}} == 'ubuntu-latest' && ${{matrix.python-version}} == '3.10'
+        if: ${{ steps.set_lnf.outputs.flag == '1' }}
         uses: snow-actions/line-notify@v1.1.0
         with:
           access_token: ${{ secrets.LINE_ACCESS_TOKEN }}
