@@ -1,4 +1,4 @@
-name: pytest and deploy
+name: test and deploy
 
 on:
   workflow_dispatch:
@@ -48,9 +48,11 @@ jobs:
       - name: Commit HTML report to ghpages branch
         if: ${{ steps.is_main.outputs.flag == '1' }}
         run: |
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git checkout -b ghpages
           git add assets/ report_page.html
-          git commit -m "Add HTML report to ghpages"
+          git commit -m "Add pytest HTML report to ghpages"
 
       - name: Push to ghpages branch
         if: ${{ steps.is_main.outputs.flag == '1' }}
