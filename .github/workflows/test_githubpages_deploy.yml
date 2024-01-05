@@ -60,6 +60,7 @@ jobs:
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           branch: ghpages
+          force: true
 
       # https://github.com/marketplace/actions/line-notify
       # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
