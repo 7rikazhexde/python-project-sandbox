@@ -56,10 +56,10 @@ jobs:
         run: |
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git stash
+          mv ${{ matrix.os }}/report_page.html ${{ matrix.os }}/report_page_temp.html
           git fetch origin ghpages:ghpages
           git checkout ghpages
-          git stash pop
+          mv ${{ matrix.os }}/report_page_temp.html ${{ matrix.os }}/report_page.html
           git add ${{ matrix.os }}/assets ${{ matrix.os }}/report_page.html
           git commit -m "Add pytest HTML report to ghpages for ${{ matrix.os }}"
           git push origin ghpages
