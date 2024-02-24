@@ -43,6 +43,7 @@ jobs:
           else
             echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
           fi
+      
       - name: Poetry setup
         run: poetry install
 
