@@ -56,13 +56,18 @@ jobs:
         run: |
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          mv ${{ matrix.os }}/report_page.html ${{ matrix.os }}/report_page_temp.html
           git fetch origin ghpages:ghpages
           git checkout ghpages
           mv ${{ matrix.os }}/report_page_temp.html ${{ matrix.os }}/report_page.html
           git add ${{ matrix.os }}/assets ${{ matrix.os }}/report_page.html
           git commit -m "Add pytest HTML report to ghpages for ${{ matrix.os }}"
-          git push origin ghpages
+
+      - name: Push to ghpages branch
+        uses: ad-m/github-push-action@master
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          branch: ghpages
+          force: true
 
       - name: line-notify
         if: ${{ steps.is_main.outputs.flag == '1' }}
