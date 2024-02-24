@@ -60,7 +60,7 @@ jobs:
           git checkout ghpages
           git add ${{ matrix.os }}/report_page.html
           git commit -m "Add pytest HTML report to ghpages for ${{ matrix.os }}"
-          git push origin ghpages
+          git push https://${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git ghpages
 
       - name: line-notify
         if: ${{ steps.is_main.outputs.flag == '1' }}
