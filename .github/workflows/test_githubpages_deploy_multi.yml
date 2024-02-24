@@ -58,7 +58,7 @@ jobs:
           git config --local user.name "github-actions[bot]"
           git fetch origin ghpages:ghpages
           git checkout ghpages
-          git add ${{ matrix.os }}/report_page.html
+          git add ${{ matrix.os }}/assets ${{ matrix.os }}/report_page.html
           git commit -m "Add pytest HTML report to ghpages for ${{ matrix.os }}"
 
       - name: Push to ghpages branch
