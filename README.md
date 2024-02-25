@@ -1,26 +1,5 @@
-[![](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml)
-<a href="https://github.com/7rikazhexde/trial-test/blob/ee95eab697c399b5427b9036d7f19cdfffcec007/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/ee95eab697c399b5427b9036d7f19cdfffcec007/__init__.py">\_\_init\_\_.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/ee95eab697c399b5427b9036d7f19cdfffcec007/operations.py">operations.py</a></td><td>9</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>9</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
-
-## Pytest Result Summary (os: ubuntu-latest / python-version: 3.10)
-| Tests | Skipped | Failures | Errors | Time |
-| ----- | ------- | -------- | -------- | ------------------ |
-| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.090s :stopwatch: |
-
-[![](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![](https://img.shields.io/badge/macos_12-url-success)](https://7rikazhexde.github.io/trial-test/macos-12/report_page.html) [![](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)
+<a href="https://github.com/7rikazhexde/trial-test/blob/7475b67158ece9611252ba1e5df6f87a4cc520c3/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/7475b67158ece9611252ba1e5df6f87a4cc520c3/__init__.py">\_\_init\_\_.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/7475b67158ece9611252ba1e5df6f87a4cc520c3/operations.py">operations.py</a></td><td>9</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>9</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>\n\n## Pytest Result Summary (os: ubuntu-latest / python-version: 3.10)\n| Tests | Skipped | Failures | Errors | Time |\n| ----- | ------- | -------- | -------- | ------------------ |\n| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.089s :stopwatch: |\n
 > [!Note]
 > 
-
-> Commit: [ee95eab6](https://github.com/7rikazhexde/trial-test/tree/ee95eab6)
-
-> Click on the  badge above to see the results of running pytest on multiple hosts.
-<a href="https://github.com/7rikazhexde/trial-test/blob/70ba3cf5480f96e54aa5c998516bfb2b56e4ac0e/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/70ba3cf5480f96e54aa5c998516bfb2b56e4ac0e/__init__.py">\_\_init\_\_.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/70ba3cf5480f96e54aa5c998516bfb2b56e4ac0e/operations.py">operations.py</a></td><td>9</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>9</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
-
-## Pytest Result Summary (os: ubuntu-latest / python-version: 3.10)
-| Tests | Skipped | Failures | Errors | Time |
-| ----- | ------- | -------- | -------- | ------------------ |
-| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.090s :stopwatch: |
-
-> [!Note]
-> 
-> Commit: [70ba3cf5](https://github.com/7rikazhexde/trial-test/tree/70ba3cf5)
+> Commit: [7475b671](https://github.com/7rikazhexde/trial-test/tree/7475b671)
 > Click on the  badge above to see the results of running pytest on multiple hosts.
