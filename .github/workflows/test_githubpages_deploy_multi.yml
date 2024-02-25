@@ -41,7 +41,7 @@ jobs:
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
               curl -sSL https://install.python-poetry.org | python -
-              echo "PATH=$HOME/.poetry/bin:$PATH" >> $GITHUB_ENV
+              echo "PATH=$USERPROFILE/.poetry/bin:$PATH" >> $GITHUB_ENV
           else
             curl -sSL https://install.python-poetry.org | python3 -
             if [[ "${{ matrix.os }}" == "macos-12" ]]; then
