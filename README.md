@@ -1,13 +1,20 @@
 # trial-test
 
-[![Summary](https://github.com/rcmdnk/homebrew-file/actions/workflows/test.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml)
-[![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
-
 An experimental project to test out various tools.
+
+## Pytest Coverage Comment
+
+[![Summary](https://github.com/rcmdnk/homebrew-file/actions/workflows/test.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
+
+## pytest-html
+
+[![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![macos-12](https://img.shields.io/badge/macos_12-url-success)](https://7rikazhexde.github.io/trial-test/macos-12/report_page.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)
 
 ## Tabale of contents
 
 - [trial-test](#trial-test)
+  - [Pytest Coverage Comment](#pytest-coverage-comment)
+  - [pytest-html](#pytest-html)
   - [Tabale of contents](#tabale-of-contents)
   - [pre-commit](#pre-commit)
     - [Overview](#overview)
@@ -16,7 +23,7 @@ An experimental project to test out various tools.
     - [Overview](#overview-1)
     - [Usage](#usage-1)
   - [About Test Result And Coverage](#about-test-result-and-coverage)
-    - [pytest-coverage-comment](#pytest-coverage-comment)
+    - [pytest-coverage-comment](#pytest-coverage-comment-1)
 
 ## pre-commit
 

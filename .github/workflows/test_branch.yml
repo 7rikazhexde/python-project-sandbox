@@ -81,11 +81,13 @@ jobs:
           fi
           commit_hash=${GITHUB_SHA::8}
           commit_link="[$commit_hash](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash)"
-          echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml) [![](https://img.shields.io/badge/pytest_html-url-success)](https://7rikazhexde.github.io/trial-test/report_page.html)" > ./README.md
+          echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml)" > ./README.md
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
-          echo -e "ℹ️ **Note**:  \n" >> ./README.md
-          echo -e "Commit: $commit_link\n" >> ./README.md
-          echo "Click on the `test summary` badge above to see the results of running pytest on multiple hosts." >> ./README.md
+          echo -e "[![](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![](https://img.shields.io/badge/macos_12-url-success)](https://7rikazhexde.github.io/trial-test/macos-12/report_page.html) [![](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)" >> ./README.md
+          echo -e "> [!Note]" >> ./README.md
+          echo -e "> \n" >> ./README.md
+          echo -e "> Commit: $commit_link\n" >> ./README.md
+          echo -e "> Click on the `test summary` badge above to see the results of running pytest on multiple hosts." >> ./README.md
 
       - name: Commit
         if: ${{ steps.is_main.outputs.flag == '1' }}
