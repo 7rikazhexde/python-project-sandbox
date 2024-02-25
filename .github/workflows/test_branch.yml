@@ -87,8 +87,8 @@ jobs:
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
           echo -e "> [!Note]" >> ./README.md
           echo -e "> " >> ./README.md
-          echo -e "> Commit: $commit_link\n" >> ./README.md
-          echo "> Click on the `test summary` badge above to see the results of running pytest on multiple hosts." >> ./README.md
+          echo -e "> Commit: $commit_link" >> ./README.md
+          echo -e "> Click on the `test summary` badge above to see the results of running pytest on multiple hosts." >> ./README.md
 
       - name: Commit
         if: ${{ steps.is_main.outputs.flag == '1' }}
