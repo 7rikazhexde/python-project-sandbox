@@ -92,6 +92,7 @@ jobs:
         os: [macos-12]
         python-version: ['3.11']
     runs-on: ${{ matrix.os }}
+    needs: [test_and_deploy_ubuntu]
     env:
       TZ: 'Asia/Tokyo'
     permissions:
@@ -170,6 +171,7 @@ jobs:
         os: [windows-latest]
         python-version: ['3.11']
     runs-on: ${{ matrix.os }}
+    needs: [test_and_deploy_ubuntu,test_and_deploy_macos]
     env:
       TZ: 'Asia/Tokyo'
     permissions:
