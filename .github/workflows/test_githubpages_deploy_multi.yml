@@ -72,13 +72,15 @@ jobs:
             mv ${{ matrix.os }}/report_page.html ${{ matrix.os }}_tmp/report_page.html
           fi
           if [ -d ${{ matrix.os }}/assets ]; then
-            mv ${{ matrix.os }}/assets ${{ matrix.os }}_tmp/assets
+            cp -r ${{ matrix.os }}/assets ${{ matrix.os }}_tmp/assets
+            rm -rf ${{ matrix.os }}/assets
           fi
           git fetch origin ghpages:ghpages
           git checkout ghpages
           mkdir -p ${{ matrix.os }}
           if [ -d ${{ matrix.os }}_tmp/assets ]; then
-            mv ${{ matrix.os }}_tmp/assets ${{ matrix.os }}/assets
+            cp -r ${{ matrix.os }}_tmp/assets ${{ matrix.os }}/
+            rm -rf ${{ matrix.os }}_tmp/assets
           fi
           if [ -f ${{ matrix.os }}_tmp/report_page.html ]; then
             mv ${{ matrix.os }}_tmp/report_page.html ${{ matrix.os }}/report_page.html
