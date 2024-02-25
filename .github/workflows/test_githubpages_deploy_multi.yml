@@ -19,6 +19,7 @@ jobs:
     steps:
       - name: Check is main
         id: is_main
+        shell: bash
         run: |
           if [ "${{ github.ref }}" = "refs/heads/main" ] && [ "${{ matrix.python-version }}" = "3.10" ];then
             echo "flag=1" >> $GITHUB_OUTPUT
@@ -36,9 +37,11 @@ jobs:
           python-version: ${{ matrix.python-version }}
 
       - name: Install poetry
+        shell: bash
         run: |
           if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            choco install poetry
+              curl -sSL https://install.python-poetry.org | python -
+              echo "PATH=$HOME/.poetry/bin:$PATH" >> $GITHUB_ENV
           else
             curl -sSL https://install.python-poetry.org | python3 -
             if [[ "${{ matrix.os }}" == "macos-12" ]]; then
@@ -49,15 +52,18 @@ jobs:
           fi
       
       - name: Poetry setup
+        shell: bash
         run: poetry install
 
       - name: Run test with HTML report
+        shell: bash
         if: ${{ steps.is_main.outputs.flag == '1' }}
         run: |
           mkdir -p ${{ matrix.os }}
           poetry run pytest --html=${{ matrix.os }}/report_page.html
 
       - name: Commit HTML report to ghpages branch
+        shell: bash
         run: |
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
