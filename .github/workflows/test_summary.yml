@@ -25,6 +25,7 @@ jobs:
     steps:
       - name: Set line-notify flag
         id: set_lnf
+        shell: bash
         run: |
           if [ "${{ matrix.os }}" = "ubuntu-latest" ] && [ "${{ matrix.python-version }}" = "3.10" ];then
             echo "flag=1" >> $GITHUB_OUTPUT
@@ -55,6 +56,7 @@ jobs:
           junitxml-path: ./pytest.xml
       - name: Write job summary
         id: check_status
+        shell: bash
         run: |
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
       # https://github.com/marketplace/actions/line-notify
