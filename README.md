@@ -1,13 +1,15 @@
-[![](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml) [![](https://img.shields.io/badge/pytest_html-url-success)](https://7rikazhexde.github.io/trial-test/report_page.html)
-<a href="https://github.com/7rikazhexde/trial-test/blob/13c5205f321845ceca7edc03bd9f6c90dd3d0cb7/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/13c5205f321845ceca7edc03bd9f6c90dd3d0cb7/__init__.py">\_\_init\_\_.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/13c5205f321845ceca7edc03bd9f6c90dd3d0cb7/operations.py">operations.py</a></td><td>9</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>9</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
+[![](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml)
+<a href="https://github.com/7rikazhexde/trial-test/blob/ee95eab697c399b5427b9036d7f19cdfffcec007/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-100%25-brightgreen.svg" /></a><details><summary>Coverage Report </summary><table><tr><th>File</th><th>Stmts</th><th>Miss</th><th>Cover</th><th>Missing</th></tr><tbody><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/ee95eab697c399b5427b9036d7f19cdfffcec007/__init__.py">\_\_init\_\_.py</a></td><td>0</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><a href="https://github.com/7rikazhexde/trial-test/blob/ee95eab697c399b5427b9036d7f19cdfffcec007/operations.py">operations.py</a></td><td>9</td><td>0</td><td>100%</td><td>&nbsp;</td></tr><tr><td><b>TOTAL</b></td><td><b>9</b></td><td><b>0</b></td><td><b>100%</b></td><td>&nbsp;</td></tr></tbody></table></details>
 
 ## Pytest Result Summary (os: ubuntu-latest / python-version: 3.10)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.086s :stopwatch: |
+| 4 | 0 :zzz: | 0 :x: | 0 :fire: | 0.090s :stopwatch: |
 
-ℹ️ **Note**:  
+[![](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![](https://img.shields.io/badge/macos_12-url-success)](https://7rikazhexde.github.io/trial-test/macos-12/report_page.html) [![](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)
+> [!Note]
+> 
 
-Commit: [13c5205f](https://github.com/7rikazhexde/trial-test/tree/13c5205f)
+> Commit: [ee95eab6](https://github.com/7rikazhexde/trial-test/tree/ee95eab6)
 
-Click on the  badge above to see the results of running pytest on multiple hosts.
+> Click on the  badge above to see the results of running pytest on multiple hosts.
