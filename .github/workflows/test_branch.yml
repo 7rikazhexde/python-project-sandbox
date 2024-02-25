@@ -83,12 +83,13 @@ jobs:
           fi
           commit_hash=${GITHUB_SHA::8}
           commit_link="[$commit_hash](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash)"
-          echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_summary.yml)" > ./README.md
+          echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml)" > ./README.md
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> ./README.md
           echo -e "> [!Note]" >> ./README.md
           echo -e "> " >> ./README.md
           echo -e "> Commit: $commit_link" >> ./README.md
-          echo -e "> Click on the `test summary` badge above to see the results of running pytest on multiple hosts." >> ./README.md
+          echo -e "> " >> ./README.md
+          echo "> Click on the `test summary` badge above to see the results of running pytest on multiple hosts." >> ./README.md
 
       - name: Commit
         if: ${{ steps.is_main.outputs.flag == '1' }}
