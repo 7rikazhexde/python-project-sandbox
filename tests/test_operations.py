@@ -25,16 +25,22 @@ def test_multiply() -> None:
     assert multiply(0, 10) == 0
     assert multiply(-2, 4) == -8
     assert multiply(-2, 5) == -10
+    assert multiply(5, 6) == 30
 
 
 def test_divide() -> None:
     assert divide(6, 3) == 2
     assert divide(10, 2) == 5
     assert divide(7, 2) == 3.5
+    assert divide(7, -2) == -3.5
 
 
 if __name__ == "__main__":
+    print("Running test_add()")
     test_add()
+    print("Running test_subtract()")
     test_subtract()
+    print("Running test_multiply()")
     test_multiply()
+    print("Running test_divide()")
     test_divide()
