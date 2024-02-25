@@ -70,13 +70,20 @@ jobs:
           if [ -f ${{ matrix.os }}/report_page.html ]; then
             mv ${{ matrix.os }}/report_page.html ${{ matrix.os }}/report_page_temp.html
           fi
+          if [ -d ${{ matrix.os }}/assets ]; then
+            mkdir -p temp
+            mv ${{ matrix.os }}/assets temp/
+          fi
           git fetch origin ghpages:ghpages
           git checkout ghpages
+          if [ -d temp/assets ]; then
+            mv temp/assets ${{ matrix.os }}/
+          fi
           if [ -f ${{ matrix.os }}/report_page_temp.html ]; then
             mv ${{ matrix.os }}/report_page_temp.html ${{ matrix.os }}/report_page.html
           fi
           git add ${{ matrix.os }}/assets ${{ matrix.os }}/report_page.html
-          git commit -m "Add pytest HTML report to ghpages for ${{ matrix.os }}"
+          git commit -m "Add pytest HTML report to ghpages for ${{ matrix.os }}"        
 
       - name: Push to ghpages branch
         uses: ad-m/github-push-action@master
