@@ -4,7 +4,7 @@ An experimental project to test out various tools.
 
 ## Pytest Coverage Comment
 
-[![Summary](https://github.com/rcmdnk/homebrew-file/actions/workflows/test.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
+[![Test Summary](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
 
 ## pytest-html
 

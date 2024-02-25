@@ -18,6 +18,8 @@ jobs:
         os: [macos-12, ubuntu-latest]
         python-version: ['3.10', '3.9']
     runs-on: ${{ matrix.os }}
+    env:
+      TZ: 'Asia/Tokyo'
     permissions:
       contents: write
     steps:
