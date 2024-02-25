@@ -36,21 +36,24 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install poetry
+      - name: Install poetry on Windows
+        if: matrix.os == 'windows-latest'
+        shell: pwsh
+        run: |
+          iwr -useb get-poetry.py | python -
+          echo "$env:USERPROFILE\.poetry\bin" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
+        
+      - name: Install poetry on macOS and Ubuntu
+        if: matrix.os != 'windows-latest'
         shell: bash
         run: |
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-              curl -sSL https://install.python-poetry.org | python -
-              echo "PATH=/c/Users/runneradmin/.poetry/bin:$PATH" >> $GITHUB_ENV
+          curl -sSL https://install.python-poetry.org | python3 -
+          if [[ "${{ matrix.os }}" == "macos-12" ]]; then
+            echo "/Users/runner/.local/bin" >> $GITHUB_PATH
           else
-            curl -sSL https://install.python-poetry.org | python3 -
-            if [[ "${{ matrix.os }}" == "macos-12" ]]; then
-              echo "PATH=/Users/runner/.local/bin:$PATH" >> $GITHUB_ENV
-            else
-              echo "PATH=$HOME/.local/bin:$PATH" >> $GITHUB_ENV
-            fi
+            echo "$HOME/.local/bin" >> $GITHUB_PATH
           fi
-      
+        
       - name: Poetry setup
         shell: bash
         run: poetry install
