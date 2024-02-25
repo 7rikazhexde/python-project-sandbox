@@ -177,6 +177,10 @@ jobs:
     permissions:
       contents: write
     steps:
+      - name: Set Timezone on Windows
+        if: matrix.os == 'windows-latest'
+        run: |
+          tzutil /s "Tokyo Standard Time"
       - name: Check is main
         id: is_main
         shell: bash
