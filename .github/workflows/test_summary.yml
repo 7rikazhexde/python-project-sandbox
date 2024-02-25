@@ -49,7 +49,7 @@ jobs:
         if: matrix.os == 'windows-latest'
         run: choco install ffmpeg
       - name: Run ffmpeg
-        run: ffmpeg
+        run: ffmpeg -version
       - name: Install poetry
         run: pip install poetry  
       - name: Poetry setup
