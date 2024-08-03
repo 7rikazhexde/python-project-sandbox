@@ -51,7 +51,7 @@ jobs:
       - name: Run ffmpeg
         run: ffmpeg -version
       - name: Install poetry
-        run: pip install poetry  
+        run: pip install poetry
       - name: Poetry setup
         run: poetry install
       - name: Run test

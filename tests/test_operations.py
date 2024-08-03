@@ -37,6 +37,7 @@ def test_divide() -> None:
     assert divide(10, 2) == 5
     assert divide(7, 2) == 3.5
     assert divide(7, -2) == -3.5
+    assert divide(1, 1) == 1
 
 
 if __name__ == "__main__":
