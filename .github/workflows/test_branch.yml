@@ -20,23 +20,30 @@ jobs:
         python-version: ['3.11', '3.12']
     runs-on: ${{ matrix.os }}
     env:
+      # タイムゾーンを東京時間に設定
       TZ: 'Asia/Tokyo'
     permissions:
       contents: write
     steps:
+      # リポジトリをチェックアウト
       - uses: actions/checkout@v4
+      # Python環境のセットアップ
       - uses: actions/setup-python@v5
         with:
           python-version: ${{matrix.python-version}}
       - name: Install poetry
+        # poetryのインストール
         run: pip install poetry
       - name: Poetry setup
+        # Poetryで依存関係をインストール
         run: poetry install
       - name: Run test
         id: pytest
+        # エラーが発生しても続行する
         continue-on-error: true
         run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=calculator tests/ | tee pytest-coverage.txt
       - name: Pytest coverage comment
+        # カバレッジレポートをコメントとして生成
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
@@ -54,15 +61,21 @@ jobs:
           junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
       - name: Save summary report
         run: |
+          # カバレッジのサマリーレポートをMarkdownファイルとして保存
           echo '${{ steps.coverageComment.outputs.summaryReport }}' > summary-report.md
       - name: Upload coverage data
+        # カバレッジデータをアップロード
         uses: actions/upload-artifact@v4
         with:
           name: coverage-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: |
+            # pytestの出力テキスト（テストの実行結果とカバレッジデータ）
             pytest-coverage.txt
+            # カバレッジデータのXML形式ファイル（詳細なカバレッジ情報）
             coverage.xml
+            # テスト結果のJUnit XMLレポート（テストの成功/失敗や詳細なタイムスタンプ情報を含む）
             pytest.xml
+            # カバレッジとテスト結果のサマリー（Markdown形式で出力したレポート）
             summary-report.md
 
   update_readme:
@@ -78,21 +91,25 @@ jobs:
         uses: actions/download-artifact@v4
       - name: Update README in coverage branch
         run: |
+          # "coverage" ブランチが存在する場合はチェックアウト、存在しない場合は新規作成する
           if git ls-remote --heads origin coverage | grep coverage; then
             git checkout coverage
           else
             git checkout --orphan coverage
             git rm -rf .
           fi
+          # README.mdのヘッダーとバッジを追加
           echo "# Coverage Reports" > README.md
           echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml)" >> README.md
           echo "" >> README.md
+          # 最新のコミット情報をREADMEに追加
           commit_hash=${GITHUB_SHA::8}
           commit_link="[$commit_hash](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash)"
           echo -e "> [!Note]" >> README.md
           echo -e "> " >> README.md
           echo -e "> Commit: $commit_link" >> README.md
           echo -e "> " >> README.md
+          # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
           for os in macos-12 ubuntu-latest windows-latest; do
             for version in 3.11 3.12; do
               echo "## Coverage Report (os: $os / python-version: $version)" >> README.md
@@ -109,6 +126,7 @@ jobs:
           done
       - name: Commit and push
         run: |
+          # Gitのユーザー設定とコミット、ブランチへのプッシュ
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
           git add README.md
