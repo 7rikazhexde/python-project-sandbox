@@ -93,8 +93,9 @@ jobs:
             for version in 3.10 3.11; do
               echo "## Coverage Report (os: $os / python-version: $version)" >> README.md
               if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
-                # Remove leading/trailing quotes, unescape characters, fix newlines, and remove the last line if it's just a quote
-                sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' "coverage-data-$os-$version/summary-report.md" | sed '$s/^"$//' | sed '/^$/d' >> README.md
+                # Remove leading/trailing quotes, unescape characters, fix newlines, remove trailing quotes, and normalize line endings
+                sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e '$s/"$//' "coverage-data-$os-$version/summary-report.md" | \
+                tr -d '\r' | sed 's/$/\r/' >> README.md
               else
                 echo "No summary report found for $os - $version" >> README.md
               fi
@@ -108,6 +109,9 @@ jobs:
           echo -e "> Commit: $commit_link" >> README.md
           echo -e "> " >> README.md
           echo "> Click on the \`test summary\` badge above to see the results of running pytest on multiple hosts." >> README.md
+      - name: Normalize line endings
+        run: |
+          sed -i 's/$/\r/' README.md
       - name: Commit and push
         run: |
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
