@@ -125,7 +125,16 @@ jobs:
             done
           done
           # ファイルパスを修正する（バッジのリンクは除外）
-          sed -i '/alt="coverage"/! s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/calculator/\2|g' README.md
+          awk '
+          {
+            if ($0 ~ /alt="coverage"/) {
+              print $0;  # バッジのリンクはそのまま出力
+            } else {
+              gsub(/\/blob\/[a-f0-9]+\/([^"]+)/, "/blob/&/calculator/\\1");
+              print $0;
+            }
+          }
+          ' README.md > README_temp.md && mv README_temp.md README.md
       - name: Commit and push
         run: |
           # Gitのユーザー設定とコミット、ブランチへのプッシュ
