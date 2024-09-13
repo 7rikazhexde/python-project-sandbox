@@ -76,49 +76,6 @@ jobs:
           fetch-depth: 0
       - name: Download all artifacts
         uses: actions/download-artifact@v4
-      - name: Set up Python
-        uses: actions/setup-python@v4
-        with:
-          python-version: '3.x'
-      - name: Create Python script
-        run: |
-          cat << EOF > process_summary.py
-          import sys
-          import re
-          import html
-
-          def process_file(file_path):
-              try:
-                  with open(file_path, 'r', encoding='utf-8') as f:
-                      content = f.read()
-
-                  # HTMLエンティティをデコード
-                  content = html.unescape(content)
-
-                  # 先頭と末尾の引用符を削除
-                  content = content.strip('"')
-
-                  # バックスラッシュのエスケープを解除
-                  content = content.replace('\\\\', '\\').replace('\\"', '"')
-
-                  # 改行を正規化
-                  content = content.replace('\\n', '\n')
-
-                  # 連続する改行を1つにまとめる
-                  content = re.sub(r'\n+', '\n', content)
-
-                  return content.strip()
-              except Exception as e:
-                  print(f"Error processing {file_path}: {str(e)}", file=sys.stderr)
-                  return ""
-
-          if __name__ == "__main__":
-              if len(sys.argv) < 2:
-                  print("Usage: python process_summary.py <file_path>", file=sys.stderr)
-                  sys.exit(1)
-              file_path = sys.argv[1]
-              print(process_file(file_path))
-          EOF
       - name: Update README in coverage branch
         run: |
           if git ls-remote --heads origin coverage | grep coverage; then
@@ -134,7 +91,9 @@ jobs:
             for version in 3.10 3.11; do
               echo "## Coverage Report (os: $os / python-version: $version)" >> README.md
               if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
-                python3 process_summary.py "coverage-data-$os-$version/summary-report.md" >> README.md
+                sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' "coverage-data-$os-$version/summary-report.md" |
+                sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
+                sed '/^$/N;/^\n$/D' >> README.md
               else
                 echo "No summary report found for $os - $version" >> README.md
               fi
