@@ -124,6 +124,8 @@ jobs:
               echo "" >> README.md
             done
           done
+          # ファイルパスを修正する
+          sed -i 's|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/calculator/\2|g' README.md
       - name: Commit and push
         run: |
           # Gitのユーザー設定とコミット、ブランチへのプッシュ
