@@ -53,10 +53,10 @@ jobs:
           junitxml-path: ./pytest.xml
           junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
       - name: Save summary report
+        shell: pwsh
         run: |
-          cat << EOF > summary-report.md
-          ${{ steps.coverageComment.outputs.summaryReport }}
-          EOF
+          $summaryReport = '${{ steps.coverageComment.outputs.summaryReport }}'
+          $summaryReport | Set-Content -Path summary-report.md
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
