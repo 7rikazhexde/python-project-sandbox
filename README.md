@@ -18,7 +18,7 @@ Coverage XML written to file coverage.xml
 
 ============================== slowest durations ===============================
 
-<a href="https://github.com/7rikazhexde/trial-test/blob/e087585d881ebf77cfc02f23788ef6998247fdc2/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
+<a href="https://github.com/7rikazhexde/trial-test/blob/d1570d7267567634b345f5cdba4268d4c6114855/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
 <details><summary>Coverage Report </summary>
 ============================= test session starts ==============================
 platform darwin -- Python 3.10.14, pytest-7.4.4, pluggy-1.5.0
@@ -37,7 +37,7 @@ Coverage XML written to file coverage.xml
 ============================== slowest durations ===============================
 
 (12 durations < 0.005s hidden.  Use -vv to show these durations.)
-============================== 4 passed in 0.13s ===============================
+============================== 4 passed in 0.16s ===============================
 </details>
 
 ## Pytest Result Summary (os: macos-12 / python-version: 3.11)
@@ -57,7 +57,7 @@ Coverage XML written to file coverage.xml
 
 ============================== slowest durations ===============================
 
-<a href="https://github.com/7rikazhexde/trial-test/blob/e087585d881ebf77cfc02f23788ef6998247fdc2/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
+<a href="https://github.com/7rikazhexde/trial-test/blob/d1570d7267567634b345f5cdba4268d4c6114855/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
 <details><summary>Coverage Report </summary>
 ============================= test session starts ==============================
 platform darwin -- Python 3.11.9, pytest-7.4.4, pluggy-1.5.0
@@ -96,7 +96,7 @@ Coverage XML written to file coverage.xml
 
 ============================== slowest durations ===============================
 
-<a href="https://github.com/7rikazhexde/trial-test/blob/e087585d881ebf77cfc02f23788ef6998247fdc2/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
+<a href="https://github.com/7rikazhexde/trial-test/blob/d1570d7267567634b345f5cdba4268d4c6114855/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
 <details><summary>Coverage Report </summary>
 ============================= test session starts ==============================
 platform linux -- Python 3.10.14, pytest-7.4.4, pluggy-1.5.0
@@ -135,7 +135,7 @@ Coverage XML written to file coverage.xml
 
 ============================== slowest durations ===============================
 
-<a href="https://github.com/7rikazhexde/trial-test/blob/e087585d881ebf77cfc02f23788ef6998247fdc2/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
+<a href="https://github.com/7rikazhexde/trial-test/blob/d1570d7267567634b345f5cdba4268d4c6114855/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
 <details><summary>Coverage Report </summary>
 ============================= test session starts ==============================
 platform linux -- Python 3.11.9, pytest-7.4.4, pluggy-1.5.0
@@ -174,7 +174,7 @@ Coverage XML written to file coverage.xml
 
 ============================== slowest durations ==============================
 
-<a href="https://github.com/7rikazhexde/trial-test/blob/e087585d881ebf77cfc02f23788ef6998247fdc2/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
+<a href="https://github.com/7rikazhexde/trial-test/blob/d1570d7267567634b345f5cdba4268d4c6114855/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
 <details><summary>Coverage Report </summary>
 ============================= test session starts =============================
 platform win32 -- Python 3.10.11, pytest-7.4.4, pluggy-1.5.0
@@ -193,7 +193,7 @@ Coverage XML written to file coverage.xml
 ============================== slowest durations ==============================
 
 (12 durations < 0.005s hidden.  Use -vv to show these durations.)
-============================== 4 passed in 0.39s ==============================
+============================== 4 passed in 0.37s ==============================
 </details>
 
 ## Pytest Result Summary (os: windows-latest / python-version: 3.11)
@@ -213,7 +213,7 @@ Coverage XML written to file coverage.xml
 
 ============================== slowest durations ==============================
 
-<a href="https://github.com/7rikazhexde/trial-test/blob/e087585d881ebf77cfc02f23788ef6998247fdc2/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
+<a href="https://github.com/7rikazhexde/trial-test/blob/d1570d7267567634b345f5cdba4268d4c6114855/README.md"><img alt="coverage" src="https://img.shields.io/badge/coverage-1.001.001.00100.00%25-brightgreen.svg" /></a>
 <details><summary>Coverage Report </summary>
 ============================= test session starts =============================
 platform win32 -- Python 3.11.9, pytest-7.4.4, pluggy-1.5.0
@@ -232,11 +232,11 @@ Coverage XML written to file coverage.xml
 ============================== slowest durations ==============================
 
 (12 durations < 0.005s hidden.  Use -vv to show these durations.)
-============================== 4 passed in 0.44s ==============================
+============================== 4 passed in 0.39s ==============================
 </details>
 
 > [!Note]
 > 
-> Commit: [e087585d](https://github.com/7rikazhexde/trial-test/tree/e087585d)
+> Commit: [d1570d72](https://github.com/7rikazhexde/trial-test/tree/d1570d72)
 > 
 > Click on the `test summary` badge above to see the results of running pytest on multiple hosts.
