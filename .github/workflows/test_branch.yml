@@ -52,6 +52,11 @@ jobs:
           remove-link-from-badge: false
           junitxml-path: ./pytest.xml
           junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
+      - name: Save summary report
+        run: |
+          cat << EOF > summary-report.md
+          ${{ steps.coverageComment.outputs.summaryReport }}
+          EOF
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
@@ -61,8 +66,6 @@ jobs:
             coverage.xml
             pytest.xml
             summary-report.md
-      - name: Save summary report
-        run: echo "${{ steps.coverageComment.outputs.summaryReport }}" > summary-report.md
 
   update_readme:
     needs: test
