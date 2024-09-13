@@ -53,10 +53,8 @@ jobs:
           junitxml-path: ./pytest.xml
           junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
       - name: Save summary report
-        shell: pwsh
         run: |
-          $summaryReport = '${{ steps.coverageComment.outputs.summaryReport }}'
-          $summaryReport | Set-Content -Path summary-report.md
+          echo '${{ steps.coverageComment.outputs.summaryReport }}' > summary-report.md
       - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
@@ -89,15 +87,21 @@ jobs:
           import re
 
           def process_file(file_path):
-              with open(file_path, 'r') as f:
-                  content = f.read()
-              content = re.sub(r'^\"|\"$', '', content)
-              content = content.replace('\\"', '"').replace('\\\\', '\\').replace('\\n', '\n')
-              content = re.sub(r'\n+', '\n', content)
-              content = content.strip()
-              return content
+              try:
+                  with open(file_path, 'r') as f:
+                      content = f.read()
+                  content = re.sub(r'^"|"$', '', content)
+                  content = content.replace('\\"', '"').replace('\\\\', '\\').replace('\\n', '\n')
+                  content = re.sub(r'\n+', '\n', content)
+                  return content.strip()
+              except Exception as e:
+                  print(f"Error processing {file_path}: {str(e)}", file=sys.stderr)
+                  return ""
 
           if __name__ == "__main__":
+              if len(sys.argv) < 2:
+                  print("Usage: python process_summary.py <file_path>", file=sys.stderr)
+                  sys.exit(1)
               file_path = sys.argv[1]
               print(process_file(file_path))
           EOF
