@@ -76,6 +76,8 @@ jobs:
       - uses: actions/checkout@v3
         with:
           fetch-depth: 0
+      - name: Install html-xml-utils
+        run: sudo apt-get install html-xml-utils
       - name: Download all artifacts
         uses: actions/download-artifact@v4
       - name: Update README in coverage branch
@@ -93,9 +95,12 @@ jobs:
             for version in 3.10 3.11; do
               echo "## Coverage Report (os: $os / python-version: $version)" >> README.md
               if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
-                # Remove leading/trailing quotes, unescape internal quotes, and remove extra newlines
-                sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e '/^$/d' "coverage-data-$os-$version/summary-report.md" | \
-                sed -e 's/\\\\\\_\\\\\\_/\\_\\_/g' -e 's/\\n/\n/g' >> README.md
+                # Remove leading/trailing quotes, unescape internal quotes, remove extra newlines, and fix file names
+                sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e '/^$/d' -e 's/\\\\\\_\\\\\\_/__/g' -e 's/\\\\\\_/_/g' "coverage-data-$os-$version/summary-report.md" | \
+                sed -e 's/\\n/\n/g' | \
+                hxnormalize -x | \
+                hxselect -c -s '\n' 'body' | \
+                sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' >> README.md
               else
                 echo "No summary report found for $os - $version" >> README.md
               fi
