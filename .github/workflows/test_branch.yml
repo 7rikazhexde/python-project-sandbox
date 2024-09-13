@@ -13,26 +13,6 @@ on:
       - 'master'
 
 jobs:
-  debug_info:
-    runs-on: ubuntu-latest
-    steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-      - name: Dump job context
-        env:
-          JOB_CONTEXT: ${{ toJson(job) }}
-        run: echo "$JOB_CONTEXT"
-      - name: Dump steps context
-        env:
-          STEPS_CONTEXT: ${{ toJson(steps) }}
-        run: echo "$STEPS_CONTEXT"
-      - name: Dump runner context
-        env:
-          RUNNER_CONTEXT: ${{ toJson(runner) }}
-        run: echo "$RUNNER_CONTEXT"
-
   test:
     strategy:
       matrix:
@@ -80,6 +60,9 @@ jobs:
             pytest-coverage.txt
             coverage.xml
             pytest.xml
+            summary-report.md
+      - name: Save summary report
+        run: echo "${{ steps.coverageComment.outputs.summaryReport }}" > summary-report.md
 
   update_readme:
     needs: test
@@ -105,29 +88,12 @@ jobs:
           echo "" >> README.md
           for os in macos-12 ubuntu-latest windows-latest; do
             for version in 3.10 3.11; do
-              echo "## Pytest Result Summary (os: $os / python-version: $version)" >> README.md
-              if [ -f "coverage-data-$os-$version/pytest-coverage.txt" ]; then
-                # Extract the summary table from pytest-coverage.txt
-                sed -n '/===.*test session starts/,/===.*slowest durations/p' coverage-data-$os-$version/pytest-coverage.txt >> README.md
-                echo "" >> README.md
+              echo "## Coverage Report (os: $os / python-version: $version)" >> README.md
+              if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
+                cat "coverage-data-$os-$version/summary-report.md" >> README.md
               else
-                echo "No pytest-coverage.txt file found for $os - $version" >> README.md
+                echo "No summary report found for $os - $version" >> README.md
               fi
-              if [ -f "coverage-data-$os-$version/coverage.xml" ]; then
-                # Extract coverage percentage from coverage.xml
-                coverage=$(grep -oP 'line-rate="\K[^"]+' coverage-data-$os-$version/coverage.xml)
-                coverage_percent=$(echo "$coverage * 100" | bc | xargs printf "%.2f")
-                echo "<a href=\"https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/README.md\"><img alt=\"coverage\" src=\"https://img.shields.io/badge/coverage-${coverage_percent}%25-brightgreen.svg\" /></a>" >> README.md
-              else
-                echo "No coverage.xml file found for $os - $version" >> README.md
-              fi
-              echo "<details><summary>Coverage Report </summary>" >> README.md
-              if [ -f "coverage-data-$os-$version/pytest-coverage.txt" ]; then
-                cat coverage-data-$os-$version/pytest-coverage.txt >> README.md
-              else
-                echo "No pytest-coverage.txt file found for $os - $version" >> README.md
-              fi
-              echo "</details>" >> README.md
               echo "" >> README.md
             done
           done
