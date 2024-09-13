@@ -93,17 +93,22 @@ jobs:
             for version in 3.10 3.11; do
               echo "## Coverage Report (os: $os / python-version: $version)" >> README.md
               if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
-                # Remove quotes, unescape characters, fix newlines, remove empty lines, and remove trailing quote
-                sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' "coverage-data-$os-$version/summary-report.md" | \
-                sed '/^$/d' | sed '$ s/^"$//' | sed '$ s/"$//' >> README.md
+                python3 -c "
+                  import re
+                  with open('coverage-data-$os-$version/summary-report.md', 'r') as f:
+                      content = f.read()
+                  content = re.sub(r'^\"|\"$', '', content)  # Remove leading/trailing quotes
+                  content = content.replace('\\"', '"').replace('\\\\', '\\').replace('\\n', '\n')  # Unescape characters
+                  content = re.sub(r'\n+', '\n', content)  # Remove extra newlines
+                  content = content.strip()  # Remove leading/trailing whitespace
+                  print(content)
+                " >> README.md
               else
                 echo "No summary report found for $os - $version" >> README.md
               fi
               echo "" >> README.md
             done
           done
-          # Remove any trailing newlines
-          sed -i -e :a -e '/^\n*$/{$d;N;ba' -e '}' README.md
           commit_hash=${GITHUB_SHA::8}
           commit_link="[$commit_hash](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash)"
           echo -e "> [!Note]" >> README.md
