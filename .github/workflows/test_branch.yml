@@ -85,14 +85,28 @@ jobs:
           cat << EOF > process_summary.py
           import sys
           import re
+          import html
 
           def process_file(file_path):
               try:
-                  with open(file_path, 'r') as f:
+                  with open(file_path, 'r', encoding='utf-8') as f:
                       content = f.read()
-                  content = re.sub(r'^"|"$', '', content)
-                  content = content.replace('\\"', '"').replace('\\\\', '\\\\').replace('\\n', '\n')
+
+                  # HTMLエンティティをデコード
+                  content = html.unescape(content)
+
+                  # 先頭と末尾の引用符を削除
+                  content = content.strip('"')
+
+                  # バックスラッシュのエスケープを解除
+                  content = content.replace('\\\\', '\\').replace('\\"', '"')
+
+                  # 改行を正規化
+                  content = content.replace('\\n', '\n')
+
+                  # 連続する改行を1つにまとめる
                   content = re.sub(r'\n+', '\n', content)
+
                   return content.strip()
               except Exception as e:
                   print(f"Error processing {file_path}: {str(e)}", file=sys.stderr)
