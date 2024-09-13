@@ -41,7 +41,7 @@ jobs:
         id: pytest
         # エラーが発生しても続行する
         continue-on-error: true
-        run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=calculator tests/ | tee pytest-coverage.txt
+        run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=project_a tests/ | tee pytest-coverage.txt
       - name: Pytest coverage comment
         # カバレッジレポートをコメントとして生成
         id: coverageComment

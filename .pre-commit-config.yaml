@@ -66,14 +66,14 @@ repos:
     #    name: isort
     #    stages: [commit]
     #    language: system
-    #    entry: poetry run isort ci tests calculator
+    #    entry: poetry run isort ci tests project_a
     #    types: [python]
 
     #-   id: black
     #    name: black
     #    stages: [commit]
     #    language: system
-    #    entry: poetry run black ci tests calculator
+    #    entry: poetry run black ci tests project_a
     #    types: [python]
     #    exclude: resources_bin.py
 
@@ -81,7 +81,7 @@ repos:
     #    name: flake8
     #    stages: [commit]
     #    language: system
-    #    entry: poetry run flake8 ci tests calculator
+    #    entry: poetry run flake8 ci tests project_a
     #    types: [python]
 
     #-   id: mypy
