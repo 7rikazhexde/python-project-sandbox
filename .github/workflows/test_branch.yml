@@ -93,7 +93,8 @@ jobs:
               if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
                 sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-$os-$version/summary-report.md" |
                 sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
-                sed '/^$/N;/^\n$/D' >> README.md
+                sed '/^$/N;/^\n$/D' |
+                sed -e 's/^"//' -e 's/"$//' >> README.md
               else
                 echo "No summary report found for $os - $version" >> README.md
               fi
