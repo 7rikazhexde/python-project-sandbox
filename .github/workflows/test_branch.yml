@@ -125,10 +125,10 @@ jobs:
             done
           done
           # ファイルパスを修正する
-          sed -i '
-            /<a href="[^"]*"><img alt="coverage"/b
-            s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/calculator/\2|g
-          ' README.md
+          # Step 1: すべてのリンクにcalculator/を追加
+          sed -i 's|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/calculator/\2|g' README.md
+          # Step 2: alt="coverage" を含むリンクから calculator/ を除去
+          sed -i '/<img alt="coverage"/s|/blob/\([a-f0-9]*\)/calculator/|/blob/\1/|g' README.md
       - name: Commit and push
         run: |
           # Gitのユーザー設定とコミット、ブランチへのプッシュ
