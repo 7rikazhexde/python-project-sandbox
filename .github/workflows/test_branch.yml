@@ -93,7 +93,8 @@ jobs:
             for version in 3.10 3.11; do
               echo "## Coverage Report (os: $os / python-version: $version)" >> README.md
               if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
-                cat "coverage-data-$os-$version/summary-report.md" >> README.md
+                # Remove leading and trailing quotes, and unescape internal quotes
+                sed -e 's/^"//' -e 's/"$//' -e 's/\\"//g' "coverage-data-$os-$version/summary-report.md" >> README.md
               else
                 echo "No summary report found for $os - $version" >> README.md
               fi
