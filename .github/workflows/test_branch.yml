@@ -91,7 +91,7 @@ jobs:
                   with open(file_path, 'r') as f:
                       content = f.read()
                   content = re.sub(r'^"|"$', '', content)
-                  content = content.replace('\\"', '"').replace('\\\\', '\\').replace('\\n', '\n')
+                  content = content.replace('\\"', '"').replace('\\\\', '\\\\').replace('\\n', '\n')
                   content = re.sub(r'\n+', '\n', content)
                   return content.strip()
               except Exception as e:
