@@ -126,8 +126,8 @@ jobs:
           done
           # ファイルパスを修正する
           sed -i '
-            s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/calculator/\2|g;
-            s|/blob/\([a-f0-9]*\)/calculator/README\.md|/blob/\1/README.md|g
+            s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
+            s|/blob/\([a-f0-9]*\)/project_a/README\.md|/blob/\1/README.md|g
           ' README.md
       - name: Commit and push
         run: |

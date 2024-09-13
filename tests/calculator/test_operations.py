@@ -1,4 +1,4 @@
-from calculator.operations import add, divide, multiply, subtract
+from project_a.calculator.operations import add, divide, multiply, subtract
 
 
 def test_add() -> None:
@@ -38,10 +38,3 @@ def test_divide() -> None:
     assert divide(7, 2) == 3.5
     assert divide(7, -2) == -3.5
     assert divide(1, 1) == 1
-
-
-if __name__ == "__main__":
-    test_add()
-    test_subtract()
-    test_multiply()
-    test_divide()

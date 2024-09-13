@@ -49,8 +49,15 @@ repos:
     rev: v0.5.6
     hooks:
       - id: ruff
-        args: [ --fix ]
+        args: ["--fix","project_a"]
       - id: ruff-format
+
+  - repo: https://github.com/pre-commit/mirrors-mypy
+    rev: v1.10.0
+    hooks:
+      - id: mypy
+        additional_dependencies: [types-requests==2.32.0.20240622]
+        args: [--config-file=pyproject.toml]
 
   # Repository local hooks
   - repo: local
@@ -77,12 +84,12 @@ repos:
     #    entry: poetry run flake8 ci tests calculator
     #    types: [python]
 
-    -   id: mypy
-        name: mypy
-        stages: [commit]
-        language: system
-        entry: poetry run mypy
-        types: [python]
+    #-   id: mypy
+    #    name: mypy
+    #    stages: [commit]
+    #    language: system
+    #    entry: poetry run mypy
+    #    types: [python]
 
     -   id: mdformat
         name: mdformat
