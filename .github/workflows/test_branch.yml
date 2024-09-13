@@ -61,26 +61,49 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v3
+        with:
+          fetch-depth: 0
+      - name: Install xq
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq
+          pip install yq
       - name: Download all artifacts
         uses: actions/download-artifact@v4
       - name: Update README in coverage branch
         run: |
-          git checkout coverage || git checkout --orphan coverage
-          git rm -rf .
+          if git ls-remote --heads origin coverage | grep coverage; then
+            git checkout coverage
+          else
+            git checkout --orphan coverage
+            git rm -rf .
+          fi
           echo "# Coverage Reports" > README.md
           echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml)" >> README.md
           echo "" >> README.md
           for os in macos-12 ubuntu-latest windows-latest; do
             for version in 3.10 3.11; do
               echo "## Pytest Result Summary (os: $os / python-version: $version)" >> README.md
-              cat coverage-data-$os-$version/pytest.xml | xq -r '.testsuite["@errors"], .testsuite["@failures"], .testsuite["@skipped"], .testsuite["@tests"], .testsuite["@time"]' |
-              awk '{printf "| %d | %d :zzz: | %d :x: | %d :fire: | %.3fs :stopwatch: |\n", $4, $3, $2, $1, $5}' >> README.md
+              if [ -f "coverage-data-$os-$version/pytest.xml" ]; then
+                xq -r '.testsuite["@errors"], .testsuite["@failures"], .testsuite["@skipped"], .testsuite["@tests"], .testsuite["@time"]' coverage-data-$os-$version/pytest.xml |
+                awk '{printf "| %d | %d :zzz: | %d :x: | %d :fire: | %.3fs :stopwatch: |\n", $4, $3, $2, $1, $5}' >> README.md
+              else
+                echo "No pytest.xml file found for $os - $version" >> README.md
+              fi
               echo "" >> README.md
-              coverage=$(cat coverage-data-$os-$version/coverage.xml | xq -r '.coverage["@line-rate"]')
-              coverage_percent=$(echo "$coverage * 100" | bc)
-              echo "<a href=\"https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/README.md\"><img alt=\"coverage\" src=\"https://img.shields.io/badge/coverage-${coverage_percent}%25-brightgreen.svg\" /></a>" >> README.md
+              if [ -f "coverage-data-$os-$version/coverage.xml" ]; then
+                coverage=$(xq -r '.coverage["@line-rate"]' coverage-data-$os-$version/coverage.xml)
+                coverage_percent=$(echo "$coverage * 100" | bc)
+                echo "<a href=\"https://github.com/$GITHUB_REPOSITORY/blob/$GITHUB_SHA/README.md\"><img alt=\"coverage\" src=\"https://img.shields.io/badge/coverage-${coverage_percent}%25-brightgreen.svg\" /></a>" >> README.md
+              else
+                echo "No coverage.xml file found for $os - $version" >> README.md
+              fi
               echo "<details><summary>Coverage Report </summary>" >> README.md
-              cat coverage-data-$os-$version/pytest-coverage.txt >> README.md
+              if [ -f "coverage-data-$os-$version/pytest-coverage.txt" ]; then
+                cat coverage-data-$os-$version/pytest-coverage.txt >> README.md
+              else
+                echo "No pytest-coverage.txt file found for $os - $version" >> README.md
+              fi
               echo "</details>" >> README.md
               echo "" >> README.md
             done
