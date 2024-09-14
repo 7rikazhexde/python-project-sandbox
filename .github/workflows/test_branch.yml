@@ -96,17 +96,20 @@ jobs:
             git checkout --orphan coverage
             git rm -rf .
           fi
+
           # README.mdのヘッダーとバッジを追加
           echo "# Coverage Reports" > README.md
           echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml)" >> README.md
           echo "" >> README.md
+
           # 最新のコミット情報をREADMEに追加
           commit_hash=${GITHUB_SHA::8}
           commit_link="[$commit_hash](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash)"
           echo -e "> [!Note]" >> README.md
           echo -e "> " >> README.md
           echo -e "> Commit: $commit_link" >> README.md
-          echo -e "> " >> README.md
+          echo -e "" >> README.md  # この行を追加
+
           # テスト対象外のファイルに関する注記を追加
           echo -e "> [!Important]" >> README.md
           echo -e "> The following file is intentionally excluded from test coverage:" >> README.md
@@ -114,6 +117,7 @@ jobs:
           echo -e "> " >> README.md
           echo -e "> This file contains complex external dependencies and is verified through manual and integration testing." >> README.md
           echo -e "> " >> README.md
+
           # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
           for os in macos-12 ubuntu-latest windows-latest; do
             for version in 3.11 3.12; do
@@ -129,6 +133,7 @@ jobs:
               echo "" >> README.md
             done
           done
+
           # ファイルパスを修正する
           sed -i '
             s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
