@@ -5,12 +5,9 @@ on:
   push:
     branches:
       - 'main'
-      - 'master'
-      - 'develop'
   pull_request:
     branches:
       - 'main'
-      - 'master'
 
 jobs:
   test:
@@ -41,7 +38,8 @@ jobs:
         id: pytest
         # エラーが発生しても続行する
         continue-on-error: true
-        run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=project_a tests/ | tee pytest-coverage.txt
+        #run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=project_a tests/ | tee pytest-coverage.txt
+        run: poetry run task test_gh_action_xml
       - name: Pytest coverage comment
         # カバレッジレポートをコメントとして生成
         id: coverageComment
@@ -108,6 +106,13 @@ jobs:
           echo -e "> [!Note]" >> README.md
           echo -e "> " >> README.md
           echo -e "> Commit: $commit_link" >> README.md
+          echo -e "> " >> README.md
+          # テスト対象外のファイルに関する注記を追加
+          echo -e "> [!Important]" >> README.md
+          echo -e "> The following file is intentionally excluded from test coverage:" >> README.md
+          echo -e "> - \`project_a/staking/ton_whales_staking_dashboard.py\`" >> README.md
+          echo -e "> " >> README.md
+          echo -e "> This file contains complex external dependencies and is verified through manual and integration testing." >> README.md
           echo -e "> " >> README.md
           # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
           for os in macos-12 ubuntu-latest windows-latest; do

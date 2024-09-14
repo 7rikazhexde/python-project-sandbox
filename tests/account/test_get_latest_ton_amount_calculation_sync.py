@@ -1,3 +1,4 @@
+import importlib
 from datetime import datetime, timezone
 from typing import Any, Dict, List, Optional
 
@@ -259,6 +260,29 @@ def test_get_ton_balance(mocker: MockerFixture, mock_session: Any) -> None:
     balance = gltacs.get_ton_balance(mock_session, "user_friendly_address")
 
     assert balance == 5.0
+
+
+def test_get_currency_symbol_exception_handling(mocker: MockerFixture) -> None:
+    """
+    get_currency_symbolが例外を発生させた場合のテスト
+    """
+    # モジュールレベルの変数をパッチ
+    mocker.patch.object(gltacs, "DEFAULT_COUNTER_VAL", "INVALID")
+
+    # get_currency_symbolをモックして例外を発生させる
+    mock_get_currency_symbol = mocker.patch("babel.numbers.get_currency_symbol")
+    mock_get_currency_symbol.side_effect = ValueError()
+
+    # モジュールを再読み込みして、パッチされた値を反映
+    importlib.reload(gltacs)
+
+    # symbolの値を確認
+    assert gltacs.symbol == "¥"
+
+    # TypeErrorの場合もテスト
+    mock_get_currency_symbol.side_effect = TypeError()
+    importlib.reload(gltacs)
+    assert gltacs.symbol == "¥"
 
 
 def test_main_success(
