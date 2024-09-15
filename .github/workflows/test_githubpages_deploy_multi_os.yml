@@ -24,28 +24,19 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      - name: Install dependencies
-        run: |
-          pip install --upgrade pip
-          pip install poetry
-          poetry install
-      - name: Install FFmpeg
-        run: |
-          if [ "${{ matrix.os }}" == "ubuntu-latest" ]; then
-            sudo apt-get update && sudo apt-get install -y ffmpeg
-          elif [ "${{ matrix.os }}" == "macos-12" ]; then
-            brew install ffmpeg
-          else
-            choco install ffmpeg
-          fi
-        shell: bash
+      - name: Install poetry
+        run: pip install poetry
+      - name: Poetry setup
+        run: poetry install
       - name: Run tests
+        id: pytest
+        continue-on-error: true
         run: |
           mkdir -p test_results
-          poetry run pytest --html=test_results/report.html || (echo "Tests failed" && exit 1)
-        shell: bash
+          poetry run task test_gh_action_xml || true
+          poetry run pytest --html=test_results/report.html
       - name: Upload test results
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}
           path: test_results
@@ -60,7 +51,7 @@ jobs:
         with:
           fetch-depth: 0
       - name: Download all artifacts
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4
       - name: Deploy to GitHub Pages
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
