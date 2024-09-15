@@ -64,8 +64,6 @@ jobs:
     needs: test
     runs-on: ubuntu-latest
     if: success() && github.ref == 'refs/heads/main'
-    env:
-      LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -104,6 +102,8 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Send LINE Notify
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
           message="Deployment completed.
 
