@@ -33,8 +33,7 @@ jobs:
         continue-on-error: true
         run: |
           mkdir -p test_results
-          poetry run task test_gh_action_xml || true
-          poetry run pytest --html=test_results/report.html
+          poetry run pytest --html=test_results/report_page.html
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
