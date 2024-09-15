@@ -59,8 +59,8 @@ jobs:
           git checkout ghpages
           for os in ubuntu-latest macos-12 windows-latest; do
             mkdir -p $os
-            if [ -f test-results-$os/report.html ]; then
-              mv test-results-$os/report.html $os/
+            if [ -f test-results-$os/report_page.html ]; then
+              mv test-results-$os/report_page.html $os/
               if [ -d test-results-$os/assets ]; then
                 cp -r test-results-$os/assets $os/
               fi
@@ -78,3 +78,8 @@ jobs:
           message: |
             Deployment completed. Check reports at:
             https://7rikazhexde.github.io/video-grid-merge/
+
+            Badges:
+            [![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/video-grid-merge/ubuntu-latest/report_page.html)
+            [![macos-12](https://img.shields.io/badge/macos_12-url-success)](https://7rikazhexde.github.io/video-grid-merge/macos-12/report_page.html)
+            [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/video-grid-merge/windows-latest/report_page.html)
