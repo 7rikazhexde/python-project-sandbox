@@ -24,6 +24,22 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
+      - name: Set timezone
+        run: |
+          if [ "${{ runner.os }}" == "Windows" ]; then
+            tzutil /s "Tokyo Standard Time"
+            echo "Setting TZ environment variable"
+            echo "TZ=Asia/Tokyo" >> $GITHUB_ENV
+          elif [ "${{ runner.os }}" == "macOS" ]; then
+            sudo systemsetup -settimezone Asia/Tokyo
+          fi
+        shell: bash
+      - name: Verify timezone
+        run: |
+          echo "Current time: $(date)"
+          echo "Current TZ: $TZ"
+          python -c "import time; print(f'Python time: {time.strftime(\"%Y-%m-%d %H:%M:%S %Z\")}')"
+        shell: bash
       - name: Install poetry
         run: pip install poetry
       - name: Poetry setup
@@ -34,6 +50,7 @@ jobs:
         run: |
           mkdir -p test_results
           poetry run pytest --html=test_results/report_page.html
+        shell: bash
       - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
