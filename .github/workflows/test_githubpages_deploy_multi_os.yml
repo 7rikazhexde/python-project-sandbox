@@ -28,8 +28,7 @@ jobs:
         run: |
           if [ "${{ runner.os }}" == "Windows" ]; then
             tzutil /s "Tokyo Standard Time"
-            echo "Setting TZ environment variable"
-            echo "TZ=Asia/Tokyo" >> $GITHUB_ENV
+            echo "TZ=Asia/Tokyo" >> $env:GITHUB_ENV
           elif [ "${{ runner.os }}" == "macOS" ]; then
             sudo systemsetup -settimezone Asia/Tokyo
           fi
