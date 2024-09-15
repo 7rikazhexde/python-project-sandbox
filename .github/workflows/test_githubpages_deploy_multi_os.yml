@@ -71,15 +71,22 @@ jobs:
           done
           git commit -m "Add test reports to GitHub Pages" || echo "No changes to commit"
           git push origin ghpages --force
+      - name: Generate URL list
+        run: |
+          URL_LIST=""
+          for os in ubuntu-latest macos-12 windows-latest; do
+            URL_LIST="${URL_LIST}https://7rikazhexde.github.io/trial-test/${os}/report_page.html\n"
+          done
+          echo "URL_LIST<<EOF" >> $GITHUB_ENV
+          echo -e "$URL_LIST" >> $GITHUB_ENV
+          echo "EOF" >> $GITHUB_ENV
       - name: Notify on Line
         uses: snow-actions/line-notify@v1.1.0
         with:
           access_token: ${{ secrets.LINE_ACCESS_TOKEN }}
           message: |
             Deployment completed. Check reports at:
-            https://7rikazhexde.github.io/video-grid-merge/
+            https://7rikazhexde.github.io/trial-test/
 
-            Badges:
-            [![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/video-grid-merge/ubuntu-latest/report_page.html)
-            [![macos-12](https://img.shields.io/badge/macos_12-url-success)](https://7rikazhexde.github.io/video-grid-merge/macos-12/report_page.html)
-            [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/video-grid-merge/windows-latest/report_page.html)
+            Check URL:
+            ${{ env.URL_LIST }}
