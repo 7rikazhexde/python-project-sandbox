@@ -91,21 +91,26 @@ jobs:
           git commit -m "Add test reports to GitHub Pages" || echo "No changes to commit"
           git push origin ghpages --force
       - name: Generate URL list
+        id: generate_url_list
         run: |
           URL_LIST=""
           for os in ubuntu-latest macos-12 windows-latest; do
             URL_LIST="${URL_LIST}https://7rikazhexde.github.io/trial-test/${os}/report_page.html\n"
           done
-          echo "URL_LIST<<EOF" >> $GITHUB_ENV
-          echo -e "$URL_LIST" >> $GITHUB_ENV
-          echo "EOF" >> $GITHUB_ENV
-      - name: Notify on Line
-        uses: snow-actions/line-notify@v1.1.0
-        with:
-          access_token: ${{ secrets.LINE_ACCESS_TOKEN }}
-          message: |
-            Deployment completed. Check reports at:
-            https://7rikazhexde.github.io/trial-test/
+          echo "url_list<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$URL_LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
-            Check URL:
-            ${{ env.URL_LIST }}
+      - name: Send LINE Notify
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+        run: |
+          message="Deployment completed. Check reports at:
+          https://7rikazhexde.github.io/trial-test/
+
+          Check URL:
+          ${{ steps.generate_url_list.outputs.url_list }}"
+
+          curl -X POST https://notify-api.line.me/api/notify \
+            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
+            -F "message=${message}"
