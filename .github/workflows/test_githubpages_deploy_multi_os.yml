@@ -26,20 +26,22 @@ jobs:
           python-version: ${{ matrix.python-version }}
       - name: Set timezone on Windows
         if: runner.os == 'Windows'
-        run: |
-          tzutil /s "Tokyo Standard Time"
+        run: tzutil /s "Tokyo Standard Time"
         shell: cmd
-      - name: Set timezone on macOS
-        if: runner.os == 'macOS'
-        run: |
-          sudo systemsetup -settimezone Asia/Tokyo
-        shell: bash
-      - name: Verify timezone
-        run: |
-          echo "Current time: $(date)"
-          echo "Current TZ: $TZ"
-          python -c "import time; print(f'Python time: {time.strftime(\"%Y-%m-%d %H:%M:%S %Z\")}')"
-        shell: bash
+      #- name: Set timezone on macOS
+      #  if: runner.os == 'macOS'
+      #  run: sudo systemsetup -settimezone Asia/Tokyo
+      #  shell: bash
+      #- name: Set timezone on Ubuntu
+      #  if: runner.os == 'Linux'
+      #  run: sudo timedatectl set-timezone Asia/Tokyo
+      #  shell: bash
+      #- name: Verify timezone
+      #  run: |
+      #    echo "Current time: $(date)"
+      #    echo "Current TZ: $TZ"
+      #    python -c "import time; print(f'Python time: {time.strftime(\"%Y-%m-%d %H:%M:%S %Z\")}')"
+      #  shell: bash
       - name: Install poetry
         run: pip install poetry
       - name: Poetry setup
