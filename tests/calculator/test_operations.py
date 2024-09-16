@@ -29,6 +29,7 @@ def test_multiply() -> None:
     assert multiply(-2, 4) == -8
     assert multiply(-2, 5) == -10
     assert multiply(5, 6) == 30
+    assert multiply(5, -1) == -5
 
 
 def test_divide() -> None:

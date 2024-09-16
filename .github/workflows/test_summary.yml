@@ -22,6 +22,7 @@ jobs:
       TZ: 'Asia/Tokyo'
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - name: Set line-notify flag
         id: set_lnf
@@ -39,6 +40,10 @@ jobs:
       - uses: actions/setup-python@v5
         with:
           python-version: ${{matrix.python-version}}
+      - name: Set timezone on Windows
+        if: runner.os == 'Windows'
+        run: tzutil /s "Tokyo Standard Time"
+        shell: cmd
       - name: Install FFmpeg (macOS)
         if: matrix.os == 'macos-12'
         run: brew install ffmpeg
@@ -52,7 +57,14 @@ jobs:
         run: ffmpeg -version
       - name: Install poetry
         run: pip install poetry
-      - name: Poetry setup
+      #- name: Poetry setup
+      #  run: poetry install
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
         run: poetry install
       - name: Run test
         id: pytest
@@ -66,19 +78,45 @@ jobs:
           hide-comment: true
           pytest-coverage-path: ./pytest-coverage.txt
           junitxml-path: ./pytest.xml
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check test results
+        if: steps.pytest.outcome == 'failure'
+        run: |
+          echo "Tests failed. This will be reported in the workflow summary."
+          echo "::warning::Tests failed on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
       - name: Write job summary
         id: check_status
         shell: bash
         run: |
           echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
-      # https://github.com/marketplace/actions/line-notify
+
+  check_all_tests:
+    needs: test
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
+      - name: Check test results
+        if: contains(needs.test.result, 'failure')
+        run: |
+          echo "Some tests failed. Please check the test results and fix any issues before merging."
+          exit 1
+
+  send_notification:
+    needs: [test, check_all_tests]
+    runs-on: ubuntu-latest
+    if: always()
+    steps:
       # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
-      - name: line-notify
-        if: ${{ steps.set_lnf.outputs.flag == '1' }}
-        uses: snow-actions/line-notify@v1.1.0
-        with:
-          access_token: ${{ secrets.LINE_ACCESS_TOKEN }}
-          message: |
-            Call "test_summary" from Github Action
-            Env: ${{ matrix.os }} / ${{ matrix.python-version }}
-            Chack URL: https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml
+      - name: Send LINE Notify
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+        run: |
+          status="${{ contains(needs.test.result, 'failure') && 'FAILED' || 'SUCCESS' }}"
+          message="'test_summary' workflow completed with status: $status
+
+          Check URL:
+          https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml"
+
+          curl -X POST https://notify-api.line.me/api/notify \
+            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
+            -F "message=${message}"
