@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trial-test"
-version = "0.2.162"
+version = "0.2.163"
 description = "An experimental project to test out various tools."
 authors = ["7rikaz"]
 license = "MIT"
@@ -124,6 +124,7 @@ addopts = "--cov=project_a --cov-report=term-missing --cov-report=html"
 [tool.coverage.run]
 source = ["project_a"]
 omit = ["project_a/staking/ton_whales_staking_dashboard.py"]
+branch = true
 
 [tool.coverage.report]
 exclude_lines = [
