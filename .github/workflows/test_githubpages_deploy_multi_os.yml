@@ -9,6 +9,8 @@ on:
 
 jobs:
   test:
+    # 変更: Dependabot PRの場合はこのジョブをスキップ
+    if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
       matrix:
         os: [ubuntu-latest, macos-12, windows-latest]
@@ -76,7 +78,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: success() && github.ref == 'refs/heads/main'
+    if: success() && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
     steps:
       - uses: actions/checkout@v4
         with:

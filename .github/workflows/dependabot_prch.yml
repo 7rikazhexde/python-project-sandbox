@@ -1,0 +1,44 @@
+name: Dependabot PR Check
+
+on:
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  dependabot-check:
+    if: ${{ github.actor == 'dependabot[bot]' }}
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install poetry
+        run: pip install poetry
+      - name: Install dependencies
+        run: poetry install
+      - name: Run basic tests
+        run: poetry run pytest
+      - name: Check if PR is mergeable
+        if: success()
+        run: |
+          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
+          mergeable=$(gh pr view $pr_number --json mergeable -q .mergeable)
+          if [ "$mergeable" = "true" ]; then
+            echo "PR is mergeable"
+            # 将来的に自動マージを有効にする場合は、以下のコメントを解除してください
+            # gh pr merge $pr_number --auto --merge
+          else
+            echo "PR is not mergeable"
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      # 自動承認のステップをコメントアウト
+      # - name: Approve PR if tests pass
+      #   if: success()
+      #   run: |
+      #     gh pr review --approve "${{ github.event.pull_request.html_url }}"
+      #   env:
+      #     GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

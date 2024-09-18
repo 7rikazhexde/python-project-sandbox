@@ -11,6 +11,8 @@ on:
 
 jobs:
   test:
+    # 変更: Dependabot PRの場合はこのジョブをスキップ
+    if: ${{ github.actor != 'dependabot[bot]' || github.event_name == 'push' }}
     strategy:
       matrix:
         os: [macos-12, ubuntu-latest, windows-latest]
@@ -100,7 +102,8 @@ jobs:
   update_readme:
     needs: test
     runs-on: ubuntu-latest
-    if: always()
+    # 変更: Dependabot PRの場合はこのジョブをスキップ
+    if: ${{ github.actor != 'dependabot[bot]' && always() }}
     permissions:
       contents: write
       pull-requests: write
