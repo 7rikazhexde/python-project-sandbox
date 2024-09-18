@@ -1,14 +1,10 @@
 [tool.poetry]
 name = "trial-test"
-version = "0.2.172"
+version = "0.2.173"
 description = "An experimental project to test out various tools."
 authors = ["7rikaz"]
 license = "MIT"
 readme = "README.md"
-#packages = [
-#    { include = "project_a" },
-#]
-#package-mode = false
 
 [tool.poetry.dependencies]
 python = "^3.11"
