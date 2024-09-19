@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trial-test"
-version = "0.2.177"
+version = "0.2.178"
 description = "An experimental project to test out various tools."
 authors = ["7rikaz"]
 license = "MIT"
@@ -47,8 +47,6 @@ test_gh_action_xml = "python scripts/run_tests.py --report xml"
 test_gh_action_term = "python scripts/run_tests.py --report term"
 
 [tool.ruff]
-select = ["E", "F", "I"]
-ignore = ["E402", "E501"]
 exclude = [
     ".bzr",
     ".direnv",
@@ -74,6 +72,10 @@ exclude = [
 ]
 per-file-ignores = {}
 target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I"]
+ignore = ["E402", "E501"]
 
 [tool.mypy]
 files = ["project_a"]
