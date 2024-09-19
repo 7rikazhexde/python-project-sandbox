@@ -8,7 +8,7 @@ An experimental project to test out various tools.
 
 ## pytest-html
 
-[![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![macos-12](https://img.shields.io/badge/macos_12-url-success)](https://7rikazhexde.github.io/trial-test/macos-12/report_page.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)
+[![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![macos-13](https://img.shields.io/badge/macos_13-url-success)](https://7rikazhexde.github.io/trial-test/macos-13/report_page.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)
 
 ## Tabale of contents
 

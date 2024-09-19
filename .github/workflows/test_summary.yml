@@ -17,7 +17,7 @@ jobs:
     if: ${{ github.actor != 'dependabot[bot]' }}
     strategy:
       matrix:
-        os: [macos-12, ubuntu-latest, windows-latest]
+        os: [macos-13, ubuntu-latest, windows-latest]
         python-version: ['3.11', '3.12']
     runs-on: ${{ matrix.os }}
     env:
@@ -48,7 +48,7 @@ jobs:
         run: tzutil /s "Tokyo Standard Time"
         shell: cmd
       - name: Install FFmpeg (macOS)
-        if: matrix.os == 'macos-12'
+        if: matrix.os == 'macos-13'
         run: brew install ffmpeg
       - name: Install FFmpeg (Ubuntu)
         if: matrix.os == 'ubuntu-latest'
