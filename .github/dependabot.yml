@@ -3,9 +3,6 @@ updates:
   - package-ecosystem: "pip"
     directory: "/"
     schedule:
-      interval: "daily"
-      time: "00:00"
+      cron: "0 */3 * * *"
       timezone: "UTC"
     open-pull-requests-limit: 10
-    custom_schedule:
-      - cron: "0 */3 * * *"
