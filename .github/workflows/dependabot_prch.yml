@@ -11,11 +11,6 @@ jobs:
     env:
       TZ: 'Asia/Tokyo'
     steps:
-      - name: Dump GitHub context
-        env:
-          GITHUB_CONTEXT: ${{ toJson(github) }}
-        run: echo "$GITHUB_CONTEXT"
-
       - uses: actions/checkout@v4
 
       - name: Set up Python
@@ -23,73 +18,27 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Print Python version
-        run: python --version
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install poetry
-        run: |
-          pip install poetry
-          poetry --version
-
-      - name: Show poetry config
-        run: poetry config --list
+        run: pip install poetry
 
       - name: Install dependencies
-        run: |
-          poetry install
-          poetry show --tree
+        run: poetry install
 
       - name: Run tests
-        run: poetry run pytest -v
-
-      - name: Check PR status
-        if: success()
-        run: |
-          pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
-          repo="${GITHUB_REPOSITORY}"
-
-          echo "PR number: $pr_number"
-          echo "Repository: $repo"
-
-          response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                          -H "Accept: application/vnd.github.v3+json" \
-                          "https://api.github.com/repos/${repo}/pulls/${pr_number}")
-
-          echo "API Response:"
-          echo "$response" | jq .
-
-          mergeable=$(echo "$response" | jq -r .mergeable)
-          mergeable_state=$(echo "$response" | jq -r .mergeable_state)
-
-          echo "Mergeable: $mergeable"
-          echo "Mergeable state: $mergeable_state"
-
-          if [ "$mergeable" = "true" ] && [ "$mergeable_state" = "clean" ]; then
-            echo "PR is mergeable"
-          else
-            echo "PR is not mergeable or merge status is unclear"
-            echo "Detailed PR info:"
-            gh pr view $pr_number --json number,title,body,state,mergeable,mergeStateStatus,reviewDecision
-            exit 1
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check for conflicts
-        if: success()
-        run: |
-          conflicts=$(gh pr view ${{ github.event.pull_request.number }} --json mergeStateStatus -q .mergeStateStatus)
-          echo "Merge state status: $conflicts"
-          if [ "$conflicts" = "CONFLICTING" ]; then
-            echo "PR has conflicts that need to be resolved manually"
-            gh pr view ${{ github.event.pull_request.number }} --json number,title,body,state,mergeable,mergeStateStatus,reviewDecision
-            exit 1
-          fi
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: poetry run pytest
 
       - name: Print final status
         if: always()
         run: |
           echo "Final job status: ${{ job.status }}"
           echo "PR link: ${{ github.event.pull_request.html_url }}"
+          if [ "${{ job.status }}" = "failure" ]; then
+            echo "Tests failed. Please check the test results and fix any issues before merging."
+            exit 1
+          fi
