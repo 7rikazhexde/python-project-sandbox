@@ -4,7 +4,7 @@ An experimental project to test out various tools.
 
 ## Pytest Coverage Comment
 
-[![Test Summary](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
+[![Pytest Multi-OS](https://github.com/7rikazhexde/trial-test/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_multi_os.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
 
 ## pytest-html
 
@@ -22,7 +22,6 @@ An experimental project to test out various tools.
   - [post-commit](#post-commit)
     - [Overview](#overview-1)
     - [Usage](#usage-1)
-  - [About Test Result And Coverage](#about-test-result-and-coverage)
     - [pytest-coverage-comment](#pytest-coverage-comment-1)
 
 ## pre-commit
@@ -35,9 +34,7 @@ This project is using [pre-commit](https://github.com/pre-commit/pre-commit) via
 
 1. Using Static Analysis Tools
 
-   - [isort](https://pypi.org/project/isort/): Automatic organization of import statements
-   - [black](https://pypi.org/project/black/): Code formatter for Python (PEP8 compliant)
-   - [flake8](https://pypi.org/project/flake8/): Grammar checking
+   - [ruff](https://pypi.org/project/ruff/): An extremely fast Python linter and code formatter, written in Rust.
    - [mypy](https://pypi.org/project/mypy/): Type checking with type annotations
    - [mdformat](https://pypi.org/project/mdformat/): Opinionated Markdown formatter that can be used to enforce a consistent style in Markdown files.
 
@@ -114,6 +111,7 @@ If you are committing to a project for the first time, create a post-commit scri
    Execute the following command to create post-commit.
 
    ```bash
+   cd scripts
    chmod +x create_post-commit.sh
    ./create_post-commit.sh
    ```
@@ -139,20 +137,6 @@ If you are committing to a project for the first time, create a post-commit scri
    ```bash
    .git/hooks/post-commit
    ```
-
-## About Test Result And Coverage
-
-I'm using Pytest to get test coverage, but currently there is the following problem with GitHub Action which is set in the project, and it is under suspension.
-
-- Specifying options for GitHub Action
-- Test Run
-
-If you want to check the coverage, run the following command to see the results.
-
-```bash
-poetry install
-poetry run task vgmtest
-```
 
 ### pytest-coverage-comment
 

@@ -1,4 +1,4 @@
-name: test branch
+name: Pytest Multi-OS
 
 on:
   workflow_dispatch:
@@ -125,7 +125,7 @@ jobs:
 
           # README.mdのヘッダーとバッジを追加
           echo "# Coverage Reports" > README.md
-          echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_branch.yml)" >> README.md
+          echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_multi_os.yml)" >> README.md
           echo "" >> README.md
 
           # 最新のコミット情報をREADMEに追加
