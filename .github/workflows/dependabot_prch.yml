@@ -1,16 +1,5 @@
 name: Dependabot PR Check
 
-# 処理の流れ:
-#  1. Dependabotがプルリクエストを作成
-#  2. このワークフローが自動的に実行される
-#  3. 必要な環境（Python, Poetry）をセットアップ
-#  4. 依存関係をインストールし、基本的なテストを実行
-#  5. PRのマージ可能状態を確認するための待機時間を設ける
-#  6. PRのマージ可能性を複数回チェック（GitHub APIを使用）
-#  7. マージ可能であれば成功、そうでなければ失敗を報告
-#  8. 開発者がワークフローの結果を確認
-#  9. 問題がなければ、開発者が手動でプルリクエストを承認しマージ
-
 on:
   pull_request:
     branches: [ main ]
@@ -22,53 +11,85 @@ jobs:
     env:
       TZ: 'Asia/Tokyo'
     steps:
+      - name: Dump GitHub context
+        env:
+          GITHUB_CONTEXT: ${{ toJson(github) }}
+        run: echo "$GITHUB_CONTEXT"
+
       - uses: actions/checkout@v4
+
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
+
+      - name: Print Python version
+        run: python --version
+
       - name: Install poetry
-        run: pip install poetry
-      - name: Install dependencies
-        run: poetry install
-      - name: Run basic tests
-        run: poetry run pytest
-      - name: Wait for mergeable status
         run: |
-          echo "Waiting for 60 seconds to allow GitHub to update PR status..."
-          sleep 60
-      - name: Check if PR is mergeable
+          pip install poetry
+          poetry --version
+
+      - name: Show poetry config
+        run: poetry config --list
+
+      - name: Install dependencies
+        run: |
+          poetry install
+          poetry show --tree
+
+      - name: Run tests
+        run: poetry run pytest -v
+
+      - name: Check PR status
         if: success()
         run: |
           pr_number=$(jq --raw-output .pull_request.number "$GITHUB_EVENT_PATH")
           repo="${GITHUB_REPOSITORY}"
 
-          for i in {1..5}; do
-            echo "Attempt $i to check if PR is mergeable..."
-            response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
-                            -H "Accept: application/vnd.github.v3+json" \
-                            "https://api.github.com/repos/${repo}/pulls/${pr_number}")
+          echo "PR number: $pr_number"
+          echo "Repository: $repo"
 
-            mergeable=$(echo "$response" | jq -r .mergeable)
-            mergeable_state=$(echo "$response" | jq -r .mergeable_state)
+          response=$(curl -s -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+                          -H "Accept: application/vnd.github.v3+json" \
+                          "https://api.github.com/repos/${repo}/pulls/${pr_number}")
 
-            echo "Mergeable: $mergeable"
-            echo "Mergeable state: $mergeable_state"
+          echo "API Response:"
+          echo "$response" | jq .
 
-            if [ "$mergeable" = "true" ] && [ "$mergeable_state" = "clean" ]; then
-              echo "PR is mergeable"
-              exit 0
-            elif [ "$mergeable" = "false" ]; then
-              echo "PR is not mergeable"
-              exit 1
-            fi
+          mergeable=$(echo "$response" | jq -r .mergeable)
+          mergeable_state=$(echo "$response" | jq -r .mergeable_state)
 
-            echo "PR merge status is not yet determined, waiting for 30 seconds before next attempt..."
-            sleep 30
-          done
+          echo "Mergeable: $mergeable"
+          echo "Mergeable state: $mergeable_state"
 
-          echo "PR merge status could not be determined after 5 attempts"
-          exit 1
+          if [ "$mergeable" = "true" ] && [ "$mergeable_state" = "clean" ]; then
+            echo "PR is mergeable"
+          else
+            echo "PR is not mergeable or merge status is unclear"
+            echo "Detailed PR info:"
+            gh pr view $pr_number --json number,title,body,state,mergeable,mergeStateStatus,reviewDecision
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-# 注意: このワークフローは自動マージを行いません。
-# マージの決定と実行は、開発者が手動で行う必要があります。
+      - name: Check for conflicts
+        if: success()
+        run: |
+          conflicts=$(gh pr view ${{ github.event.pull_request.number }} --json mergeStateStatus -q .mergeStateStatus)
+          echo "Merge state status: $conflicts"
+          if [ "$conflicts" = "CONFLICTING" ]; then
+            echo "PR has conflicts that need to be resolved manually"
+            gh pr view ${{ github.event.pull_request.number }} --json number,title,body,state,mergeable,mergeStateStatus,reviewDecision
+            exit 1
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Print final status
+        if: always()
+        run: |
+          echo "Final job status: ${{ job.status }}"
+          echo "PR link: ${{ github.event.pull_request.html_url }}"
