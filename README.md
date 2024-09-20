@@ -4,7 +4,7 @@ An experimental project to test out various tools.
 
 ## Pytest Coverage Comment
 
-[![Pytest Multi-OS](https://github.com/7rikazhexde/trial-test/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_multi_os.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
+[![Test Multi-OS](https://github.com/7rikazhexde/trial-test/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_multi_os.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
 
 ## pytest-html
 
