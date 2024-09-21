@@ -3,7 +3,7 @@
 
 > [!Note]
 > 
-> Commit: [8eac00a9](https://github.com/7rikazhexde/trial-test/tree/8eac00a9)
+> Commit: [3ef0f7e6](https://github.com/7rikazhexde/trial-test/tree/3ef0f7e6)
 
 > [!Important]
 > The following file is intentionally excluded from test coverage:
