@@ -1,16 +1,5 @@
 name: Version Update and Release
 
-# ワークフローの処理の流れ:
-# 1. 手動トリガーによるワークフロー開始
-# 2. バージョン更新タイプを指定
-# 3. Pythonとpoetryのセットアップ
-# 4. 現在のバージョンの取得
-# 5. 指定されたタイプに基づくバージョンの更新
-# 6. 更新されたバージョンのコミットとプッシュ
-# 7. 新しいGitタグの作成とプッシュ
-# 8. 変更ログの生成
-# 9. GitHubリリースの作成
-
 on:
   workflow_dispatch:
     inputs:
@@ -68,12 +57,10 @@ jobs:
           echo "$changelog" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Create Release
-        uses: actions/create-release@v1
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: softprops/action-gh-release@v2
         with:
           tag_name: v${{ steps.update_version.outputs.new_version }}
-          release_name: trial-test-v${{ steps.update_version.outputs.new_version }}
+          name: trial-test-v${{ steps.update_version.outputs.new_version }}
           body: |
             Changes in this Release:
             ${{ steps.changelog.outputs.changelog }}
@@ -81,3 +68,5 @@ jobs:
             For full changes, see the [comparison view](${{ github.server_url }}/${{ github.repository }}/compare/v${{ steps.current_version.outputs.version }}..v${{ steps.update_version.outputs.new_version }})
           draft: false
           prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
