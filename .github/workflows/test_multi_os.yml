@@ -130,10 +130,10 @@ jobs:
           echo -e "" >> README.md  # この行を追加
 
           # テスト対象外のファイルに関する注記を追加（ファイルが存在すればファイルへの直接リンク付きで追記する）
-          commit_hash=$(git rev-parse HEAD)
+          commit_hash=${GITHUB_SHA}
           file_path="project_a/staking/ton_whales_staking_dashboard.py"
           file_link="https://github.com/$GITHUB_REPOSITORY/blob/$commit_hash/$file_path"
-          if [ -f "$file_path" ]; then
+          if [ -f "$file_link" ]; then
               {
                   echo -e "> [!Important]"
                   echo -e "> The following file is intentionally excluded from test coverage:"
