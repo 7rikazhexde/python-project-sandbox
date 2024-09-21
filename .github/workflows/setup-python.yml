@@ -1,8 +1,7 @@
 # .github/workflows/setup-python.yml
-name: Setup Python Environment
+name: Setup Python
 
 on:
-  # 他のワークフローから呼び出すトリガー
   workflow_call:
     inputs:
       python-version:
@@ -10,10 +9,20 @@ on:
         type: string
 
 jobs:
-  setup-python-environment:
-    runs-on: ubuntu-latest
+  setup:
+    runs-on: ${{ github.job == 'setup' && inputs.os || 'ubuntu-latest' }}
     steps:
+      - uses: actions/checkout@v4
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: ${{ inputs.python-version }}
+      - name: Install poetry
+        run: pip install poetry
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        run: poetry install
