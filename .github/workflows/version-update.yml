@@ -1,34 +1,35 @@
-name: Version Update
+name: Version Update and Release
 
-# 処理の流れ:
-# 1. リポジトリのチェックアウト
-# 2. Pythonのセットアップ
-# 3. 依存関係のインストール（Poetry）
-# 4. バージョンの更新:
-#    - 現在のバージョンの取得
-#    - 指定された更新タイプ（patch/minor/major）に基づいて新バージョンの計算
-#    - pyproject.tomlのバージョン更新
-# 5. Gitタグの更新:
-#    - run_git_tag_base_pyproject.pyスクリプトの実行
-#    - 新しいバージョンに基づいてGitタグを作成
-# 6. 変更のコミットとプッシュ:
-#    - 更新されたpyproject.tomlのコミット
-#    - 変更のリモートリポジトリへのプッシュ
-# 7. 新しいタグのプッシュ
-# 8. 実行サマリーの表示
+# ワークフローの処理の流れ:
+# 1. 手動トリガーによるワークフロー開始
+# 2. バージョン更新タイプとリリース作成の有無を指定
+# 3. Pythonとpoetryのセットアップ
+# 4. 現在のバージョンの取得
+# 5. 指定されたタイプに基づくバージョンの更新
+# 6. 更新されたバージョンのコミットとプッシュ
+# 7. 新しいGitタグの作成とプッシュ
+# 8. （オプション）リリースワークフローのトリガー
 
 on:
   workflow_dispatch:
     inputs:
       update_type:
-        description: 'Type of version update (leave empty for patch)'
-        required: false
+        description: 'Type of version update'
+        required: true
         default: 'patch'
         type: choice
         options:
         - patch
         - minor
         - major
+      create_release:
+        description: 'Create release after version update'
+        required: true
+        default: 'true'
+        type: choice
+        options:
+        - 'true'
+        - 'false'
 
 jobs:
   update-version:
@@ -41,63 +42,53 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - name: Install dependencies
+      - name: Install poetry
         run: |
           python -m pip install --upgrade pip
           pip install poetry
-          echo "Poetry version: $(poetry --version)"
-      - name: Update version
+      - name: Configure Git
         run: |
-          echo "Current branch: $(git branch --show-current)"
-          current_version=$(poetry version -s)
-          echo "Current version: $current_version"
-          IFS='.' read -ra VERSION_PARTS <<< "$current_version"
-
-          update_type="${{ github.event.inputs.update_type }}"
-          echo "Update type: ${update_type:-patch (default)}"
-
-          if [ -z "$update_type" ] || [ "$update_type" == "patch" ]; then
-            new_version="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$((VERSION_PARTS[2] + 1))"
-          elif [ "$update_type" == "minor" ]; then
-            new_version="${VERSION_PARTS[0]}.$((VERSION_PARTS[1] + 1)).0"
-          elif [ "$update_type" == "major" ]; then
-            new_version="$((VERSION_PARTS[0] + 1)).0.0"
-          else
-            echo "Invalid update type"
-            exit 1
-          fi
-
-          echo "Updating to new version: $new_version"
-          poetry version $new_version
-          echo "Version updated in pyproject.toml"
-          echo "New version: $(poetry version -s)"
-      - name: Update git tag
-        run: |
-          echo "Running git tag update script"
-          python ci/run_git_tag_base_pyproject.py
-          echo "Latest git tags:"
-          git tag --sort=-v:refname | head -n 5
-      - name: Commit and push changes
-        run: |
-          echo "Configuring git"
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          echo "Adding changes to git"
+      - name: Get current version
+        id: current_version
+        run: echo "version=$(poetry version -s)" >> $GITHUB_OUTPUT
+      - name: Update version
+        id: update_version
+        run: |
+          poetry version ${{ github.event.inputs.update_type }}
+          echo "new_version=$(poetry version -s)" >> $GITHUB_OUTPUT
+      - name: Commit and push if changed
+        run: |
           git add pyproject.toml
-          echo "Committing changes"
-          git commit -m "Bump version to $(poetry version -s)" || echo "No changes to commit"
-          echo "Pushing changes"
+          git commit -m "Bump version to ${{ steps.update_version.outputs.new_version }}" || echo "No changes to commit"
           git push
-          echo "Changes pushed to repository"
-      - name: Push tags
+      - name: Create and push new tag
         run: |
-          echo "Pushing tags"
+          git tag v${{ steps.update_version.outputs.new_version }}
           git push --tags
-          echo "Tags pushed to repository"
-      - name: Summary
-        run: |
-          echo "Workflow Summary:"
-          echo "- Initial version: $current_version"
-          echo "- Update type: ${update_type:-patch (default)}"
-          echo "- New version: $(poetry version -s)"
-          echo "- Latest git tag: $(git describe --tags --abbrev=0)"
+
+  trigger-release:
+    needs: update-version
+    if: github.event.inputs.create_release == 'true'
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      - name: Get updated version
+        id: get_version
+        run: echo "new_version=$(poetry version -s)" >> $GITHUB_OUTPUT
+      - name: Trigger release workflow
+        uses: actions/github-script@v7
+        with:
+          github-token: ${{secrets.GITHUB_TOKEN}}
+          script: |
+            github.rest.actions.createWorkflowDispatch({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              workflow_id: 'release.yml',
+              ref: 'main',
+              inputs: {
+                version: '${{ steps.get_version.outputs.new_version }}'
+              }
+            })
