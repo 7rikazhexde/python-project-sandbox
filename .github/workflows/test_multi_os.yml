@@ -26,18 +26,32 @@ jobs:
         os: [macos-13, ubuntu-latest, windows-latest]
         python-version: ['3.11', '3.12']
     runs-on: ${{ matrix.os }}
+    env:
+      TZ: 'Asia/Tokyo'
+    permissions:
+      contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
-      - name: Setup Python
-        uses: ./.github/workflows/setup-python.yml
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
-          python-version: ${{ matrix.python-version }}
+          python-version: ${{matrix.python-version}}
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
         with:
           timezoneLinux: "Asia/Tokyo"
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
+      - name: Install poetry
+        run: pip install poetry
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        run: poetry install
       - name: Run test
         id: pytest
         continue-on-error: true
