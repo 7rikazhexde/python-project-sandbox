@@ -122,14 +122,15 @@ jobs:
           echo "" >> README.md
 
           # 最新のコミット情報をREADMEに追加
-          commit_hash=${GITHUB_SHA::8}
-          commit_link="[$commit_hash](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash)"
+          commit_hash8=${GITHUB_SHA::8}
+          commit_link="[$commit_hash8](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash8)"
           echo -e "> [!Note]" >> README.md
           echo -e "> " >> README.md
           echo -e "> Commit: $commit_link" >> README.md
           echo -e "" >> README.md  # この行を追加
 
           # テスト対象外のファイルに関する注記を追加（ファイルが存在すればファイルへの直接リンク付きで追記する）
+          commit_hash=$(git rev-parse HEAD)
           file_path="project_a/staking/ton_whales_staking_dashboard.py"
           file_link="https://github.com/$GITHUB_REPOSITORY/blob/$commit_hash/$file_path"
           if [ -f "$file_path" ]; then
