@@ -1,4 +1,21 @@
-name: Verbose Version Update
+name: Version Update
+
+# 処理の流れ:
+# 1. リポジトリのチェックアウト
+# 2. Pythonのセットアップ
+# 3. 依存関係のインストール（Poetry）
+# 4. バージョンの更新:
+#    - 現在のバージョンの取得
+#    - 指定された更新タイプ（patch/minor/major）に基づいて新バージョンの計算
+#    - pyproject.tomlのバージョン更新
+# 5. Gitタグの更新:
+#    - run_git_tag_base_pyproject.pyスクリプトの実行
+#    - 新しいバージョンに基づいてGitタグを作成
+# 6. 変更のコミットとプッシュ:
+#    - 更新されたpyproject.tomlのコミット
+#    - 変更のリモートリポジトリへのプッシュ
+# 7. 新しいタグのプッシュ
+# 8. 実行サマリーの表示
 
 on:
   workflow_dispatch:
