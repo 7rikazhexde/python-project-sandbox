@@ -129,15 +129,21 @@ jobs:
           echo -e "> Commit: $commit_link" >> README.md
           echo -e "" >> README.md  # この行を追加
 
-          # テスト対象外のファイルに関する注記を追加（ファイルへの直接リンク付き）
+          # テスト対象外のファイルに関する注記を追加（ファイルが存在すればファイルへの直接リンク付きで追記する）
           file_path="project_a/staking/ton_whales_staking_dashboard.py"
           file_link="https://github.com/$GITHUB_REPOSITORY/blob/$commit_hash/$file_path"
-          echo -e "> [!Important]" >> README.md
-          echo -e "> The following file is intentionally excluded from test coverage:" >> README.md
-          echo -e "> - [\`$file_path\`]($file_link)" >> README.md
-          echo -e "> " >> README.md
-          echo -e "> This file contains complex external dependencies and is verified through manual and integration testing." >> README.md
-          echo -e "> " >> README.md
+          if [ -f "$file_path" ]; then
+              {
+                  echo -e "> [!Important]"
+                  echo -e "> The following file is intentionally excluded from test coverage:"
+                  echo -e "> - [\`$file_path\`]($file_link)"
+                  echo -e "> "
+                  echo -e "> This file contains complex external dependencies and is verified through manual and integration testing."
+                  echo -e "> "
+              } >> README.md
+          else
+              echo "Note: File $file_path not found. Skipping addition to README.md." >&2
+          fi
 
           # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
           for os in macos-13 ubuntu-latest windows-latest; do
