@@ -1,0 +1,86 @@
+name: Verbose Version Update
+
+on:
+  workflow_dispatch:
+    inputs:
+      update_type:
+        description: 'Type of version update (leave empty for patch)'
+        required: false
+        default: 'patch'
+        type: choice
+        options:
+        - patch
+        - minor
+        - major
+
+jobs:
+  update-version:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install poetry
+          echo "Poetry version: $(poetry --version)"
+      - name: Update version
+        run: |
+          echo "Current branch: $(git branch --show-current)"
+          current_version=$(poetry version -s)
+          echo "Current version: $current_version"
+          IFS='.' read -ra VERSION_PARTS <<< "$current_version"
+
+          update_type="${{ github.event.inputs.update_type }}"
+          echo "Update type: ${update_type:-patch (default)}"
+
+          if [ -z "$update_type" ] || [ "$update_type" == "patch" ]; then
+            new_version="${VERSION_PARTS[0]}.${VERSION_PARTS[1]}.$((VERSION_PARTS[2] + 1))"
+          elif [ "$update_type" == "minor" ]; then
+            new_version="${VERSION_PARTS[0]}.$((VERSION_PARTS[1] + 1)).0"
+          elif [ "$update_type" == "major" ]; then
+            new_version="$((VERSION_PARTS[0] + 1)).0.0"
+          else
+            echo "Invalid update type"
+            exit 1
+          fi
+
+          echo "Updating to new version: $new_version"
+          poetry version $new_version
+          echo "Version updated in pyproject.toml"
+          echo "New version: $(poetry version -s)"
+      - name: Update git tag
+        run: |
+          echo "Running git tag update script"
+          python ci/run_git_tag_base_pyproject.py
+          echo "Latest git tags:"
+          git tag --sort=-v:refname | head -n 5
+      - name: Commit and push changes
+        run: |
+          echo "Configuring git"
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          echo "Adding changes to git"
+          git add pyproject.toml
+          echo "Committing changes"
+          git commit -m "Bump version to $(poetry version -s)" || echo "No changes to commit"
+          echo "Pushing changes"
+          git push
+          echo "Changes pushed to repository"
+      - name: Push tags
+        run: |
+          echo "Pushing tags"
+          git push --tags
+          echo "Tags pushed to repository"
+      - name: Summary
+        run: |
+          echo "Workflow Summary:"
+          echo "- Initial version: $current_version"
+          echo "- Update type: ${update_type:-patch (default)}"
+          echo "- New version: $(poetry version -s)"
+          echo "- Latest git tag: $(git describe --tags --abbrev=0)"
