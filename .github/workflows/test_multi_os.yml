@@ -1,64 +1,60 @@
 name: Test Multi-OS
 
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - 手動実行
+#    - mainブランチへのプルリクエスト
+#    - mainブランチへのプッシュ（Version Updateワークフロー以外）
+# 2. 複数の環境（OS、Pythonバージョン）でのテスト実行
+# 3. テスト結果に基づくREADMEの更新
+# 4. 全テスト結果の確認
+
 on:
   workflow_dispatch:
-  push:
+  pull_request:
     branches:
       - 'main'
-  pull_request:
+  push:
     branches:
       - 'main'
 
 jobs:
   test:
-    # 変更: Dependabot PRの場合はこのジョブをスキップ
-    if: ${{ github.actor != 'dependabot[bot]' || github.event_name == 'push' }}
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     strategy:
       matrix:
         os: [macos-13, ubuntu-latest, windows-latest]
         python-version: ['3.11', '3.12']
     runs-on: ${{ matrix.os }}
     env:
-      # タイムゾーンを東京時間に設定
       TZ: 'Asia/Tokyo'
     permissions:
       contents: write
       pull-requests: write
     steps:
-      # リポジトリをチェックアウト
       - uses: actions/checkout@v4
-      # Python環境のセットアップ
-      - uses: actions/setup-python@v5
+      - name: Set up Python
+        uses: actions/setup-python@v5
         with:
           python-version: ${{matrix.python-version}}
-      # Windowsのタイムゾーン設定
       - name: Set timezone on Windows
         if: runner.os == 'Windows'
         run: tzutil /s "Tokyo Standard Time"
         shell: cmd
       - name: Install poetry
-        # poetryのインストール
         run: pip install poetry
-      #- name: Poetry setup
-      #  # Poetryで依存関係をインストール
-      #  run: poetry install
       - name: Cache dependencies
-        #キャッシュの活用
         uses: actions/cache@v4
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
       - name: Install dependencies
-        # Poetryで依存関係をインストール
         run: poetry install
       - name: Run test
         id: pytest
-        # エラーが発生しても続行する
         continue-on-error: true
-        #run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=project_a tests/ | tee pytest-coverage.txt
         run: poetry run task test_gh_action_xml
       - name: Pytest coverage comment
-        # カバレッジレポートをコメントとして生成
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
@@ -82,28 +78,21 @@ jobs:
           exit 1
       - name: Save summary report
         run: |
-          # カバレッジのサマリーレポートをMarkdownファイルとして保存
           echo '${{ steps.coverageComment.outputs.summaryReport }}' > summary-report.md
       - name: Upload coverage data
-        # カバレッジデータをアップロード
         uses: actions/upload-artifact@v4
         with:
           name: coverage-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: |
-            # pytestの出力テキスト（テストの実行結果とカバレッジデータ）
             pytest-coverage.txt
-            # カバレッジデータのXML形式ファイル（詳細なカバレッジ情報）
             coverage.xml
-            # テスト結果のJUnit XMLレポート（テストの成功/失敗や詳細なタイムスタンプ情報を含む）
             pytest.xml
-            # カバレッジとテスト結果のサマリー（Markdown形式で出力したレポート）
             summary-report.md
 
   update_readme:
     needs: test
     runs-on: ubuntu-latest
-    # 変更: Dependabot PRの場合はこのジョブをスキップ
-    if: ${{ github.actor != 'dependabot[bot]' && always() }}
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update') && always()
     permissions:
       contents: write
       pull-requests: write

@@ -1,16 +1,26 @@
 name: Test and Deploy Multi-OS
 
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - 手動実行
+#    - プルリクエスト
+#    - mainブランチへのプッシュ（Version Updateワークフロー以外）
+# 2. 複数の環境（OS、Pythonバージョン）でのテスト実行
+# 3. テスト結果のアップロード
+# 4. mainブランチへのプッシュ時のみ、GitHub Pagesへのデプロイ
+# 5. LINE通知の送信
+# 6. 全テスト結果の確認
+
 on:
   workflow_dispatch:
-  push:
-    branches-ignore:
-      - "coverage"
   pull_request:
+  push:
+    branches:
+      - 'main'
 
 jobs:
   test:
-    # 変更: Dependabot PRの場合はこのジョブをスキップ
-    if: ${{ github.actor != 'dependabot[bot]' }}
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
@@ -31,24 +41,8 @@ jobs:
         if: runner.os == 'Windows'
         run: tzutil /s "Tokyo Standard Time"
         shell: cmd
-      #- name: Set timezone on macOS
-      #  if: runner.os == 'macOS'
-      #  run: sudo systemsetup -settimezone Asia/Tokyo
-      #  shell: bash
-      #- name: Set timezone on Ubuntu
-      #  if: runner.os == 'Linux'
-      #  run: sudo timedatectl set-timezone Asia/Tokyo
-      #  shell: bash
-      #- name: Verify timezone
-      #  run: |
-      #    echo "Current time: $(date)"
-      #    echo "Current TZ: $TZ"
-      #    python -c "import time; print(f'Python time: {time.strftime(\"%Y-%m-%d %H:%M:%S %Z\")}')"
-      #  shell: bash
       - name: Install poetry
         run: pip install poetry
-      #- name: Poetry setup
-      #  run: poetry install
       - name: Cache dependencies
         uses: actions/cache@v4
         with:
@@ -78,7 +72,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: success() && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]'
+    if: success() && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     steps:
       - uses: actions/checkout@v4
         with:
@@ -115,8 +109,6 @@ jobs:
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-      # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
       - name: Send LINE Notify
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
