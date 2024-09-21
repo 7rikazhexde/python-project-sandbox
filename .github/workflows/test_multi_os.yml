@@ -56,12 +56,16 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{matrix.python-version}}
-      - name: Set timezone
-        uses: szenius/set-timezone@v2.0
-        with:
-          timezoneLinux: "Asia/Tokyo"
-          timezoneMacos: "Asia/Tokyo"
-          timezoneWindows: "Tokyo Standard Time"
+      - name: Set timezone on Windows
+        if: runner.os == 'Windows'
+        run: tzutil /s "Tokyo Standard Time"
+        shell: cmd
+      #- name: Set timezone
+      #  uses: szenius/set-timezone@v2.0
+      #  with:
+      #    timezoneLinux: "Asia/Tokyo"
+      #    timezoneMacos: "Asia/Tokyo"
+      #    timezoneWindows: "Tokyo Standard Time"
       - name: Install poetry
         run: pip install poetry
       - name: Cache dependencies
