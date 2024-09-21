@@ -1,0 +1,21 @@
+# .github/workflows/setup-python.yml
+name: Setup Python Environment
+
+on:
+  workflow_call:   # 他のワークフローから呼び出すトリガー
+    inputs:
+      python-version:
+        required: true
+        type: string
+
+jobs:
+  setup-python-environment:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ inputs.python-version }}

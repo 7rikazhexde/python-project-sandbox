@@ -32,9 +32,13 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
-      - name: Set up Python
-        uses: actions/setup-python@v5
+      #- uses: actions/checkout@v4
+      #- name: Set up Python
+      #  uses: actions/setup-python@v5
+      #  with:
+      #    python-version: ${{matrix.python-version}}
+      - name: Reuse Setup Python Workflow
+        uses: ./.github/workflows/setup-python.yml
         with:
           python-version: ${{matrix.python-version}}
       - name: Set timezone on Windows
