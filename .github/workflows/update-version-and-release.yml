@@ -1,5 +1,17 @@
 name: Version Update and Release
 
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - 手動実行
+#    - プルリクエスト
+#    - mainブランチへのプッシュ（Version Updateワークフロー以外）
+# 2. 複数の環境（OS、Pythonバージョン）でのテスト実行
+# 3. テスト結果のアップロード
+# 4. mainブランチへのプッシュ時のみ、GitHub Pagesへのデプロイ
+# 5. LINE通知の送信
+# 6. 全テスト結果の確認
+# 7. バージョン更新とリリース作成（手動実行時のみ）
+
 on:
   workflow_dispatch:
     inputs:
@@ -57,7 +69,7 @@ jobs:
           echo "$changelog" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Create Release
-        uses: softprops/action-gh-release@v2
+        uses: softprops/action-gh-release@v2.0.8
         with:
           tag_name: v${{ steps.update_version.outputs.new_version }}
           name: trial-test-v${{ steps.update_version.outputs.new_version }}
