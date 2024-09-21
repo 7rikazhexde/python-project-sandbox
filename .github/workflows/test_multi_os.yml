@@ -33,6 +33,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
+    outputs:
+      file_exists: ${{ steps.check_file.outputs.file_exists }}
     steps:
       - uses: actions/checkout@v4
       - name: Set up Python
@@ -92,6 +94,14 @@ jobs:
             coverage.xml
             pytest.xml
             summary-report.md
+      - name: Check file existence
+        id: check_file
+        run: |
+          if [ -f "project_a/staking/ton_whales_staking_dashboard.py" ]; then
+            echo "file_exists=true" >> $GITHUB_OUTPUT
+          else
+            echo "file_exists=false" >> $GITHUB_OUTPUT
+          fi
 
   update_readme:
     needs: test
@@ -127,23 +137,25 @@ jobs:
           echo -e "> [!Note]" >> README.md
           echo -e "> " >> README.md
           echo -e "> Commit: $commit_link" >> README.md
-          echo -e "" >> README.md  # この行を追加
+          echo -e "" >> README.md
 
-          # テスト対象外のファイルに関する注記を追加（ファイルへの直接リンク付き）
+          # テスト対象外のファイルに関する注記を追加（ファイルの存在確認結果に基づく）
           commit_hash=${GITHUB_SHA}
           file_path_1="project_a/staking/ton_whales_staking_dashboard.py"
-          echo "$file_path_1" >&2
           file_path_2="staking/ton_whales_staking_dashboard.py"
-          echo "$file_path_2" >&2
+          # 後述するカバレッジレポートのリンク修正のためプログラムのソースコードディレクトリを除いたリンクにする
           file_link="https://github.com/$GITHUB_REPOSITORY/blob/$commit_hash/$file_path_2"
-          echo "$file_link" >&2
 
-          echo -e "> [!Important]" >> README.md
-          echo -e "> The following file is intentionally excluded from test coverage:" >> README.md
-          echo -e "> - [$file_path_1]($file_link)" >> README.md
-          echo -e "> " >> README.md
-          echo -e "> This file contains complex external dependencies and is verified through manual and integration testing." >> README.md
-          echo -e "> " >> README.md
+          if [[ "${{ needs.test.outputs.file_exists }}" == "true" ]]; then
+            echo -e "> [!Important]" >> README.md
+            echo -e "> The following file is intentionally excluded from test coverage:" >> README.md
+            echo -e "> - [$file_path_1]($file_link)" >> README.md
+            echo -e "> " >> README.md
+            echo -e "> This file contains complex external dependencies and is verified through manual and integration testing." >> README.md
+            echo -e "> " >> README.md
+          else
+            echo "Note: File $file_path_1 not found. Skipping addition to README.md." >&2
+          fi
 
           # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
           for os in macos-13 ubuntu-latest windows-latest; do
@@ -161,7 +173,7 @@ jobs:
             done
           done
 
-          # ファイルパスを修正する
+          # カバレッジレポート内のリンクを有効にするためにファイルパスを修正する
           sed -i '
             s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
             s|/blob/\([a-f0-9]*\)/project_a/README\.md|/blob/\1/README.md|g
