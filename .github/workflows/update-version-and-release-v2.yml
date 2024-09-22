@@ -54,6 +54,10 @@ jobs:
         run: |
           pr_url=$(gh pr create --title "Bump version to ${{ steps.update_version.outputs.new_version }}" --body "Automated version update" --base main --head version-update-${{ github.run_id }})
           echo "PR_URL=$pr_url" >> $GITHUB_ENV
+      - name: Create and push new tag
+        run: |
+          git tag v${{ steps.update_version.outputs.new_version }}
+          git push origin v${{ steps.update_version.outputs.new_version }}
       - name: Generate changelog
         id: changelog
         run: |
@@ -61,7 +65,7 @@ jobs:
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$changelog" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-      - name: Create Release Draft
+      - name: Create Release
         uses: softprops/action-gh-release@v2.0.8
         with:
           tag_name: v${{ steps.update_version.outputs.new_version }}
@@ -71,7 +75,7 @@ jobs:
             ${{ steps.changelog.outputs.changelog }}
 
             For full changes, see the [comparison view](${{ github.server_url }}/${{ github.repository }}/compare/v${{ steps.current_version.outputs.version }}..v${{ steps.update_version.outputs.new_version }})
-          draft: true
+          draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
