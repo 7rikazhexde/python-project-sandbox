@@ -8,11 +8,15 @@ An experimental project to test out various tools.
 
 ## pytest-html
 
-[![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![macos-13](https://img.shields.io/badge/macos_13-url-success)](https://7rikazhexde.github.io/trial-test/macos-13/report_page.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)
+[![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/trial-test/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml)
+
+[![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-brightgreen)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![macos-13](https://img.shields.io/badge/macos_13-url-ff69b4)](https://7rikazhexde.github.io/trial-test/macos-13/report_page.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-blue)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)
 
 ## pytest-cov
 
-[![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/htmlcov_ubuntu-latest/index.html) [![macos-13](https://img.shields.io/badge/macos_13-url-success)](https://7rikazhexde.github.io/trial-test/macos-13/htmlcov_macos-13/index.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/htmlcov_windows-latest/index.html)
+[![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/trial-test/actions/workflows/test_pytest-html-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_pytest-html-report_deploy_multi_os.yml)
+
+[![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-brightgreen)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/htmlcov_ubuntu-latest/index.html) [![macos-13](https://img.shields.io/badge/macos_13-url-ff69b4)](https://7rikazhexde.github.io/trial-test/macos-13/htmlcov_macos-13/index.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-blue)](https://7rikazhexde.github.io/trial-test/windows-latest/htmlcov_windows-latest/index.html)
 
 ## Tabale of contents
 
