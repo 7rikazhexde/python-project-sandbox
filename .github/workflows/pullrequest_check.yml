@@ -61,15 +61,42 @@ jobs:
         run: poetry install
       - name: Run test
         id: pytest
+        continue-on-error: true
         run: poetry run task test_gh_action_xml
-      - name: Upload test results
+      - name: Pytest coverage comment
+        id: coverageComment
+        uses: MishaKav/pytest-coverage-comment@main
+        with:
+          pytest-coverage-path: ./pytest-coverage.txt
+          pytest-xml-coverage-path: ./coverage.xml
+          title: Coverage Report (${{ matrix.os }} / Python ${{ matrix.python-version }})
+          badge-title: coverage
+          hide-badge: false
+          hide-report: false
+          create-new-comment: false
+          hide-comment: false
+          report-only-changed-files: false
+          remove-link-from-badge: false
+          junitxml-path: ./pytest.xml
+          junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+      - name: Check test results
+        if: steps.pytest.outcome == 'failure'
+        run: |
+          echo "Tests failed. This will prevent merging the pull request."
+          exit 1
+      - name: Save summary report
+        run: |
+          echo '${{ steps.coverageComment.outputs.summaryReport }}' > summary-report.md
+      - name: Upload coverage data
         uses: actions/upload-artifact@v4
         with:
-          name: test-results-${{ matrix.os }}-${{ matrix.python-version }}
+          name: coverage-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: |
             pytest-coverage.txt
             coverage.xml
             pytest.xml
+            summary-report.md
 
   aggregate-results:
     needs: test
@@ -79,34 +106,52 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Download all artifacts
         uses: actions/download-artifact@v4
-      - name: Aggregate test results
+      - name: Update README in coverage branch
         run: |
-          echo "# Dependabot PR Test Results Summary" > aggregated_results.md
+          # aggregated_results.mdのヘッダーとバッジを追加
+          echo "# Coverage Reports" > aggregated_results.md
+          echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pullrequest_check.yml.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/pullrequest_check.yml.yml)" >> aggregated_results.md
+          echo "" >> aggregated_results.md
+
+          # 最新のコミット情報をREADMEに追加
+          commit_hash8=${GITHUB_SHA::8}
+          commit_link="[$commit_hash8](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash8)"
+          echo -e "> [!Note]" >> aggregated_results.md
+          echo -e "> " >> aggregated_results.md
+          echo -e "> Commit: $commit_link" >> aggregated_results.md
+          echo -e "" >> aggregated_results.md
+
+          # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
           for os in macos-13 ubuntu-latest windows-latest; do
             for version in 3.11 3.12; do
-              echo "## $os - Python $version" >> aggregated_results.md
-              echo '```' >> aggregated_results.md
-              cat test-results-$os-$version/pytest-coverage.txt >> aggregated_results.md
-              echo '```' >> aggregated_results.md
+              echo "## Coverage Report (os: $os / python-version: $version)" >> aggregated_results.md
+              if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
+                sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-$os-$version/summary-report.md" |
+                sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
+                sed '/^$/N;/^\n$/D' |
+                sed -e 's/^"//' -e 's/"$//' >> aggregated_results.md
+              else
+                echo "No summary report found for $os - $version" >> aggregated_results.md
+              fi
               echo "" >> aggregated_results.md
             done
           done
+
+          # カバレッジレポート内のリンクを有効にするためにファイルパスを修正する
+          sed -i '
+            s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
+            s|/blob/\([a-f0-9]*\)/project_a/README\.md|/blob/\1/aggregated_results.md|g
+          ' aggregated_results.md
       - name: Create coverage comment
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: ./aggregated_results.md
           title: Aggregated Coverage Report (PR Check - Except Dependabot)
           badge-title: coverage
-          hide-badge: false
-          hide-report: false
-          create-new-comment: false
-          hide-comment: false
-          report-only-changed-files: false
-          remove-link-from-badge: false
-          junitxml-path: ./test-results-ubuntu-latest-3.12/pytest.xml
-          junitxml-title: "Pytest Result Summary (PR Check - Except Dependabot)"
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   check_all_tests:
