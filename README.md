@@ -10,11 +10,16 @@ An experimental project to test out various tools.
 
 [![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/report_page.html) [![macos-13](https://img.shields.io/badge/macos_13-url-success)](https://7rikazhexde.github.io/trial-test/macos-13/report_page.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/report_page.html)
 
+## pytest-cov
+
+[![ubuntu_latest](https://img.shields.io/badge/ubuntu_latest-url-success)](https://7rikazhexde.github.io/trial-test/ubuntu-latest/htmlcov_ubuntu-latest/index.html) [![macos-13](https://img.shields.io/badge/macos_13-url-success)](https://7rikazhexde.github.io/trial-test/macos-13/htmlcov_macos-13/index.html) [![windows-latest](https://img.shields.io/badge/windows_latest-url-success)](https://7rikazhexde.github.io/trial-test/windows-latest/htmlcov_windows-latest/index.html)
+
 ## Tabale of contents
 
 - [trial-test](#trial-test)
   - [Pytest Coverage Comment](#pytest-coverage-comment)
   - [pytest-html](#pytest-html)
+  - [pytest-cov](#pytest-cov)
   - [Tabale of contents](#tabale-of-contents)
   - [pre-commit](#pre-commit)
     - [Overview](#overview)

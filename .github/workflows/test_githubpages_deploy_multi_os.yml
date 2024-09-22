@@ -6,10 +6,13 @@ name: Test and Deploy Multi-OS
 #    - プルリクエスト
 #    - mainブランチへのプッシュ（Version Updateワークフロー以外）
 # 2. 複数の環境（OS、Pythonバージョン）でのテスト実行
-# 3. テスト結果のアップロード
-# 4. mainブランチへのプッシュ時のみ、GitHub Pagesへのデプロイ
-# 5. LINE通知の送信
-# 6. 全テスト結果の確認
+# 3. pytest-htmlによるテストレポート生成
+# 4. pytest-covによるカバレッジレポート生成
+# 5. テスト結果とカバレッジレポートのアップロード
+# 6. mainブランチへのプッシュ時のみ、GitHub Pagesへのデプロイ
+# 7. デプロイしたレポートのURL生成
+# 8. LINE通知の送信
+# 9. 全テスト結果の確認
 
 on:
   workflow_dispatch:
@@ -37,10 +40,6 @@ jobs:
         uses: actions/setup-python@v5
         with:
           python-version: ${{ matrix.python-version }}
-      #- name: Set timezone on Windows
-      #  if: runner.os == 'Windows'
-      #  run: tzutil /s "Tokyo Standard Time"
-      #  shell: cmd
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
         with:
@@ -62,23 +61,36 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
       - name: Install dependencies
         run: poetry install
-      - name: Run tests
-        id: pytest
+      - name: Run tests with pytest-html
+        id: pytest-html
         continue-on-error: true
         run: |
           mkdir -p test_results
           poetry run pytest --html=test_results/report_page.html
         shell: bash
+      - name: Run tests with pytest-cov
+        id: pytest-cov
+        continue-on-error: true
+        run: |
+          mkdir -p htmlcov_${{ matrix.os }}
+          poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}
+        shell: bash
       - name: Check test results
-        if: steps.pytest.outcome == 'failure'
+        if: steps.pytest-html.outcome == 'failure' || steps.pytest-cov.outcome == 'failure'
         run: |
           echo "Tests failed. This will be reported in the workflow summary."
           echo "::warning::Tests failed on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
-      - name: Upload test results
+      - name: Upload pytest-html results
         uses: actions/upload-artifact@v4
         with:
           name: test-results-${{ matrix.os }}
           path: test_results
+        if: always()
+      - name: Upload pytest-cov results
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-results-${{ matrix.os }}
+          path: htmlcov_${{ matrix.os }}
         if: always()
 
   deploy:
@@ -106,10 +118,16 @@ jobs:
               fi
               git add $os
             else
-              echo "No report found for $os"
+              echo "No pytest-html report found for $os"
+            fi
+            if [ -d coverage-results-$os ]; then
+              mv coverage-results-$os $os/htmlcov_$os
+              git add $os/htmlcov_$os
+            else
+              echo "No pytest-cov report found for $os"
             fi
           done
-          git commit -m "Add test reports to GitHub Pages" || echo "No changes to commit"
+          git commit -m "Add test and coverage reports to GitHub Pages" || echo "No changes to commit"
           git push origin ghpages --force
       - name: Generate URL list
         id: generate_url_list
@@ -119,7 +137,8 @@ jobs:
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
           for os in ubuntu-latest macos-13 windows-latest; do
-            URL_LIST="${URL_LIST}https://${REPO_OWNER}.github.io/${REPO_NAME}/${os}/report_page.html\n"
+            URL_LIST="${URL_LIST}pytest-html: https://${REPO_OWNER}.github.io/${REPO_NAME}/${os}/report_page.html\n"
+            URL_LIST="${URL_LIST}pytest-cov: https://${REPO_OWNER}.github.io/${REPO_NAME}/${os}/htmlcov_${os}/index.html\n"
           done
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
@@ -130,7 +149,7 @@ jobs:
         run: |
           message="Deployment completed.
 
-          Check URL:
+          Check URLs:
           ${{ steps.generate_url_list.outputs.url_list }}"
 
           curl -X POST https://notify-api.line.me/api/notify \
