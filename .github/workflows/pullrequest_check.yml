@@ -1,0 +1,65 @@
+name: PR Check (Except Dependabot)
+
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - mainブランチへのプルリクエスト時
+#    - Dependabotによる実行でないこと
+#    - コミットメッセージが"Bump version"で始まっていないこと
+#    - ブランチ名に"version-update"が含まれていないこと
+# 2. ジョブの条件判定: Dependabot によるPRかチェック
+# 3. OS毎の環境設定
+# 4. リポジトリのチェックアウト
+# 5. Python環境のセットアップ (3.11,3.12)
+# 6. 依存関係のキャッシュ
+# 7. Poetry のインストール
+# 8. プロジェクト依存関係のインストール
+# 9. テストの実行
+# 10. 最終ステータスの出力と結果の判定
+
+on:
+  pull_request:
+    branches: "main"
+
+jobs:
+  test:
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    strategy:
+      matrix:
+        os: [macos-13, ubuntu-latest, windows-latest]
+        python-version: ['3.11', '3.12']
+    runs-on: ${{ matrix.os }}
+    env:
+      TZ: 'Asia/Tokyo'
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{matrix.python-version}}
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+      - name: Check timezone
+        shell: bash
+        run: |
+          echo "System date: $(date)"
+          echo "TZ environment variable: $TZ"
+          python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
+      - name: Install poetry
+        run: pip install poetry
+      - name: Cache dependencies
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        run: poetry install
+      - name: Run test
+        id: pytest
+        run: poetry run pytest
