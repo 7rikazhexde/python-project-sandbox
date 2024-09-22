@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "trial-test"
-version = "1.0.8"
+version = "1.0.9"
 description = "An experimental project to test out various tools."
 authors = ["7rikaz"]
 license = "MIT"
