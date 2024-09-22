@@ -77,8 +77,11 @@ jobs:
         run: poetry install
       - name: Run test
         id: pytest
-        continue-on-error: true
-        #run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing --cov=project_a tests/ | tee pytest-coverage.txt
+        #continue-on-error: true
+        # Mac / Linux
+        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing --cov=project_a tests/ | tee pytest-coverage.txt
+        # Windowss
+        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
         run: poetry run task test_gh_action_term
       - name: Pytest coverage comment
         id: coverageComment

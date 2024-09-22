@@ -63,14 +63,14 @@ jobs:
         run: poetry install
       - name: Run tests with pytest-html
         id: pytest-html
-        continue-on-error: true
+        #continue-on-error: true
         run: |
           mkdir -p test_results
           poetry run pytest --html=test_results/report_page.html
         shell: bash
       - name: Run tests with pytest-cov
         id: pytest-cov
-        continue-on-error: true
+        #continue-on-error: true
         run: |
           mkdir -p htmlcov_${{ matrix.os }}
           poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}
