@@ -86,7 +86,8 @@ jobs:
     # 実行条件:
     # - 前のジョブが成功していること
     # - 先行するワークフロー（pytest-html）がmainブランチで実行されたこと
-    if: success() && github.event.workflow_run.head_branch == 'main'
+    # - 先行するワークフローのイベントタイプがプッシュであること
+    if: success() && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push'
     steps:
       - uses: actions/checkout@v4
         with:
