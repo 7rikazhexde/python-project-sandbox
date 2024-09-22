@@ -2,9 +2,10 @@ name: Test Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - 手動実行
-#    - mainブランチへのプルリクエスト
-#    - mainブランチへのプッシュ（Version Updateワークフロー以外）
+#    - mainブランチへのプッシュ（プルリクエストのマージのみ）
+#    - Dependabotによる実行でないこと
+#    - コミットメッセージが"Bump version"で始まっていないこと
+#    - ブランチ名に"version-update"が含まれていないこと
 # 2. ファイルの存在確認（Ubuntu環境）
 # 3. 複数の環境（OS、Pythonバージョン）でのテスト実行
 # 4. テスト結果に基づくREADMEの更新（mainブランチへのプッシュ時のみ）
@@ -13,16 +14,13 @@ name: Test Multi-OS
 # 5. 全テスト結果の確認
 
 on:
-  workflow_dispatch:
-  pull_request:
-    branches:
-      - 'main'
   push:
     branches:
       - 'main'
 
 jobs:
   check_file:
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     runs-on: ubuntu-latest
     outputs:
       file_exists: ${{ steps.check_file.outputs.file_exists }}
@@ -39,10 +37,6 @@ jobs:
 
   test:
     needs: check_file
-    # 実行条件:
-    # - Dependabotによる実行でないこと
-    # - コミットメッセージが"Bump version"で始まっていないこと
-    # - ブランチ名に"version-update"が含まれていないこと
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     strategy:
       matrix:
@@ -123,12 +117,6 @@ jobs:
   update_readme:
     needs: [check_file, test]
     runs-on: ubuntu-latest
-    # 実行条件:
-    # - mainブランチへのプッシュであること
-    # - Dependabotによる実行でないこと
-    # - コミットメッセージが"Bump version"で始まっていないこと
-    # - ブランチ名に"version-update"が含まれていないこと
-    # - 前のジョブが常に実行されていること
     if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update') && always()
     permissions:
       contents: write
@@ -213,7 +201,7 @@ jobs:
   check_all_tests:
     needs: test
     runs-on: ubuntu-latest
-    if: always()
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     steps:
       - name: Check test results
         if: contains(needs.test.result, 'failure')

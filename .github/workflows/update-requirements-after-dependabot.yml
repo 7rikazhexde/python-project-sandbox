@@ -1,5 +1,13 @@
 name: Update Requirements after Dependabot Merge
 
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - プルリクエストマージ時
+#    - Dependabotによる実行であること
+# 2. 環境のセットアップ（Ubuntu、Python、Poetry）
+# 3. requirements.txtとrequirements-dev.txtの作成
+# 4. 変更のコミットとプッシュ
+
 on:
   pull_request:
     types: [closed]
