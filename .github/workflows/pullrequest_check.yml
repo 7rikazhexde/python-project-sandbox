@@ -122,7 +122,7 @@ jobs:
           message="'pullrequest_check.yml' workflow completed with status: $status
 
           Check URL:
-          https://github.com/7rikazhexde/trial-test/actions/workflows/pullrequest_check.yml.yml"
+          https://github.com/7rikazhexde/trial-test/actions/workflows/pullrequest_check.yml"
 
           curl -X POST https://notify-api.line.me/api/notify \
             -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
