@@ -9,9 +9,9 @@ name: pytest-html Report and Deploy Multi-OS
 # 3. pytest-htmlを使用してHTMLレポートを生成
 # 4. テスト結果のアップロード
 # 5. 全テスト結果の確認
-# 6. mainブランチへのプッシュ時のみ、GitHub Pagesへのデプロイ
+# 6. mainブランチへのプッシュ時のみ、変更がある場合にGitHub Pagesへデプロイ
 # 7. デプロイしたレポートのURL生成
-# 8. LINE通知の送信
+# 8. 変更の有無に応じたLINE通知の送信
 
 on:
   workflow_dispatch:
@@ -83,26 +83,45 @@ jobs:
           fetch-depth: 0
       - name: Download pytest-html artifacts
         uses: actions/download-artifact@v4
-      - name: Deploy to GitHub Pages
+      - name: Setup Git
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+      - name: Check and Deploy to GitHub Pages
+        run: |
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
+
+          changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
-            mkdir -p $os
+            folder_name="pytest-html-report_${os}"
+            mkdir -p $folder_name
             if [ -f test-results-$os/report_page.html ]; then
-              mv test-results-$os/report_page.html $os/
-              if [ -d test-results-$os/assets ]; then
-                cp -r test-results-$os/assets $os/
+              if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os/report_page.html $folder_name/report_page.html > /dev/null; then
+                echo "Changes detected for $os, updating..."
+                mv test-results-$os/report_page.html $folder_name/
+                if [ -d test-results-$os/assets ]; then
+                  rm -rf $folder_name/assets
+                  cp -r test-results-$os/assets $folder_name/
+                fi
+                git add $folder_name
+                changes_made=true
+              else
+                echo "No changes for $os, skipping..."
               fi
-              git add $os
             else
               echo "No pytest-html report found for $os"
             fi
           done
-          git commit -m "Add pytest-html reports to GitHub Pages" || echo "No changes to commit"
-          git push origin ghpages --force
+
+          if [ "$changes_made" = true ]; then
+            git commit -m "Update pytest-html reports on GitHub Pages"
+            git push origin ghpages
+            echo "DEPLOY_STATUS=updated" >> $GITHUB_ENV
+          else
+            echo "No changes to commit"
+            echo "DEPLOY_STATUS=unchanged" >> $GITHUB_ENV
+          fi
       - name: Generate URL list
         id: generate_url_list
         run: |
@@ -111,19 +130,30 @@ jobs:
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
           for os in ubuntu-latest macos-13 windows-latest; do
-            URL_LIST="${URL_LIST}pytest-html: https://${REPO_OWNER}.github.io/${REPO_NAME}/${os}/report_page.html\n"
+            URL_LIST="${URL_LIST}pytest-html: https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}/report_page.html\n"
           done
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
       - name: Send LINE Notify
+        if: env.DEPLOY_STATUS == 'updated'
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          message="pytest-html report deployment completed.
+          message="pytest-html report deployment completed. Changes were made.
 
           Check URLs:
           ${{ steps.generate_url_list.outputs.url_list }}"
+
+          curl -X POST https://notify-api.line.me/api/notify \
+            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
+            -F "message=${message}"
+      - name: Send LINE Notify (No Changes)
+        if: env.DEPLOY_STATUS == 'unchanged'
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+        run: |
+          message="pytest-html report check completed. No changes were necessary."
 
           curl -X POST https://notify-api.line.me/api/notify \
             -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
