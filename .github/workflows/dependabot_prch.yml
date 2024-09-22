@@ -62,16 +62,26 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
       - name: Install dependencies
         run: poetry install
-      - name: Run tests
-        #run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report=term-missing --cov=project_a tests/ | tee pytest-coverage.txt
-        run: poetry run task test_gh_action_term
+      - name: Run test
+        id: pytest
+        #run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=project_a tests/ | tee pytest-coverage.txt
+        run: poetry run task test_gh_action_xml
       - name: Pytest coverage comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@main
         with:
-          hide-comment: true
           pytest-coverage-path: ./pytest-coverage.txt
+          pytest-xml-coverage-path: ./coverage.xml
+          title: Coverage Report (${{ matrix.os }} / Python ${{ matrix.python-version }})
+          badge-title: coverage
+          hide-badge: false
+          hide-report: false
+          create-new-comment: false
+          hide-comment: false
+          report-only-changed-files: false
+          remove-link-from-badge: false
           junitxml-path: ./pytest.xml
+          junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
           github-token: ${{ secrets.GITHUB_TOKEN }}
       - name: Check test results
         if: steps.pytest.outcome == 'failure'
