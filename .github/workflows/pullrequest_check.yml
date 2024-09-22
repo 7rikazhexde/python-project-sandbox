@@ -64,7 +64,10 @@ jobs:
         run: poetry install
       - name: Run test
         id: pytest
-        #run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report "xml:coverage.xml" --cov=project_a tests/ | tee pytest-coverage.txt
+        # Mac / Linux
+        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
+        # Windowss
+        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
         run: poetry run task test_gh_action_xml
       - name: Pytest coverage comment
         id: coverageComment
