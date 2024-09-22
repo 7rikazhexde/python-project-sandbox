@@ -2,32 +2,23 @@ name: pytest-html Report and Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - 手動実行
-#    - プルリクエスト
-#    - mainブランチへのプッシュ（Version Updateワークフロー以外）
+#    - mainブランチへのプッシュ（プルリクエストのマージを含む）
 # 2. 複数の環境（OS、Pythonバージョン）でのテスト実行
 # 3. pytest-htmlを使用してHTMLレポートを生成
 # 4. テスト結果のアップロード
 # 5. 全テスト結果の確認
-# 6. mainブランチへのプッシュ時のみ、変更がある場合にGitHub Pagesへデプロイ
+# 6. 変更がある場合にGitHub Pagesへデプロイ
 # 7. デプロイしたレポートのURL生成
 # 8. 変更の有無に応じたLINE通知の送信
-# 9. mainへの直接プッシュ時もテストを実行し、成功後にデプロイ
 
 on:
-  workflow_dispatch:
-  pull_request:
   push:
     branches:
       - 'main'
 
 jobs:
   test-and-report:
-    # 実行条件:
-    # 以下のいづれかの時
-    # - プルリクエストの場合
-    # - pushイベントでmainブランチへのプッシュの場合
-    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
@@ -81,14 +72,7 @@ jobs:
   deploy:
     needs: [test-and-report, check_all_tests]
     runs-on: ubuntu-latest
-    # 実行条件:
-    # - 前のジョブが成功していること
-    # - mainブランチへのプッシュであること
-    # - プッシュイベントであること（プルリクエストではない）
-    # - Dependabotによる実行でないこと
-    # - コミットメッセージが"Bump version"で始まっていないこと
-    # - ブランチ名に"version-update"が含まれていないこと
-    if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: success()
     steps:
       - uses: actions/checkout@v4
         with:
