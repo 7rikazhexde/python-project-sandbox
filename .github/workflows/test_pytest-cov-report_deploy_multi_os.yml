@@ -1,0 +1,118 @@
+name: pytest-html Report and Deploy Multi-OS
+
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - 手動実行
+#    - プルリクエスト
+#    - mainブランチへのプッシュ（Version Updateワークフロー以外）
+# 2. 複数の環境（OS、Pythonバージョン）でのテスト実行
+# 3. pytest-htmlを使用してHTMLレポートを生成
+# 4. テスト結果のアップロード
+# 5. mainブランチへのプッシュ時のみ、GitHub Pagesへのデプロイ
+# 6. デプロイしたレポートのURL生成
+# 7. LINE通知の送信
+
+on:
+  workflow_dispatch:
+  pull_request:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  test-and-report:
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    strategy:
+      matrix:
+        os: [ubuntu-latest, macos-13, windows-latest]
+        python-version: ["3.12"]
+    runs-on: ${{ matrix.os }}
+    env:
+      TZ: "Asia/Tokyo"
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+      - name: Install poetry
+        run: pip install poetry
+      - name: Install dependencies
+        run: poetry install
+      - name: Run tests with pytest-html
+        id: pytest-html
+        run: |
+          mkdir -p test_results
+          poetry run pytest --html=test_results/report_page.html
+        shell: bash
+      - name: Upload pytest-html results
+        uses: actions/upload-artifact@v4
+        with:
+          name: test-results-${{ matrix.os }}
+          path: test_results
+        if: always()
+
+  deploy:
+    needs: test-and-report
+    runs-on: ubuntu-latest
+    if: success() && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Download pytest-html artifacts
+        uses: actions/download-artifact@v4
+      - name: Deploy to GitHub Pages
+        run: |
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git fetch origin ghpages:ghpages || git checkout -b ghpages
+          git checkout ghpages
+          for os in ubuntu-latest macos-13 windows-latest; do
+            mkdir -p $os
+            if [ -f test-results-$os/report_page.html ]; then
+              mv test-results-$os/report_page.html $os/
+              if [ -d test-results-$os/assets ]; then
+                cp -r test-results-$os/assets $os/
+              fi
+              git add $os
+            else
+              echo "No pytest-html report found for $os"
+            fi
+          done
+          git commit -m "Add pytest-html reports to GitHub Pages" || echo "No changes to commit"
+          git push origin ghpages --force
+      - name: Generate URL list
+        id: generate_url_list
+        run: |
+          IFS='/' read -ra REPO_INFO <<< "$GITHUB_REPOSITORY"
+          REPO_OWNER=${REPO_INFO[0]}
+          REPO_NAME=${REPO_INFO[1]}
+          URL_LIST=""
+          for os in ubuntu-latest macos-13 windows-latest; do
+            URL_LIST="${URL_LIST}pytest-html: https://${REPO_OWNER}.github.io/${REPO_NAME}/${os}/report_page.html\n"
+          done
+          echo "url_list<<EOF" >> $GITHUB_OUTPUT
+          echo -e "$URL_LIST" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+      - name: Send LINE Notify
+        env:
+          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+        run: |
+          message="pytest-html report deployment completed.
+
+          Check URLs:
+          ${{ steps.generate_url_list.outputs.url_list }}"
+
+          curl -X POST https://notify-api.line.me/api/notify \
+            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
+            -F "message=${message}"
