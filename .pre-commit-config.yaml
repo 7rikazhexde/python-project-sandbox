@@ -99,10 +99,10 @@ repos:
         types: [markdown]
 
     # Original script
-    #- id: update-pyproject
-    #  name: Update pyproject.toml version
-    #  entry: poetry run python ci/update_pyproject_version.py
-    #  language: system
-    #  pass_filenames: false
-    #  stages: [commit]
-    #  additional_dependencies: []
+    - id: update-pyproject
+      name: Update pyproject.toml version
+      entry: poetry run python ci/update_pyproject_version.py
+      language: system
+      pass_filenames: false
+      stages: [commit]
+      additional_dependencies: []
