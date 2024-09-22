@@ -12,6 +12,7 @@ name: pytest-html Report and Deploy Multi-OS
 # 6. mainブランチへのプッシュ時のみ、変更がある場合にGitHub Pagesへデプロイ
 # 7. デプロイしたレポートのURL生成
 # 8. 変更の有無に応じたLINE通知の送信
+# 9. mainへの直接プッシュ時もテストを実行し、成功後にデプロイ
 
 on:
   workflow_dispatch:
@@ -22,7 +23,11 @@ on:
 
 jobs:
   test-and-report:
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    # 実行条件:
+    # 以下のいづれかの時
+    # - プルリクエストの場合
+    # - pushイベントでmainブランチへのプッシュの場合
+    if: github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main')
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
@@ -76,7 +81,14 @@ jobs:
   deploy:
     needs: [test-and-report, check_all_tests]
     runs-on: ubuntu-latest
-    if: success() && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    # 実行条件:
+    # - 前のジョブが成功していること
+    # - mainブランチへのプッシュであること
+    # - プッシュイベントであること（プルリクエストではない）
+    # - Dependabotによる実行でないこと
+    # - コミットメッセージが"Bump version"で始まっていないこと
+    # - ブランチ名に"version-update"が含まれていないこと
+    if: success() && github.ref == 'refs/heads/main' && github.event_name == 'push' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     steps:
       - uses: actions/checkout@v4
         with:

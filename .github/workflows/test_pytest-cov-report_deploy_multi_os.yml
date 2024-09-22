@@ -11,6 +11,7 @@ name: pytest-cov Report and Deploy Multi-OS
 # 7. GitHub Pagesへのデプロイ
 # 8. デプロイしたレポートのURL生成
 # 9. LINE通知の送信
+# 10. mainへの直接プッシュ時もテストを実行し、成功後にデプロイ
 
 on:
   # pytest-cov Reportを単体で実行する場合
@@ -23,12 +24,15 @@ on:
     workflows: ["pytest-html Report and Deploy Multi-OS"]
     types:
       - completed
+    branches:
+      - 'main'
 
 jobs:
   test-and-coverage:
-    # pytest-cov Reportを単体で実行する場合
-    #if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
-    if: github.event.workflow_run.conclusion == 'success'
+    # 実行条件:
+    # - pytest-htmlワークフローが成功した場合のみ実行
+    # - 先行するワークフローがmainブランチで実行された場合のみ
+    if: github.event.workflow_run.conclusion == 'success' && github.event.workflow_run.head_branch == 'main'
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
@@ -82,7 +86,11 @@ jobs:
   deploy:
     needs: [test-and-coverage, check_all_tests]
     runs-on: ubuntu-latest
-    if: success()
+    # 実行条件:
+    # - 前のジョブが成功していること
+    # - 先行するワークフロー（pytest-html）がmainブランチで実行されたこと
+    # - 先行するワークフローのイベントタイプがプッシュであること
+    if: success() && github.event.workflow_run.head_branch == 'main' && github.event.workflow_run.event == 'push'
     steps:
       - uses: actions/checkout@v4
         with:
