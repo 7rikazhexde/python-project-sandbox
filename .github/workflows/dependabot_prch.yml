@@ -76,7 +76,7 @@ jobs:
           badge-title: coverage
           hide-badge: false
           hide-report: false
-          create-new-comment: false
+          create-new-comment: true
           hide-comment: false
           report-only-changed-files: false
           remove-link-from-badge: false
