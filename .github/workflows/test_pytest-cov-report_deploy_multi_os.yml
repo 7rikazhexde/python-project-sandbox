@@ -132,7 +132,8 @@ jobs:
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
           for os in ubuntu-latest macos-13 windows-latest; do
-            URL_LIST="${URL_LIST}pytest-cov: https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}/index.html\n"
+            URL_LIST="${URL_LIST}pytest-cov-report_${os}:\n\
+          https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}/index.html\n\n"
           done
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
