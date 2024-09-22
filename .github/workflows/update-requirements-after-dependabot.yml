@@ -1,25 +1,29 @@
 name: Update Requirements after Dependabot Merge
 
 on:
-  push:
-    branches: [ main ]
+  pull_request:
+    types: [closed]
 
 jobs:
   update-requirements:
-    if: ${{ github.actor == 'dependabot[bot]' }}
+    if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.12'
       - name: Install Poetry
         run: pip install poetry
+      - name: Install dependencies
+        run: poetry install
       - name: Update requirements files
         run: |
-          poetry export -f requirements.txt --output requirements.txt --without-hashes
-          poetry export -f requirements.txt --output requirements-dev.txt --without-hashes --with dev
+          poetry export -f requirements.txt -o requirements.txt --without-hashes
+          poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
       - name: Commit changes
         run: |
           git config --local user.email "action@github.com"
