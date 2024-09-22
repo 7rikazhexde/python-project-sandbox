@@ -73,7 +73,6 @@ jobs:
 
   aggregate-results:
     needs: test
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -84,11 +83,13 @@ jobs:
         uses: actions/download-artifact@v4
       - name: Aggregate test results
         run: |
-          echo "# Test Results Summary" > aggregated_results.md
+          echo "# Dependabot PR Test Results Summary" > aggregated_results.md
           for os in macos-13 ubuntu-latest windows-latest; do
             for version in 3.11 3.12; do
               echo "## $os - Python $version" >> aggregated_results.md
+              echo '```' >> aggregated_results.md
               cat test-results-$os-$version/pytest-coverage.txt >> aggregated_results.md
+              echo '```' >> aggregated_results.md
               echo "" >> aggregated_results.md
             done
           done
@@ -96,7 +97,7 @@ jobs:
         uses: MishaKav/pytest-coverage-comment@main
         with:
           pytest-coverage-path: ./aggregated_results.md
-          title: Aggregated Coverage Report
+          title: Aggregated Coverage Report (PR Check - Except Dependabot)
           badge-title: coverage
           hide-badge: false
           hide-report: false
@@ -105,7 +106,7 @@ jobs:
           report-only-changed-files: false
           remove-link-from-badge: false
           junitxml-path: ./test-results-ubuntu-latest-3.12/pytest.xml
-          junitxml-title: "Pytest Result Summary"
+          junitxml-title: "Pytest Result Summary (PR Check - Except Dependabot)"
           github-token: ${{ secrets.GITHUB_TOKEN }}
 
   check_all_tests:

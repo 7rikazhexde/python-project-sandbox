@@ -76,7 +76,6 @@ jobs:
 
   aggregate-results:
     needs: test
-    if: github.actor == 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
     runs-on: ubuntu-latest
     permissions:
       contents: read
@@ -91,7 +90,9 @@ jobs:
           for os in macos-13 ubuntu-latest windows-latest; do
             for version in 3.11 3.12; do
               echo "## $os - Python $version" >> aggregated_results.md
+              echo '```' >> aggregated_results.md
               cat test-results-$os-$version/pytest-coverage.txt >> aggregated_results.md
+              echo '```' >> aggregated_results.md
               echo "" >> aggregated_results.md
             done
           done
