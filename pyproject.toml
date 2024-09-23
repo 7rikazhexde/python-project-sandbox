@@ -83,7 +83,7 @@ ignore = ["E402", "E501"]
 per-file-ignores = {}
 
 [tool.mypy]
-files = ["project_a", "tests"]
+files = ["project_a", "tests", "ci", "scripts"]
 python_version = "3.12"
 show_error_context = true
 show_column_numbers = true
