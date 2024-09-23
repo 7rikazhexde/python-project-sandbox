@@ -1,5 +1,15 @@
 name: Create Release
 
+# ワークフローの処理の流れ:
+# 1. トリガー条件: 手動実行（workflow_dispatch）
+#    - オプションでタグを指定可能
+# 2. 環境変数の設定（リポジトリ名）
+# 3. 最新のタグを取得
+# 4. リリース用タグの設定（指定があればそのタグ、なければ最新のタグ）
+# 5. 変更ログの生成（前のタグからの変更を取得）
+# 6. GitHubリリースの作成
+#    - タグ名、リリース名（リポジトリ名を含む）、変更ログを含む
+
 on:
   workflow_dispatch:
     inputs:
@@ -29,6 +39,10 @@ jobs:
             echo "release_tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
           fi
 
+      - name: Get repository name
+        id: get_repo_name
+        run: echo "repo_name=${GITHUB_REPOSITORY#*/}" >> $GITHUB_OUTPUT
+
       - name: Generate changelog
         id: changelog
         run: |
@@ -42,7 +56,7 @@ jobs:
         uses: softprops/action-gh-release@v2.0.8
         with:
           tag_name: ${{ steps.set_release_tag.outputs.release_tag }}
-          name: trial-test-v${{ steps.set_release_tag.outputs.release_tag }}
+          name: ${{ steps.get_repo_name.outputs.repo_name }}-v${{ steps.set_release_tag.outputs.release_tag }}
           body: |
             Changes in this Release:
             ${{ steps.changelog.outputs.changelog }}
