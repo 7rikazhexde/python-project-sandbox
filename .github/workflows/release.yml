@@ -2,13 +2,16 @@ name: Create Release
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件: 手動実行（workflow_dispatch）
-#    - タグを指定（必須）
-# 2. 指定されたタグが既にリリース済みかチェック
+#    - タグを指定（オプション、空の場合は最新のタグを使用）
+# 2. 使用するタグの決定
+#    - 入力が空の場合、最新のタグを取得
+#    - 入力がある場合、指定されたタグを使用
+# 3. 指定されたタグが既にリリース済みかチェック
 #    - リリース済みの場合はエラーで終了
-# 3. リポジトリ名の取得
-# 4. 変更ログの生成
+# 4. リポジトリ名の取得
+# 5. 変更ログの生成
 #    - 前のタグから指定されたタグまでのコミットを取得
-# 5. GitHubリリースの作成
+# 6. GitHubリリースの作成
 #    - タグ名、リリース名（リポジトリ名を含む）、変更ログを含む
 
 on:
@@ -16,7 +19,7 @@ on:
     inputs:
       tag:
         description: 'Tag to create release from (leave empty for latest)'
-        required: true
+        required: false
         type: string
 
 jobs:
@@ -27,12 +30,24 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Determine tag to use
+        id: get_tag
+        run: |
+          if [ -z "${{ github.event.inputs.tag }}" ]; then
+            latest_tag=$(git describe --tags --abbrev=0)
+            echo "tag=$latest_tag" >> $GITHUB_OUTPUT
+            echo "Using latest tag: $latest_tag"
+          else
+            echo "tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+            echo "Using specified tag: ${{ github.event.inputs.tag }}"
+          fi
+
       - name: Check if the tag is already released
         id: check_release
         run: |
-          release=$(gh release view ${{ github.event.inputs.tag }} 2>/dev/null || echo "not_found")
+          release=$(gh release view ${{ steps.get_tag.outputs.tag }} 2>/dev/null || echo "not_found")
           if [ "$release" != "not_found" ]; then
-            echo "The tag ${{ github.event.inputs.tag }} is already released."
+            echo "The tag ${{ steps.get_tag.outputs.tag }} is already released."
             exit 1
           fi
 
@@ -43,8 +58,8 @@ jobs:
       - name: Generate changelog
         id: changelog
         run: |
-          previous_tag=$(git describe --tags --abbrev=0 ${{ github.event.inputs.tag }}^)
-          changelog=$(git log --pretty=format:"- %s" $previous_tag..${{ github.event.inputs.tag }})
+          previous_tag=$(git describe --tags --abbrev=0 ${{ steps.get_tag.outputs.tag }}^)
+          changelog=$(git log --pretty=format:"- %s" $previous_tag..${{ steps.get_tag.outputs.tag }})
           echo "changelog<<EOF" >> $GITHUB_OUTPUT
           echo "$changelog" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
@@ -52,13 +67,13 @@ jobs:
       - name: Create Release
         uses: softprops/action-gh-release@v2.0.8
         with:
-          tag_name: ${{ github.event.inputs.tag }}
-          name: ${{ steps.get_repo_name.outputs.repo_name }}-v${{ github.event.inputs.tag }}
+          tag_name: ${{ steps.get_tag.outputs.tag }}
+          name: ${{ steps.get_repo_name.outputs.repo_name }}-${{ steps.get_tag.outputs.tag }}
           body: |
             Changes in this Release:
             ${{ steps.changelog.outputs.changelog }}
 
-            For full changes, see the [comparison view](${{ github.server_url }}/${{ github.repository }}/compare/$previous_tag..${{ github.event.inputs.tag }})
+            For full changes, see the [comparison view](${{ github.server_url }}/${{ github.repository }}/compare/$previous_tag..${{ steps.get_tag.outputs.tag }})
           draft: false
           prerelease: false
         env:
