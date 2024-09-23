@@ -198,7 +198,4 @@ if __name__ == "__main__":  # pragma: no cover
     # Create a new tag
     if remote_tag_checker_flag is True and local_tag_checker_flag is True:
         subprocess.run(["git", "tag", new_tag])
-        print(f"Created new tag: {new_tag}")
-    else:
-        print("No new tag created.")
     subprocess.run(["git", "tag"])
