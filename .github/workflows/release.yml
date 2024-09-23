@@ -1,0 +1,54 @@
+name: Create Release
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to create release from (leave empty for latest)'
+        required: false
+        type: string
+
+jobs:
+  create-release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Get latest tag
+        id: get_latest_tag
+        run: echo "latest_tag=$(git describe --tags --abbrev=0)" >> $GITHUB_OUTPUT
+
+      - name: Set release tag
+        id: set_release_tag
+        run: |
+          if [ -z "${{ github.event.inputs.tag }}" ]; then
+            echo "release_tag=${{ steps.get_latest_tag.outputs.latest_tag }}" >> $GITHUB_OUTPUT
+          else
+            echo "release_tag=${{ github.event.inputs.tag }}" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Generate changelog
+        id: changelog
+        run: |
+          previous_tag=$(git describe --tags --abbrev=0 ${{ steps.set_release_tag.outputs.release_tag }}^)
+          changelog=$(git log --pretty=format:"- %s" $previous_tag..${{ steps.set_release_tag.outputs.release_tag }})
+          echo "changelog<<EOF" >> $GITHUB_OUTPUT
+          echo "$changelog" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+      - name: Create Release
+        uses: softprops/action-gh-release@v2.0.8
+        with:
+          tag_name: ${{ steps.set_release_tag.outputs.release_tag }}
+          name: trial-test-v${{ steps.set_release_tag.outputs.release_tag }}
+          body: |
+            Changes in this Release:
+            ${{ steps.changelog.outputs.changelog }}
+
+            For full changes, see the [comparison view](${{ github.server_url }}/${{ github.repository }}/compare/$previous_tag..${{ steps.set_release_tag.outputs.release_tag }})
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
