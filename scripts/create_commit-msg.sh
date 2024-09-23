@@ -15,16 +15,11 @@ if [[ \$commit_msg == *":bookmark:"* ]]; then
     poetry run python "$SCRIPT_DIR/../ci/update_pyproject_version.py"
     if [ \$? -eq 0 ]; then
         git add pyproject.toml
+        echo "Version updated and pyproject.toml added to the commit."
     else
         echo "Failed to update version. Please check the error and try again."
         exit 1
     fi
-fi
-
-# デフォルトで:bookmark:タグを追加（既に含まれている場合は追加しない）
-if [[ \$commit_msg != *":bookmark:"* ]]; then
-    echo -e "\n:bookmark:" >> "\$commit_msg_file"
-    echo "Default :bookmark: tag added. Remove it if version update is not needed."
 fi
 EOF
 
