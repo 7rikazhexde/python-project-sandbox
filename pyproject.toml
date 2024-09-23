@@ -37,16 +37,19 @@ pytest-html = "^4.1.1"
 pytest-mock = "^3.14.0"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.6.7"
+pytest-testmon = "^2.1.1"
 
 [build-system]
 requires = ["poetry-core"]
 build-backend = "poetry.core.masonry.api"
 
 [tool.taskipy.tasks]
-tdctest1 = "pytest -s -vv --cov=. --cov-branch --cov-report term-missing --cov-report html"
-tdctest2 = "pytest --html=htmlcov/report_page.html"
-test_gh_action_xml = "python scripts/run_tests.py --report xml"
-test_gh_action_term = "python scripts/run_tests.py --report term"
+test_coverage_verbose = "pytest -s -vv --cov=. --cov-branch --cov-report term-missing --cov-report html"
+test_html_report = "pytest --html=htmlcov/report_page.html"
+test_ci_xml = "python scripts/run_tests.py --report xml"
+test_ci_term = "python scripts/run_tests.py --report term"
+test_testmon = "pytest --testmon"
+test_coverage = "pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html"
 
 [tool.ruff]
 exclude = [
@@ -80,7 +83,7 @@ ignore = ["E402", "E501"]
 per-file-ignores = {}
 
 [tool.mypy]
-files = ["project_a", "tests"]
+files = ["project_a", "tests", "ci", "scripts"]
 python_version = "3.12"
 show_error_context = true
 show_column_numbers = true
@@ -103,7 +106,10 @@ addopts = "--cov=project_a --cov-report=term-missing --cov-report=html"
 [tool.coverage.run]
 source = ["project_a"]
 omit = ["project_a/staking/ton_whales_staking_dashboard.py"]
-branch = true
+# testmonとpytest-covの互換性の問題に対応するため明示的にfalseにする
+# testmonとpytest-covは、どちらもPythonコードの実行を追跡するために内部的にトレーシングメカニズムを使用する。
+# branch coverageが有効な場合、pytest-covはより詳細なトレーシングを行うが、testmonの動作と競合する。これはtestmonの制限である。
+branch = false
 
 [tool.coverage.report]
 exclude_lines = [
