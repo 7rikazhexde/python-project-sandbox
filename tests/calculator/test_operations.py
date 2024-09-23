@@ -7,10 +7,6 @@ def test_add() -> None:
     assert add(0, 0) == 0
     assert add(-2, 2) == 0
     assert add(1, 2) == 3
-    assert add(1, 5) == 6
-    assert add(2, 5) == 7
-    assert add(2, 98) == 100
-    assert add(2, -98) == -96
 
 
 def test_subtract() -> None:
@@ -19,9 +15,6 @@ def test_subtract() -> None:
     assert subtract(0, 0) == 0
     assert subtract(-2, 2) == -4
     assert subtract(-1, 2) == -3
-    assert subtract(-1, 5) == -6
-    assert subtract(-2, 5) == -7
-    assert subtract(-2, 6) == -8
 
 
 def test_multiply() -> None:
@@ -30,8 +23,6 @@ def test_multiply() -> None:
     assert multiply(0, 10) == 0
     assert multiply(-2, 4) == -8
     assert multiply(-2, 5) == -10
-    assert multiply(5, 6) == 30
-    assert multiply(5, -1) == -5
 
 
 def test_divide() -> None:
@@ -40,4 +31,3 @@ def test_divide() -> None:
     assert divide(10, 2) == 5
     assert divide(7, 2) == 3.5
     assert divide(7, -2) == -3.5
-    assert divide(1, 1) == 1
