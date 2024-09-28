@@ -33,9 +33,9 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.0
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ matrix.python-version }}
       - name: Set timezone
@@ -55,7 +55,7 @@ jobs:
           poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}
         shell: bash
       - name: Upload pytest-cov results
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: coverage-results-${{ matrix.os }}
           path: htmlcov_${{ matrix.os }}
@@ -79,11 +79,11 @@ jobs:
     outputs:
       deploy_status: ${{ steps.check_and_deploy.outputs.deploy_status }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.0
         with:
           fetch-depth: 0
       - name: Download pytest-cov artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.8
       - name: Setup Git
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
