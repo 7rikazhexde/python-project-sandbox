@@ -36,11 +36,11 @@ jobs:
           else
             echo "flag=0" >> $GITHUB_OUTPUT
           fi
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.0
         with:
           persist-credentials: false
           fetch-depth: 0
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{matrix.python-version}}
       - name: Set timezone on Windows
@@ -69,7 +69,7 @@ jobs:
       #- name: Poetry setup
       #  run: poetry install
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v4.0.2
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
@@ -85,7 +85,7 @@ jobs:
         run: poetry run task test_ci_term
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@main
+        uses: MishaKav/pytest-coverage-comment@v1.1.52
         with:
           hide-comment: true
           pytest-coverage-path: ./pytest-coverage.txt

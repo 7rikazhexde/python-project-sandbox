@@ -26,12 +26,12 @@ jobs:
             echo "flag=0" >> $GITHUB_OUTPUT
           fi
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.0
         with:
           persist-credentials: false
           fetch-depth: 0
 
-      - uses: actions/setup-python@v5
+      - uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ matrix.python-version }}
 

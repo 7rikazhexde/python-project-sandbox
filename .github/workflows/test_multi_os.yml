@@ -25,7 +25,7 @@ jobs:
     outputs:
       file_exists: ${{ steps.check_file.outputs.file_exists }}
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.0
       - name: Check file existence
         id: check_file
         run: |
@@ -49,9 +49,9 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.0
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{matrix.python-version}}
       - name: Set timezone
@@ -69,7 +69,7 @@ jobs:
       - name: Install poetry
         run: pip install poetry
       - name: Cache dependencies
-        uses: actions/cache@v4
+        uses: actions/cache@v4.0.2
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
@@ -85,7 +85,7 @@ jobs:
         run: poetry run task test_ci_xml
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@main
+        uses: MishaKav/pytest-coverage-comment@v1.1.52
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
@@ -109,7 +109,7 @@ jobs:
         run: |
           echo '${{ steps.coverageComment.outputs.summaryReport }}' > summary-report.md
       - name: Upload coverage data
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v4.4.0
         with:
           name: coverage-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: |
@@ -126,11 +126,11 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v4.2.0
         with:
           fetch-depth: 0
       - name: Download all artifacts
-        uses: actions/download-artifact@v4
+        uses: actions/download-artifact@v4.1.8
       - name: Update README in coverage branch
         run: |
           # "coverage" ブランチが存在する場合はチェックアウト、存在しない場合は新規作成する
