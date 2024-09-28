@@ -21,7 +21,7 @@ on:
 
 jobs:
   test-and-coverage:
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
@@ -63,7 +63,7 @@ jobs:
 
   check_all_tests:
     needs: test-and-coverage
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     runs-on: ubuntu-latest
     steps:
       - name: Check test results
@@ -74,8 +74,10 @@ jobs:
 
   deploy:
     needs: [test-and-coverage, check_all_tests]
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor != 'dependabot[bot]' && (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Bump version'))
     runs-on: ubuntu-latest
+    outputs:
+      deploy_status: ${{ steps.check_and_deploy.outputs.deploy_status }}
     steps:
       - uses: actions/checkout@v4
         with:
@@ -87,6 +89,7 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
       - name: Check and Deploy to GitHub Pages
+        id: check_and_deploy
         run: |
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
@@ -112,10 +115,10 @@ jobs:
           if [ "$changes_made" = true ]; then
             git commit -m "Update pytest-cov reports on GitHub Pages"
             git push origin ghpages
-            echo "DEPLOY_STATUS=updated" >> $GITHUB_ENV
+            echo "deploy_status=updated" >> $GITHUB_OUTPUT
           else
             echo "No changes to commit"
-            echo "DEPLOY_STATUS=unchanged" >> $GITHUB_ENV
+            echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
           fi
       - name: Generate URL list
         id: generate_url_list
@@ -131,8 +134,8 @@ jobs:
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-      - name: Send LINE Notify
-        if: env.DEPLOY_STATUS == 'updated'
+      - name: Send LINE Notify (Updated)
+        if: steps.check_and_deploy.outputs.deploy_status == 'updated'
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
@@ -145,7 +148,7 @@ jobs:
             -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
             -F "message=${message}"
       - name: Send LINE Notify (No Changes)
-        if: env.DEPLOY_STATUS == 'unchanged'
+        if: steps.check_and_deploy.outputs.deploy_status == 'unchanged'
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
