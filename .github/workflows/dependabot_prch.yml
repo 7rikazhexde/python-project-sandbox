@@ -24,7 +24,7 @@ on:
 
 jobs:
   test:
-    if: github.actor == 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor == 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
     strategy:
       matrix:
         os: [macos-13, ubuntu-latest, windows-latest]
@@ -100,7 +100,7 @@ jobs:
   check_all_tests:
     needs: test
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor == 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
     steps:
       - name: Check test results
         if: contains(needs.test.result, 'failure')
@@ -111,7 +111,7 @@ jobs:
   send_notification:
     needs: [test, check_all_tests]
     runs-on: ubuntu-latest
-    if: github.actor == 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor == 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
     steps:
       # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
       - name: Send LINE Notify

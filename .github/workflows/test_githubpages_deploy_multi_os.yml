@@ -23,7 +23,7 @@ on:
 
 jobs:
   test:
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
@@ -96,7 +96,7 @@ jobs:
   deploy:
     needs: test
     runs-on: ubuntu-latest
-    if: success() && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: success() && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     steps:
       - uses: actions/checkout@v4
         with:

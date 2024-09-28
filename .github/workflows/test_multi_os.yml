@@ -20,7 +20,7 @@ on:
 
 jobs:
   check_file:
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     runs-on: ubuntu-latest
     outputs:
       file_exists: ${{ steps.check_file.outputs.file_exists }}
@@ -37,7 +37,7 @@ jobs:
 
   test:
     needs: check_file
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     strategy:
       matrix:
         os: [macos-13, ubuntu-latest, windows-latest]
@@ -121,7 +121,7 @@ jobs:
   update_readme:
     needs: [check_file, test]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update') && always()
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && always()
     permissions:
       contents: write
       pull-requests: write
@@ -205,7 +205,7 @@ jobs:
   check_all_tests:
     needs: test
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && !contains(github.ref, 'version-update')
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     steps:
       - name: Check test results
         if: contains(needs.test.result, 'failure')
