@@ -79,15 +79,25 @@ jobs:
 
       - name: Run tests with testmon
         id: pytest-testmon
-        shell: bash # bashを使っている場合
+        shell: bash  # bashを使う明示的な指示
         run: |
           echo "Running tests with testmon..."
           output=$(poetry run pytest --testmon -v)
           echo "$output"
+
           # testmonの出力をGitHub Actionsの出力変数に保存
           echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
           echo "$output" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
+          # 出力を確認して、テストが実行されなかった場合はフラグを設定
+          if echo "$output" | grep -q "collected 0 items"; then
+           echo "No tests executed. Skipping deployment and further workflows."
+           echo "tests_executed=false" >> $GITHUB_OUTPUT
+          else
+           echo "Tests executed. Proceeding with deployment and further workflows."
+           echo "tests_executed=true" >> $GITHUB_OUTPUT
+          fi
 
       - name: Check testmon results
         id: check_testmon_results
