@@ -79,25 +79,15 @@ jobs:
 
       - name: Run tests with testmon
         id: pytest-testmon
+        shell: bash # bashを使っている場合
         run: |
           echo "Running tests with testmon..."
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            $output = poetry run pytest --testmon -v
-          else
-            output=$(poetry run pytest --testmon -v)
-          fi
+          output=$(poetry run pytest --testmon -v)
           echo "$output"
           # testmonの出力をGitHub Actionsの出力変数に保存
-          if [[ "${{ matrix.os }}" == "windows-latest" ]]; then
-            echo "testmon_output<<EOF" >> $env:GITHUB_OUTPUT
-            echo "$output" >> $env:GITHUB_OUTPUT
-            echo "EOF" >> $env:GITHUB_OUTPUT
-          else
-            echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
-            echo "$output" >> $GITHUB_OUTPUT
-            echo "EOF" >> $GITHUB_OUTPUT
-          fi
-        shell: bash
+          echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$output" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
 
       - name: Check testmon results
         id: check_testmon_results
