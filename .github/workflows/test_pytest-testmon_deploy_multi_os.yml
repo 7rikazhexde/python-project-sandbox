@@ -53,56 +53,73 @@ jobs:
 
       - name: Install poetry
         # Poetryをインストール
-        run: pip install poetry
+        run: |
+          pip install poetry
+          echo "Poetry version: $(poetry --version)"
 
       - name: Install dependencies
-        # プロジェクトの依存関係をインストール
-        run: poetry install
+      # プロジェクトの依存関係をインストール
+        run: |
+          poetry install
+          echo "Installed dependencies:"
+          poetry show --tree
 
       - name: Fetch previous testmon data
         # 以前のtestmonデータを取得し、現在の作業ディレクトリにセットアップ
         shell: bash
         run: |
+          echo "Fetching previous testmon data..."
           git fetch origin ghpages:ghpages || true
           git checkout ghpages -- testmon-data_${{ matrix.os }}/.testmondata || true
           if [ -f testmon-data_${{ matrix.os }}/.testmondata ]; then
+            echo "Previous testmon data found. Moving to current directory."
             mv testmon-data_${{ matrix.os }}/.testmondata .testmondata
             rm -rf testmon-data_${{ matrix.os }}
+          else
+            echo "No previous testmon data found."
           fi
         continue-on-error: true
 
       - name: Run tests with testmon
         # testmonを使用してテストを実行
         id: pytest-testmon
-        run: poetry run pytest --testmon
+        run: |
+          echo "Running tests with testmon..."
+          poetry run pytest --testmon -v
+          echo "Testmon execution completed."
 
       - name: Create testmon directory and move .testmondata
         # .testmondataファイルを保存するディレクトリを作成し、ファイルを移動
-        shell: pwsh
+        shell: bash
         run: |
-          $testmonDir = "testmon_data_${{ matrix.os }}"
-          New-Item -ItemType Directory -Force -Path $testmonDir
-          Move-Item -Path ".testmondata" -Destination "$testmonDir/.testmondata" -Force
+          echo "Creating testmon directory..."
+          testmon_dir="testmon_data_${{ matrix.os }}"
+          mkdir -p "$testmon_dir"
+          echo "Moving .testmondata file..."
+          if [ -f ".testmondata" ]; then
+            mv ".testmondata" "$testmon_dir/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
+          else
+            echo "Warning: .testmondata file not found in root directory."
+          fi
+          echo "Contents of $testmon_dir:"
+          ls -la "$testmon_dir"
 
       - name: Check testmon data
         # .testmondataファイルの存在を確認
-        shell: pwsh
-        run: |
-          $testmonFile = Get-ChildItem -Path "testmon_data_${{ matrix.os }}" -Filter ".testmondata" -Recurse -ErrorAction SilentlyContinue -Force
-          if ($testmonFile) {
-            Write-Output "Testmon data file found at: $($testmonFile.FullName)"
-            Write-Output "TESTMON_FILE_PATH=$($testmonFile.FullName)" >> $env:GITHUB_OUTPUT
-          } else {
-            Write-Output "Warning: Testmon data file (.testmondata) not found."
-            exit 1
-          }
-
-      - name: Debug - List directory contents
-        # デバッグ用: ディレクトリの内容を表示
-        run: |
-          echo "Contents of testmon_data_${{ matrix.os }}:"
-          ls -la testmon_data_${{ matrix.os }}
         shell: bash
+        run: |
+          echo "Checking for testmon data file..."
+          testmon_file=$(find "testmon_data_${{ matrix.os }}" -name ".testmondata" -type f)
+          if [ -n "$testmon_file" ]; then
+            echo "Testmon data file found at: $testmon_file"
+            echo "TESTMON_FILE_PATH=$testmon_file" >> $GITHUB_OUTPUT
+            echo "File size: $(du -h "$testmon_file" | cut -f1)"
+          else
+            echo "Warning: Testmon data file (.testmondata) not found."
+            echo "Contents of testmon_data_${{ matrix.os }}:"
+            ls -la "testmon_data_${{ matrix.os }}"
+            exit 1
+          fi
 
       - name: Upload testmon data
         # 更新された.testmondataファイルをアーティファクトとしてアップロード
@@ -136,11 +153,13 @@ jobs:
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
+          echo "Git configuration set."
 
       - name: Deploy testmon data to GitHub Pages
         # testmonデータをGitHub Pagesにデプロイ
         id: deploy_testmon
         run: |
+          echo "Deploying testmon data to GitHub Pages..."
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
 
@@ -148,6 +167,7 @@ jobs:
           for os in ubuntu-latest macos-13 windows-latest; do
             folder_name="testmon-data_${os}"
             artifact_folder="downloaded-artifacts/testmon-data-${os}"
+            echo "Processing $os..."
             if [ -f "${artifact_folder}/.testmondata" ]; then
               echo "Changes detected for $os, updating..."
               mkdir -p $folder_name
@@ -156,10 +176,13 @@ jobs:
               changes_made=true
             else
               echo "No testmon data found for $os"
+              echo "Contents of ${artifact_folder}:"
+              ls -la "${artifact_folder}"
             fi
           done
 
           if [ "$changes_made" = true ]; then
+            echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages"
             git push origin ghpages
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
@@ -175,6 +198,8 @@ jobs:
           git checkout ghpages
           echo "Deployed testmon data files:"
           find . -name ".testmondata"
+          echo "Contents of ghpages branch:"
+          ls -R
 
   trigger-other-workflows:
     needs: deploy-testmon
@@ -191,3 +216,8 @@ jobs:
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
+
+      - name: Log workflow triggers
+        run: |
+          echo "Triggered pytest-cov and pytest-html workflows."
+          echo "Check the Actions tab for these workflows to start."
