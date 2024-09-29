@@ -71,23 +71,40 @@ jobs:
         continue-on-error: true
 
       - name: Run tests with testmon
-        # testmonを使用してテストを実行し、.testmondataファイルの場所を確認
+        # testmonを使用してテストを実行
         id: pytest-testmon
-        run: |
-          poetry run task test_testmon
-          echo "Listing current directory contents:"
-          ls -la
-          echo "Searching for .testmondata file:"
-          find . -name ".testmondata"
+        run: poetry run task test_testmon
 
-      - name: Check testmon data
-        # .testmondataファイルの存在を確認し、見つかった場合はその場所を記録
+      - name: Check testmon data and list directory
+        # .testmondataファイルの存在を確認し、ディレクトリ内容を表示
         shell: bash
         run: |
-          TESTMON_FILE=$(find . -name ".testmondata" | head -n 1)
+          echo "Listing current directory contents:"
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            powershell -Command "Get-ChildItem -Force"
+          else
+            ls -la
+          fi
+          echo "Searching for .testmondata file:"
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            powershell -Command "Get-ChildItem -Path . -Filter .testmondata -Recurse -ErrorAction SilentlyContinue -Force | Select-Object -ExpandProperty FullName"
+          else
+            find . -name ".testmondata"
+          fi
+
+      - name: Set testmon file path
+        # .testmondataファイルのパスを設定
+        id: set-testmon-path
+        shell: bash
+        run: |
+          if [ "$RUNNER_OS" == "Windows" ]; then
+            TESTMON_FILE=$(powershell -Command "Get-ChildItem -Path . -Filter .testmondata -Recurse -ErrorAction SilentlyContinue -Force | Select-Object -First 1 -ExpandProperty FullName")
+          else
+            TESTMON_FILE=$(find . -name ".testmondata" | head -n 1)
+          fi
           if [ -n "$TESTMON_FILE" ]; then
             echo "Testmon data file found at: $TESTMON_FILE"
-            echo "TESTMON_FILE_PATH=$TESTMON_FILE" >> $GITHUB_ENV
+            echo "TESTMON_FILE_PATH=$TESTMON_FILE" >> $GITHUB_OUTPUT
           else
             echo "Warning: Testmon data file (.testmondata) not found."
             exit 1
@@ -98,7 +115,7 @@ jobs:
         uses: actions/upload-artifact@v4.4.0
         with:
           name: testmon-data-${{ matrix.os }}
-          path: ${{ env.TESTMON_FILE_PATH }}
+          path: ${{ steps.set-testmon-path.outputs.TESTMON_FILE_PATH }}
         if: success()
 
   deploy-testmon:
@@ -114,6 +131,8 @@ jobs:
       - name: Download testmon data
         # 前のジョブでアップロードされたtestmonデータをダウンロード
         uses: actions/download-artifact@v4.1.8
+        with:
+          path: downloaded-artifacts
 
       - name: Setup Git
         # Gitの設定を行い、コミット用の情報をセット
@@ -131,10 +150,11 @@ jobs:
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
             folder_name="testmon-data_${os}"
-            if [ -f testmon-data-$os/.testmondata ]; then
+            artifact_folder="downloaded-artifacts/testmon-data-${os}"
+            if [ -f "${artifact_folder}/.testmondata" ]; then
               echo "Changes detected for $os, updating..."
               mkdir -p $folder_name
-              mv testmon-data-$os/.testmondata $folder_name/
+              mv "${artifact_folder}/.testmondata" "$folder_name/"
               git add $folder_name
               changes_made=true
             else
@@ -150,6 +170,14 @@ jobs:
             echo "No changes to commit"
             echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
           fi
+
+      - name: List deployed files
+        # デプロイされたファイルを確認
+        if: steps.deploy_testmon.outputs.deploy_status == 'updated'
+        run: |
+          git checkout ghpages
+          echo "Deployed testmon data files:"
+          find . -name ".testmondata"
 
   trigger-other-workflows:
     needs: deploy-testmon
