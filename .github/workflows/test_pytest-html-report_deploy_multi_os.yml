@@ -42,6 +42,7 @@ jobs:
           timezoneWindows: "Tokyo Standard Time"
       # 新しく追加するステップ：testmonの結果に基づいてテストをスキップするかどうかを確認
       - name: Check if tests should be executed
+        shell: bash
         run: |
           if [ "${{ github.event.client_payload.skip_tests }}" = "true" ]; then
             echo "Tests skipped based on testmon results"
