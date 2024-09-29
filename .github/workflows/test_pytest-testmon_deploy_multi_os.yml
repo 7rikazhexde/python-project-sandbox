@@ -7,7 +7,7 @@ name: pytest-testmon Deploy Multi-OS
 #    - コミットメッセージが"Bump version"で始まっていないこと
 # 2. 複数の環境（OS、Pythonバージョン）でのセットアップと.testmondataの取得
 # 3. pytest-testmonを使用してテストを実行
-# 4. 更新された.testmondataファイルのアップロード
+# 4. .testmondataファイルの確認と更新されたファイルのアップロード
 # 5. GitHub Pagesへの.testmondataファイルのデプロイ
 # 6. pytest-covとpytest-htmlワークフローのトリガー
 
@@ -60,12 +60,10 @@ jobs:
 
       - name: Fetch previous testmon data
         # 以前のtestmonデータを取得し、現在の作業ディレクトリにセットアップ
+        shell: bash
         run: |
-          # ghpagesブランチの最新情報を取得
-          git fetch origin ghpages:ghpages
-          # 現在のOS用の.testmondataファイルをghpagesブランチからチェックアウト
+          git fetch origin ghpages:ghpages || true
           git checkout ghpages -- testmon-data_${{ matrix.os }}/.testmondata || true
-          # .testmondataファイルが存在する場合、それを適切な位置に移動
           if [ -f testmon-data_${{ matrix.os }}/.testmondata ]; then
             mv testmon-data_${{ matrix.os }}/.testmondata .testmondata
             rm -rf testmon-data_${{ matrix.os }}
@@ -73,17 +71,35 @@ jobs:
         continue-on-error: true
 
       - name: Run tests with testmon
-        # testmonを使用してテストを実行
+        # testmonを使用してテストを実行し、.testmondataファイルの場所を確認
         id: pytest-testmon
-        run: poetry run pytest --testmon
+        run: |
+          poetry run task test_testmon
+          echo "Listing current directory contents:"
+          ls -la
+          echo "Searching for .testmondata file:"
+          find . -name ".testmondata"
+
+      - name: Check testmon data
+        # .testmondataファイルの存在を確認し、見つかった場合はその場所を記録
+        shell: bash
+        run: |
+          TESTMON_FILE=$(find . -name ".testmondata" | head -n 1)
+          if [ -n "$TESTMON_FILE" ]; then
+            echo "Testmon data file found at: $TESTMON_FILE"
+            echo "TESTMON_FILE_PATH=$TESTMON_FILE" >> $GITHUB_ENV
+          else
+            echo "Warning: Testmon data file (.testmondata) not found."
+            exit 1
+          fi
 
       - name: Upload testmon data
         # 更新された.testmondataファイルをアーティファクトとしてアップロード
         uses: actions/upload-artifact@v4.4.0
         with:
           name: testmon-data-${{ matrix.os }}
-          path: .testmondata
-        if: always()
+          path: ${{ env.TESTMON_FILE_PATH }}
+        if: success()
 
   deploy-testmon:
     needs: test-and-deploy-testmon
@@ -109,7 +125,6 @@ jobs:
         # testmonデータをGitHub Pagesにデプロイ
         id: deploy_testmon
         run: |
-          # ghpagesブランチをチェックアウトまたは作成
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
 
