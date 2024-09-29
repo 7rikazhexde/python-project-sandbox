@@ -40,13 +40,6 @@ jobs:
           timezoneLinux: "Asia/Tokyo"
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
-      # 新しく追加するステップ：testmonの結果に基づいてテストをスキップするかどうかを確認
-      - name: Check if tests should be executed
-        run: |
-          if [ "${{ github.event.client_payload.skip_tests }}" = "true" ]; then
-            echo "Tests skipped based on testmon results"
-            exit 0
-          fi
       - name: Install poetry
         run: pip install poetry
       - name: Install dependencies
