@@ -101,6 +101,7 @@ jobs:
 
       - name: Check testmon results
         id: check_testmon_results
+        shell: bash
         run: |
           output="${{ steps.pytest-testmon.outputs.testmon_output }}"
           if echo "$output" | grep -q "collected 0 items"; then
