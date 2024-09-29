@@ -1,22 +1,26 @@
-name: pytest-html Report and Deploy Multi-OS
+name: pytest-cov Report and Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - pytest-testmon ワークフローの完了後に repository_dispatch イベントで起動
+#    - mainブランチへのプッシュ（プルリクエストのマージのみ）
+#    - Dependabotによる実行でないこと
+#    - コミットメッセージが"Bump version"で始まっていないこと
+#    - ブランチ名に"version-update"が含まれていないこと
 # 2. 複数の環境（OS、Pythonバージョン）でのテスト実行
-# 3. pytest-htmlを使用してHTMLレポートを生成
-# 4. テスト結果のアップロード
+# 3. pytest-covを使用してカバレッジレポートを生成
+# 4. カバレッジ結果のアップロード
 # 5. 全テスト結果の確認
-# 6. 変更がある場合にGitHub Pagesへデプロイ
+# 6. GitHub Pagesへのデプロイ
 # 7. デプロイしたレポートのURL生成
-# 8. 変更の有無に応じたLINE通知の送信
+# 8. LINE通知の送信
 
 on:
-  repository_dispatch:
-    types: [run-pytest-html]
+  push:
+    branches:
+      - 'main'
 
 jobs:
-  test-and-report:
+  test-and-coverage:
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     strategy:
       matrix:
@@ -44,32 +48,32 @@ jobs:
         run: pip install poetry
       - name: Install dependencies
         run: poetry install
-      - name: Run tests with pytest-html
-        id: pytest-html
+      - name: Run tests with pytest-cov
+        id: pytest-cov
         run: |
-          mkdir -p test_results
-          poetry run pytest --html=test_results/report_page.html
+          mkdir -p htmlcov_${{ matrix.os }}
+          poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}
         shell: bash
-      - name: Upload pytest-html results
+      - name: Upload pytest-cov results
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: test-results-${{ matrix.os }}
-          path: test_results
+          name: coverage-results-${{ matrix.os }}
+          path: htmlcov_${{ matrix.os }}
         if: always()
 
   check_all_tests:
-    needs: test-and-report
+    needs: test-and-coverage
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     runs-on: ubuntu-latest
     steps:
       - name: Check test results
-        if: contains(needs.test-and-report.result, 'failure')
+        if: contains(needs.test-and-coverage.result, 'failure')
         run: |
           echo "Some tests failed. Please check the test results and fix any issues before merging."
           exit 1
 
   deploy:
-    needs: [test-and-report, check_all_tests]
+    needs: [test-and-coverage, check_all_tests]
     if: github.actor != 'dependabot[bot]' && (github.event_name != 'push' || !startsWith(github.event.head_commit.message, 'Bump version'))
     runs-on: ubuntu-latest
     outputs:
@@ -78,7 +82,7 @@ jobs:
       - uses: actions/checkout@v4.2.0
         with:
           fetch-depth: 0
-      - name: Download pytest-html artifacts
+      - name: Download pytest-cov artifacts
         uses: actions/download-artifact@v4.1.8
       - name: Setup Git
         run: |
@@ -92,28 +96,24 @@ jobs:
 
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
-            folder_name="pytest-html-report_${os}"
-            mkdir -p $folder_name
-            if [ -f test-results-$os/report_page.html ]; then
-              if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os/report_page.html $folder_name/report_page.html > /dev/null; then
+            folder_name="pytest-cov-report_${os}"
+            if [ -d coverage-results-$os ]; then
+              if [ ! -d $folder_name ] || ! diff -r coverage-results-$os $folder_name > /dev/null; then
                 echo "Changes detected for $os, updating..."
-                mv test-results-$os/report_page.html $folder_name/
-                if [ -d test-results-$os/assets ]; then
-                  rm -rf $folder_name/assets
-                  cp -r test-results-$os/assets $folder_name/
-                fi
+                rm -rf $folder_name
+                mv coverage-results-$os $folder_name
                 git add $folder_name
                 changes_made=true
               else
                 echo "No changes for $os, skipping..."
               fi
             else
-              echo "No pytest-html report found for $os"
+              echo "No pytest-cov report found for $os"
             fi
           done
 
           if [ "$changes_made" = true ]; then
-            git commit -m "Update pytest-html reports on GitHub Pages"
+            git commit -m "Update pytest-cov reports on GitHub Pages"
             git push origin ghpages
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
           else
@@ -128,8 +128,8 @@ jobs:
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
           for os in ubuntu-latest macos-13 windows-latest; do
-            URL_LIST="${URL_LIST}pytest-html-report_${os}:\n\
-          https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}/report_page.html\n\n"
+            URL_LIST="${URL_LIST}pytest-cov-report_${os}:\n\
+          https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}/index.html\n\n"
           done
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
@@ -139,7 +139,7 @@ jobs:
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          message="pytest-html report deployment completed. Changes were made.
+          message="pytest-cov report deployment completed. Changes were made.
 
           Check URLs:
           ${{ steps.generate_url_list.outputs.url_list }}"
@@ -152,7 +152,7 @@ jobs:
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          message="pytest-html report check completed. No changes were necessary."
+          message="pytest-cov report check completed. No changes were necessary."
 
           curl -X POST https://notify-api.line.me/api/notify \
             -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \

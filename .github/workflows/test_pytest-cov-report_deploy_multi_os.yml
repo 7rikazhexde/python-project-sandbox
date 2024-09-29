@@ -2,10 +2,7 @@ name: pytest-cov Report and Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - mainブランチへのプッシュ（プルリクエストのマージのみ）
-#    - Dependabotによる実行でないこと
-#    - コミットメッセージが"Bump version"で始まっていないこと
-#    - ブランチ名に"version-update"が含まれていないこと
+#    - pytest-testmon ワークフローの完了後に repository_dispatch イベントで起動
 # 2. 複数の環境（OS、Pythonバージョン）でのテスト実行
 # 3. pytest-covを使用してカバレッジレポートを生成
 # 4. カバレッジ結果のアップロード
@@ -15,9 +12,8 @@ name: pytest-cov Report and Deploy Multi-OS
 # 8. LINE通知の送信
 
 on:
-  push:
-    branches:
-      - 'main'
+  repository_dispatch:
+    types: [run-pytest-cov]
 
 jobs:
   test-and-coverage:

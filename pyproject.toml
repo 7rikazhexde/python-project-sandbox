@@ -101,7 +101,37 @@ ignore_missing_imports = true
 [tool.pytest.ini_options]
 testpaths = ["project_a", "tests"]
 pythonpath = ["."]
-addopts = "--cov=project_a --cov-report=term-missing --cov-report=html"
+
+# [warning]
+# .venv/lib/python3.12/site-packages/pytest_asyncio/plugin.py:208: PytestDeprecationWarning: The configuration option "asyncio_default_fixture_loop_scope" is unset.
+# The event loop scope for asynchronous fixtures will default to the fixture caching scope.
+# Future versions of pytest-asyncio will default the loop scope for asynchronous fixtures to function scope.
+# Set the default fixture loop scope explicitly in order to avoid unexpected behavior in the future.
+# Valid fixture loop scopes are: "function", "class", "module", "package", "session"
+#
+#  warnings.warn(PytestDeprecationWarning(_DEFAULT_FIXTURE_LOOP_SCOPE_UNSET))
+# pytest-asyncio が自動的に非同期テストを検出して実行する
+asyncio_mode = "auto"
+# 非同期フィクスチャのデフォルトループスコープが "function" に設定する
+asyncio_default_fixture_loop_scope = "function"
+
+# [warning]
+# .venv/lib/python3.12/site-packages/testmon/pytest_testmon.py:461: PytestRemovedIn9Warning:
+# The (path: py.path.local) argument is deprecated, please use (collection_path: pathlib.Path)
+# see https://docs.pytest.org/en/latest/deprecations.html#py-path-local-arguments-for-hooks-replaced-with-pathlib-path
+#   def pytest_ignore_collect(self, path, config):
+#
+# 暫定対応としてPytestRemovedIn9Warningをignoreに追加したいが追加しても非表示にならないので対応を待つ
+# URL: https://github.com/tarpas/pytest-testmon/issues/237
+filterwarnings = [
+    #"ignore::pytest.PytestRemovedIn9Warning:testmon.*:",
+    "ignore::pytest.PytestRemovedIn9Warning",
+]
+
+# poetry run pytestの場合は以下のオプションが有効になる
+# CIでは明示的に引数指定して実行するため無効にする（コメントアウトする）
+#addopts = "--cov=project_a --cov-report=term-missing --cov-report=html"
+
 
 [tool.coverage.run]
 source = ["project_a"]
