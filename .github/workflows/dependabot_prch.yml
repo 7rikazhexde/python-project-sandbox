@@ -5,18 +5,21 @@ name: Dependabot PR Check
 #    - mainブランチへのプルリクエスト時
 #    - Dependabotによる実行であること
 #    - コミットメッセージが"Bump version"で始まっていないこと
-#    - ブランチ名に"version-update"が含まれていないこと
-# 2. ジョブの条件判定: Dependabot によるPRかチェック
-# 3. OS毎の環境設定
-# 4. リポジトリのチェックアウト
-# 5. Python環境のセットアップ (3.11,3.12)
-# 6. 依存関係のキャッシュ
+# 2. ジョブの条件判定: Dependabot によるPRであることをチェック
+# 3. OS毎の環境設定 (macos-13, ubuntu-latest, windows-latest)
+# 4. Python環境のセットアップ (3.11, 3.12)
+# 5. タイムゾーンの設定 (Asia/Tokyo)
+# 6. リポジトリのチェックアウト
 # 7. Poetry のインストール
-# 8. プロジェクト依存関係のインストール
-# 9. テストの実行
-# 10. 最終ステータスの出力と結果の判定
-#    - pytest-coverage-commentアクション使用
-#      URL: https://github.com/marketplace/actions/pytest-coverage-comment
+# 8. 依存関係のキャッシュ
+# 9. プロジェクト依存関係のインストール
+# 10. テストの実行とカバレッジの計算
+# 11. カバレッジが90%以上であることのチェック
+# 12. テスト結果とカバレッジレポートの生成
+# 13. テスト結果の確認と警告の表示
+# 14. ジョブサマリーの作成
+# 15. 全テストの結果確認
+# 16. LINE通知の送信
 
 on:
   pull_request:
@@ -63,12 +66,23 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: Run test
+        shell: bash
         id: pytest
         # Mac / Linux
         # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
         # Windowss
         # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
-        run: poetry run task test_ci_xml
+        run: |
+          poetry run task test_ci_xml
+          coverage_percentage=$(poetry run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
+          echo "Current coverage: $coverage_percentage%"
+          echo "COVERAGE=$coverage_percentage" >> $GITHUB_ENV
+      - name: Check coverage
+        shell: bash
+        if: ${{ env.COVERAGE < 90 }}
+        run: |
+          echo "Test coverage is below 90%. Current coverage: ${{ env.COVERAGE }}%"
+          exit 1
       - name: Pytest coverage comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.52
