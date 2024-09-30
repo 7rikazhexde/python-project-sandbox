@@ -75,6 +75,7 @@ jobs:
         run: |
           poetry run task test_ci_xml
           coverage_percentage=$(poetry run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
+          echo "Current coverage: $coverage_percentage%"
           echo "COVERAGE=$coverage_percentage" >> $GITHUB_ENV
       - name: Check coverage
         shell: bash
