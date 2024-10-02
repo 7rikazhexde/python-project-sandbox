@@ -10,8 +10,6 @@ name: Version Update and Release
 # 6. 新しいタグの作成とプッシュ
 # 7. 変更ログの生成
 # 8. GitHubリリースの作成
-#    - gh-releaseアクション使用
-#      URL: https://github.com/marketplace/actions/gh-release)
 
 on:
   workflow_dispatch:
