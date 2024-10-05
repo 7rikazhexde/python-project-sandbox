@@ -50,33 +50,38 @@ This project is using [pre-commit](https://github.com/pre-commit/pre-commit) via
 1. Using Static Analysis Tools
 
    - [ruff](https://pypi.org/project/ruff/): An extremely fast Python linter and code formatter, written in Rust.
-   - [mypy](https://pypi.org/project/mypy/): Type checking with type annotations
-   - [mdformat](https://pypi.org/project/mdformat/): Opinionated Markdown formatter that can be used to enforce a consistent style in Markdown files.
+   - [mypy](https://pypi.org/project/mypy/): Type checking with type annotations.
+   - [markdownlint-cli](https://github.com/igorshubovych/markdownlint-cli): Command Line Interface for [MarkdownLint](https://github.com/DavidAnson/markdownlint).
 
 1. Run update pyproject.toml version up script
 
-   - [update_pyproject_version.py](ci/update_pyproject_version.py)
+> [!NOTE]
+> This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/trial-test/blob/main/.github/workflows/update-version-and-release.yml).\
+> Please check the workflow for details.
 
-   - example
+- [update_pyproject_version.py](ci/update_pyproject_version.py)
 
-     ```toml
-     [tool.poetry]
-     name = "trial-test"
-     version = "0.1.19" # Automatic increase
-     description = "An experimental project to test out various tools."
-     authors = ["7rikaz_wsl1 <7rikaz.h785.stat2ltas41lcijad@gmail.com>"]
-     license = "MIT"
-     readme = "README.md"
-     ```
+- example
+
+  ```toml
+  [tool.poetry]
+  name = "trial-test"
+  version = "0.1.19" # Automatic increase
+  description = "An experimental project to test out various tools."
+  authors = ["7rikaz"]
+  license = "MIT"
+  readme = "README.md"
+  ```
 
 ### Usage
 
-> **Note**\
-> **If you are creating a pre-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.**\
-> **Also, pre-commit is applied to staged files. Note that if it is not staged, it will be Skipped.**
-> **First, please run poetry run pre-commit run --all-files to make sure that the operation is OK.**
+> [!NOTE]
+> If you are creating a pre-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.\
+> Also, pre-commit is applied to staged files. Note that if it is not staged, it will be Skipped.
+> First, please run poetry run pre-commit run --all-files to make sure that the operation is OK.
 
-Set pre-commit\
+Set pre-commit
+
 The following command will create `.git/hooks/pre-commit`.
 
 ```bash
@@ -109,6 +114,9 @@ poetry run pre-commit run --all-files
 
 ## post-commit
 
+> [!NOTE]
+> This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/trial-test/blob/main/.github/workflows/update-version-and-release.yml). Please check the workflow for details.
+
 ### Overview
 
 For this project, use .git/hooks/post-commit to reference the version of pyproject.toml and create a git tag. Then push the main branch and tag.
@@ -116,10 +124,10 @@ If you are committing to a project for the first time, create a post-commit scri
 
 ### Usage
 
-> **Note**\
-> **post-commit depends on the version of the pre-commit script and pyproject.toml.**\
-> **If you are creating a post-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.**\
-> **First, please run .git/hooks/post-commit to make sure that the operation is OK.**
+> [!NOTE]
+> post-commit depends on the version of the pre-commit script and pyproject.toml.\
+> If you are creating a post-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.\
+> First, please run .git/hooks/post-commit to make sure that the operation is OK.
 
 1. Set create post-commit
 
@@ -131,11 +139,11 @@ If you are committing to a project for the first time, create a post-commit scri
    ./create_post-commit.sh
    ```
 
-   > **Note**\
-   > **If post-commit does not exist, create a new post-commit and add execute permission (chmod +x).**
-   > **If post-commit exists, create it as post-commit.second.**
-   > **If you want to use it, merge or rename it to pre-sommit.**
-   > **Execution privileges are not attached to post-commit.second, so grant them as necessary.**
+   > [!NOTE]
+   > If post-commit does not exist, create a new post-commit and add execute permission (chmod +x).
+   > If post-commit exists, create it as post-commit.second.
+   > If you want to use it, merge or rename it to pre-sommit.
+   > Execution privileges are not attached to post-commit.second, so grant them as necessary.
 
 1. After the entire commit process
 
