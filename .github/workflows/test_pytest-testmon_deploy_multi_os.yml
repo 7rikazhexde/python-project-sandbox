@@ -31,11 +31,10 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    # ジョブの出力を定義（テスト実行の有無と、OS・Pythonバージョンの情報を後続のジョブに伝える）
+    # ジョブの出力を定義（テスト実行の有無と、マトリックス情報を後続のジョブに伝える）
     outputs:
+      matrix: ${{ toJson(matrix) }}
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
-      os: ${{ toJson(matrix.os) }}
-      python-version: ${{ toJson(matrix.python-version) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
@@ -103,28 +102,12 @@ jobs:
            echo "tests_executed=true" >> $GITHUB_OUTPUT
           fi
 
-      - name: Create testmon directory and move .testmondata
-        shell: bash
-        run: |
-          echo "Creating testmon directory..."
-          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
-          mkdir -p "$folder_name"
-          echo "Moving .testmondata file..."
-          if [ -f ".testmondata" ]; then
-            mv ".testmondata" "$folder_name/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
-          else
-            echo "Warning: .testmondata file not found in root directory."
-          fi
-          echo "Contents of $folder_name:"
-          ls -la "$folder_name"
-
       - name: Upload testmon data
         uses: actions/upload-artifact@v4.4.0
         with:
           name: testmon-data-${{ matrix.os }}-python-${{ matrix.python-version }}
-          path: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}/.testmondata
+          path: .testmondata
           if-no-files-found: warn
-          include-hidden-files: true
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
 
   deploy-testmon:
@@ -137,7 +120,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download testmon data
+      - name: Download all artifacts
         uses: actions/download-artifact@v4.1.8
         with:
           path: downloaded-artifacts
@@ -151,23 +134,22 @@ jobs:
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         env:
-          OS_LIST: ${{ needs.test-and-deploy-testmon.outputs.os }}
-          PYTHON_VERSIONS: ${{ needs.test-and-deploy-testmon.outputs.python-version }}
+          MATRIX: ${{ needs.test-and-deploy-testmon.outputs.matrix }}
         run: |
           echo "Deploying testmon data to GitHub Pages..."
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
 
-          echo "OS_LIST: $OS_LIST"
-          echo "PYTHON_VERSIONS: $PYTHON_VERSIONS"
+          echo "MATRIX: $MATRIX"
 
-          changes_made=false
-          os_list=$(echo $OS_LIST | jq -r '.')
-          python_versions=$(echo $PYTHON_VERSIONS | jq -r '.')
+          matrix=$(echo $MATRIX | jq -r '.')
+          os_list=$(echo $matrix | jq -r '.os | if type == "string" then [.] else . end | join(" ")')
+          python_versions=$(echo $matrix | jq -r '.python-version | if type == "string" then [.] else . end | join(" ")')
 
           echo "Parsed OS_LIST: $os_list"
           echo "Parsed PYTHON_VERSIONS: $python_versions"
 
+          changes_made=false
           for os in $os_list; do
             for python_version in $python_versions; do
               folder_name="testmon-data_${os}_python_${python_version}"
@@ -175,7 +157,7 @@ jobs:
               echo "Processing $os with Python ${python_version}..."
               echo "Checking for folder: ${artifact_folder}"
               if [ -d "${artifact_folder}" ]; then
-                echo "Changes detected for $os with Python ${python_version}, updating..."
+                echo "Testmon data found for $os with Python ${python_version}, updating..."
                 mkdir -p $folder_name
                 mv "${artifact_folder}"/.testmondata "$folder_name/.testmondata" 2>/dev/null || true
                 echo "Contents of $folder_name after move:"
