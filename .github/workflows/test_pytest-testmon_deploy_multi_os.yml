@@ -31,9 +31,10 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    # ジョブの出力を定義（テスト実行の有無と、マトリックス情報を後続のジョブに伝える）
+    # ジョブの出力を定義（テスト実行の有無と、OS・Pythonバージョンの情報を後続のジョブに伝える）
     outputs:
-      matrix: ${{ toJson(strategy.matrix) }}
+      os_list: ${{ toJson(strategy.matrix.os) }}
+      python_versions: ${{ toJson(strategy.matrix.python-version) }}
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
     steps:
       - name: Checkout repository
@@ -112,7 +113,7 @@ jobs:
 
   deploy-testmon:
     needs: test-and-deploy-testmon
-    if: needs.test-and-deploy-testmon.result == 'success'
+    if: contains(needs.test-and-deploy-testmon.result, 'success')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -134,17 +135,18 @@ jobs:
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         env:
-          MATRIX: ${{ needs.test-and-deploy-testmon.outputs.matrix }}
+          OS_LIST: ${{ needs.test-and-deploy-testmon.outputs.os_list }}
+          PYTHON_VERSIONS: ${{ needs.test-and-deploy-testmon.outputs.python_versions }}
         run: |
           echo "Deploying testmon data to GitHub Pages..."
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
 
-          echo "MATRIX: $MATRIX"
+          echo "OS_LIST: $OS_LIST"
+          echo "PYTHON_VERSIONS: $PYTHON_VERSIONS"
 
-          matrix=$(echo $MATRIX | jq -r '.')
-          os_list=$(echo $matrix | jq -r '.os | if type == "string" then [.] else . end | join(" ")')
-          python_versions=$(echo $matrix | jq -r '.python-version | if type == "string" then [.] else . end | join(" ")')
+          os_list=$(echo $OS_LIST | jq -r '.[]')
+          python_versions=$(echo $PYTHON_VERSIONS | jq -r '.[]')
 
           echo "Parsed OS_LIST: $os_list"
           echo "Parsed PYTHON_VERSIONS: $python_versions"
