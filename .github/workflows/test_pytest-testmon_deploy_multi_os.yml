@@ -19,29 +19,26 @@ on:
     branches:
       - 'main'
 
-env:
-  PYTHON_VERSIONS: '["3.11", "3.12"]'
-  OS_VERSIONS: '["ubuntu-latest", "macos-13", "windows-latest"]'
-  TZ: "Asia/Tokyo"
-
 jobs:
   test-and-deploy-testmon:
+    # Dependabotによる実行やバージョンバンプのコミットを除外
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     strategy:
       matrix:
-        os: ${{ fromJson(env.OS_VERSIONS) }}
-        python-version: ${{ fromJson(env.PYTHON_VERSIONS) }}
+        os: [ubuntu-latest, macos-13, windows-latest]
+        python-version: ['3.11','3.12']
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
       pull-requests: write
+    # ジョブの出力を定義（テスト実行の有無を後続のジョブに伝える）
     outputs:
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
         with:
-          fetch-depth: 0
+          fetch-depth: 0  # 全履歴を取得
 
       - name: Set up Python
         uses: actions/setup-python@v5.2.0
@@ -51,8 +48,8 @@ jobs:
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
         with:
-          timezoneLinux: ${{ env.TZ }}
-          timezoneMacos: ${{ env.TZ }}
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
 
       - name: Install poetry
@@ -89,9 +86,13 @@ jobs:
           echo "Running tests with testmon..."
           output=$(poetry run pytest --testmon -v)
           echo "$output"
+
+          # testmonの出力をGitHub Actionsの出力変数に保存
           echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
           echo "$output" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
+
+          # 出力を確認して、テストが実行されなかった場合はフラグを設定
           if echo "$output" | grep -q "collected 0 items"; then
            echo "No tests executed. Skipping deployment and further workflows."
            echo "tests_executed=false" >> $GITHUB_OUTPUT
@@ -147,27 +148,32 @@ jobs:
 
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
+        env:
+          OS_LIST: ${{ toJson(strategy.matrix.os) }}
+          PYTHON_VERSIONS: ${{ toJson(strategy.matrix.python-version) }}
         run: |
           echo "Deploying testmon data to GitHub Pages..."
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
+
           changes_made=false
-          for os in ${{ join(fromJson(env.OS_VERSIONS), ' ') }}; do
-            for python_version in ${{ join(fromJson(env.PYTHON_VERSIONS), ' ') }}; do
+          for os in $(echo $OS_LIST | jq -r '.[]'); do
+            for python_version in $(echo $PYTHON_VERSIONS | jq -r '.[]'); do
               folder_name="testmon-data_${os}_python_${python_version}"
               artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
-              echo "Processing $os with Python $python_version..."
+              echo "Processing $os with Python ${python_version}..."
               if [ -d "${artifact_folder}" ]; then
-                echo "Changes detected for $os with Python $python_version, updating..."
+                echo "Changes detected for $os with Python ${python_version}, updating..."
                 mkdir -p $folder_name
                 mv "${artifact_folder}"/.testmondata "$folder_name/.testmondata" 2>/dev/null || true
                 git add $folder_name
                 changes_made=true
               else
-                echo "No testmon data found for $os with Python $python_version"
+                echo "No testmon data found for $os with Python ${python_version}"
               fi
             done
           done
+
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages"
