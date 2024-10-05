@@ -64,14 +64,14 @@ jobs:
       - name: Run tests with pytest-cov
         id: pytest-cov
         run: |
-          mkdir -p htmlcov_${{ matrix.os }}
-          poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}
+          mkdir -p htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
+          poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
         shell: bash
       - name: Upload pytest-cov results
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: coverage-results-${{ matrix.os }}
-          path: htmlcov_${{ matrix.os }}
+          name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
         if: always()
 
   check_all_tests:
@@ -109,20 +109,22 @@ jobs:
 
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
-            folder_name="pytest-cov-report_${os}"
-            if [ -d coverage-results-$os ]; then
-              if [ ! -d $folder_name ] || ! diff -r coverage-results-$os $folder_name > /dev/null; then
-                echo "Changes detected for $os, updating..."
-                rm -rf $folder_name
-                mv coverage-results-$os $folder_name
-                git add $folder_name
-                changes_made=true
+            for python_version in 3.11 3.12; do
+              folder_name="pytest-cov-report_${os}_python_${python_version}"
+              if [ -d coverage-results-$os-python-$python_version ]; then
+                if [ ! -d $folder_name ] || ! diff -r coverage-results-$os-python-$python_version $folder_name > /dev/null; then
+                  echo "Changes detected for $os with Python $python_version, updating..."
+                  rm -rf $folder_name
+                  mv coverage-results-$os-python-$python_version $folder_name
+                  git add $folder_name
+                  changes_made=true
+                else
+                  echo "No changes for $os with Python $python_version, skipping..."
+                fi
               else
-                echo "No changes for $os, skipping..."
+                echo "No pytest-cov report found for $os with Python $python_version"
               fi
-            else
-              echo "No pytest-cov report found for $os"
-            fi
+            done
           done
 
           if [ "$changes_made" = true ]; then
@@ -141,8 +143,10 @@ jobs:
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
           for os in ubuntu-latest macos-13 windows-latest; do
-            URL_LIST="${URL_LIST}pytest-cov-report_${os}:\n\
-          https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}/index.html\n\n"
+            for python_version in 3.11 3.12; do
+              URL_LIST="${URL_LIST}pytest-cov-report_${os}_python_${python_version}:\n\
+            https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}_python_${python_version}/index.html\n\n"
+            done
           done
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT

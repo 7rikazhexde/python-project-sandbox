@@ -64,14 +64,14 @@ jobs:
       - name: Run tests with pytest-html
         id: pytest-html
         run: |
-          mkdir -p test_results
-          poetry run pytest --html=test_results/report_page.html
+          mkdir -p test_results_python_${{ matrix.python-version }}
+          poetry run pytest --html=test_results_python_${{ matrix.python-version }}/report_page.html
         shell: bash
       - name: Upload pytest-html results
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: test-results-${{ matrix.os }}
-          path: test_results
+          name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: test_results_python_${{ matrix.python-version }}
         if: always()
 
   check_all_tests:
@@ -109,24 +109,26 @@ jobs:
 
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
-            folder_name="pytest-html-report_${os}"
-            mkdir -p $folder_name
-            if [ -f test-results-$os/report_page.html ]; then
-              if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os/report_page.html $folder_name/report_page.html > /dev/null; then
-                echo "Changes detected for $os, updating..."
-                mv test-results-$os/report_page.html $folder_name/
-                if [ -d test-results-$os/assets ]; then
-                  rm -rf $folder_name/assets
-                  cp -r test-results-$os/assets $folder_name/
+            for python_version in 3.11 3.12; do
+              folder_name="pytest-html-report_${os}_python_${python_version}"
+              mkdir -p $folder_name
+              if [ -f test-results-$os-python-$python_version/report_page.html ]; then
+                if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os-python-$python_version/report_page.html $folder_name/report_page.html > /dev/null; then
+                  echo "Changes detected for $os with Python $python_version, updating..."
+                  mv test-results-$os-python-$python_version/report_page.html $folder_name/
+                  if [ -d test-results-$os-python-$python_version/assets ]; then
+                    rm -rf $folder_name/assets
+                    cp -r test-results-$os-python-$python_version/assets $folder_name/
+                  fi
+                  git add $folder_name
+                  changes_made=true
+                else
+                  echo "No changes for $os with Python $python_version, skipping..."
                 fi
-                git add $folder_name
-                changes_made=true
               else
-                echo "No changes for $os, skipping..."
+                echo "No pytest-html report found for $os with Python $python_version"
               fi
-            else
-              echo "No pytest-html report found for $os"
-            fi
+            done
           done
 
           if [ "$changes_made" = true ]; then
@@ -145,8 +147,10 @@ jobs:
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
           for os in ubuntu-latest macos-13 windows-latest; do
-            URL_LIST="${URL_LIST}pytest-html-report_${os}:\n\
-          https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}/report_page.html\n\n"
+            for python_version in 3.11 3.12; do
+              URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
+            https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
+            done
           done
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
