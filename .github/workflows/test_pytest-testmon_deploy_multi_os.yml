@@ -5,19 +5,12 @@
 #    - mainブランチへのプッシュ時に起動
 #    - Dependabotによる実行やバージョンバンプのコミットは除外
 # 2. 複数の環境（OS、Pythonバージョン）でのセットアップと前回の.testmondataの取得
-#    - Ubuntu, macOS, Windowsの最新バージョンで実行
-#    - 指定された複数のPythonバージョンを使用
 # 3. 各OS・Pythonバージョンごとに個別の.testmondataファイルを取得
 # 4. pytest-testmonを使用してテスト実行
-#    - 前回の.testmondataがある場合、それを使用して差分テストを実行
 # 5. testmon結果の確認とテスト実行有無の判定
-#    - テストが実行された場合、後続のジョブをトリガー
 # 6. 更新された.testmondataファイルのアップロード
-#    - テストが実行された場合のみ実行
 # 7. GitHub Pagesへの.testmondataファイルのデプロイ
-#    - テストが実行され、かつ変更がある場合のみ実行
 # 8. pytest-covとpytest-htmlワークフローのトリガー
-#    - テストが実行された場合のみトリガー
 
 name: pytest-testmon Deploy Multi-OS
 
@@ -26,15 +19,13 @@ on:
     branches:
       - 'main'
 
-# ワークフロー全体で使用する環境変数を定義
 env:
-  PYTHON_VERSIONS: '["3.12"]'  # 複数のPythonバージョンを指定可能
+  PYTHON_VERSIONS: '["3.11", "3.12"]'
   OS_VERSIONS: '["ubuntu-latest", "macos-13", "windows-latest"]'
-  TZ: "Asia/Tokyo"  # タイムゾーンの設定
+  TZ: "Asia/Tokyo"
 
 jobs:
   test-and-deploy-testmon:
-    # Dependabotによる実行やバージョンバンプのコミットを除外
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     strategy:
       matrix:
@@ -44,14 +35,13 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    # ジョブの出力を定義（テスト実行の有無を後続のジョブに伝える）
     outputs:
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
         with:
-          fetch-depth: 0  # 全履歴を取得
+          fetch-depth: 0
 
       - name: Set up Python
         uses: actions/setup-python@v5.2.0
@@ -99,13 +89,9 @@ jobs:
           echo "Running tests with testmon..."
           output=$(poetry run pytest --testmon -v)
           echo "$output"
-
-          # testmonの出力をGitHub Actionsの出力変数に保存
           echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
           echo "$output" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
-
-          # 出力を確認して、テストが実行されなかった場合はフラグを設定
           if echo "$output" | grep -q "collected 0 items"; then
            echo "No tests executed. Skipping deployment and further workflows."
            echo "tests_executed=false" >> $GITHUB_OUTPUT
@@ -146,7 +132,7 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
         with:
-          fetch-depth: 0  # 全履歴を取得
+          fetch-depth: 0
 
       - name: Download testmon data
         uses: actions/download-artifact@v4.1.8
@@ -165,7 +151,6 @@ jobs:
           echo "Deploying testmon data to GitHub Pages..."
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
-
           changes_made=false
           for os in ${{ join(fromJson(env.OS_VERSIONS), ' ') }}; do
             for python_version in ${{ join(fromJson(env.PYTHON_VERSIONS), ' ') }}; do
@@ -183,7 +168,6 @@ jobs:
               fi
             done
           done
-
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages"
