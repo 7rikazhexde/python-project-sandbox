@@ -45,15 +45,15 @@ This project is using [pre-commit](https://github.com/pre-commit/pre-commit) via
 
 ### Overview
 
-1. Using [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks)
-
 1. Using Static Analysis Tools
 
-   - [ruff](https://pypi.org/project/ruff/): An extremely fast Python linter and code formatter, written in Rust.
-   - [mypy](https://pypi.org/project/mypy/): Type checking with type annotations.
-   - [markdownlint-cli](https://github.com/igorshubovych/markdownlint-cli): Command Line Interface for [MarkdownLint](https://github.com/DavidAnson/markdownlint).
+   - [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks): Syntax check of each file.
+   - [poetry](https://python-poetry.org/docs/pre-commit-hooks/#usage): Syntax checking and generation of dependency files for Poetry configuration information.
+   - [markdownlint-cli](https://github.com/igorshubovych/markdownlint-cli): Syntax checking of markdown files.
+   - [ruff](https://pypi.org/project/ruff/): Code lint and format for Python.
+   - [mypy](https://pypi.org/project/mypy/): Type checking with type annotations for Python.
 
-1. Run update pyproject.toml version up script
+2. Run update pyproject.toml version up script
 
 > [!NOTE]
 > This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/trial-test/blob/main/.github/workflows/update-version-and-release.yml).\
