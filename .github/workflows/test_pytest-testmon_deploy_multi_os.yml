@@ -33,7 +33,7 @@ jobs:
       pull-requests: write
     # ジョブの出力を定義（テスト実行の有無と、マトリックス情報を後続のジョブに伝える）
     outputs:
-      matrix: ${{ toJson(matrix) }}
+      matrix: ${{ toJson(strategy.matrix) }}
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
     steps:
       - name: Checkout repository
@@ -112,7 +112,7 @@ jobs:
 
   deploy-testmon:
     needs: test-and-deploy-testmon
-    if: contains(needs.test-and-deploy-testmon.result, 'success')
+    if: needs.test-and-deploy-testmon.result == 'success'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
