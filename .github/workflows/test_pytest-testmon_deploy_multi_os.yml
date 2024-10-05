@@ -6,13 +6,12 @@ name: pytest-testmon Deploy Multi-OS
 #    - Dependabotによる実行やバージョンバンプのコミットは除外
 # 2. 複数の環境（OS、Pythonバージョン）でのセットアップと前回の.testmondataの取得
 #    - Ubuntu, macOS, Windowsの最新バージョンで実行
-#    - Python 3.12を使用
-# 3. pytest-testmonを使用してテスト実行
+#    - Python 3.11と3.12を使用
+# 3. 各OS・Pythonバージョンごとに個別の.testmondataファイルを取得
+# 4. pytest-testmonを使用してテスト実行
 #    - 前回の.testmondataがある場合、それを使用して差分テストを実行
-# 4. testmon結果の確認とテスト実行有無の判定
+# 5. testmon結果の確認とテスト実行有無の判定
 #    - テストが実行された場合、後続のジョブをトリガー
-# 5. .testmondataファイルの確認と指定フォルダへの移動
-#    - テストが実行された場合のみ実行
 # 6. 更新された.testmondataファイルのアップロード
 #    - テストが実行された場合のみ実行
 # 7. GitHub Pagesへの.testmondataファイルのデプロイ
@@ -76,13 +75,14 @@ jobs:
         run: |
           echo "Fetching previous testmon data..."
           git fetch origin ghpages:ghpages || true
-          git checkout ghpages -- testmon-data_${{ matrix.os }}/.testmondata || true
-          if [ -f testmon-data_${{ matrix.os }}/.testmondata ]; then
+          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
+          git checkout ghpages -- $folder_name/.testmondata || true
+          if [ -f $folder_name/.testmondata ]; then
             echo "Previous testmon data found. Moving to current directory."
-            mv testmon-data_${{ matrix.os }}/.testmondata .testmondata
-            rm -rf testmon-data_${{ matrix.os }}
+            mv $folder_name/.testmondata .testmondata
+            rm -rf $folder_name
           else
-            echo "No previous testmon data found."
+            echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
         continue-on-error: true
 
@@ -125,22 +125,22 @@ jobs:
         shell: bash
         run: |
           echo "Creating testmon directory..."
-          testmon_dir="testmon_data_${{ matrix.os }}"
-          mkdir -p "$testmon_dir"
+          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
+          mkdir -p "$folder_name"
           echo "Moving .testmondata file..."
           if [ -f ".testmondata" ]; then
-            mv ".testmondata" "$testmon_dir/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
+            mv ".testmondata" "$folder_name/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
           else
             echo "Warning: .testmondata file not found in root directory."
           fi
-          echo "Contents of $testmon_dir:"
-          ls -la "$testmon_dir"
+          echo "Contents of $folder_name:"
+          ls -la "$folder_name"
 
       - name: Upload testmon data
         uses: actions/upload-artifact@v4.4.0
         with:
           name: testmon-data-${{ matrix.os }}-python-${{ matrix.python-version }}
-          path: testmon_data_${{ matrix.os }}/.testmondata
+          path: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}/.testmondata
           if-no-files-found: warn
           include-hidden-files: true
         if: steps.check_testmon_results.outputs.tests_executed == 'true'
@@ -177,13 +177,13 @@ jobs:
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
             for python_version in 3.11 3.12; do
-              folder_name="testmon-data_${os}"
+              folder_name="testmon-data_${os}_python_${python_version}"
               artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
               echo "Processing $os with Python $python_version..."
               if [ -f "${artifact_folder}/.testmondata" ]; then
                 echo "Changes detected for $os with Python $python_version, updating..."
                 mkdir -p $folder_name
-                mv "${artifact_folder}/.testmondata" "$folder_name/.testmondata_python_${python_version}"
+                mv "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
                 git add $folder_name
                 changes_made=true
               else
