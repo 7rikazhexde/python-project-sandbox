@@ -32,7 +32,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
         #python-version: ['3.11','3.12']
-        python-version: ['3.11']
+        python-version: ['3.12']
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
@@ -164,7 +164,7 @@ jobs:
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
             #for python_version in 3.11 3.12; do
-            for python_version in 3.11; do
+            for python_version in 3.12; do
               folder_name="testmon-data_${os}_python_${python_version}"
               artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
               echo "Processing $os with Python $python_version..."

@@ -32,7 +32,7 @@ jobs:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
         #python-version: ['3.11','3.12']
-        python-version: ['3.11']
+        python-version: ['3.12']
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
@@ -150,7 +150,7 @@ jobs:
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
             #for python_version in 3.11 3.12; do
-            for python_version in 3.11; do
+            for python_version in 3.12; do
               folder_name="pytest-html-report_${os}_python_${python_version}"
               mkdir -p $folder_name
               if [ -f test-results-$os-python-$python_version/report_page.html ]; then
@@ -194,7 +194,7 @@ jobs:
           URL_LIST=""
           for os in ubuntu-latest macos-13 windows-latest; do
             #for python_version in 3.11 3.12; do
-            for python_version in 3.11; do
+            for python_version in 3.12; do
               URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
             https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
             done
