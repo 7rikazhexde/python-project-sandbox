@@ -139,7 +139,7 @@ jobs:
       - name: Upload testmon data
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: testmon-data-${{ matrix.os }}
+          name: testmon-data-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: testmon_data_${{ matrix.os }}/.testmondata
           if-no-files-found: warn
           include-hidden-files: true
@@ -176,20 +176,22 @@ jobs:
 
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
-            folder_name="testmon-data_${os}"
-            artifact_folder="downloaded-artifacts/testmon-data-${os}"
-            echo "Processing $os..."
-            if [ -f "${artifact_folder}/.testmondata" ]; then
-              echo "Changes detected for $os, updating..."
-              mkdir -p $folder_name
-              mv "${artifact_folder}/.testmondata" "$folder_name/"
-              git add $folder_name
-              changes_made=true
-            else
-              echo "No testmon data found for $os"
-              echo "Contents of ${artifact_folder}:"
-              ls -la "${artifact_folder}"
-            fi
+            for python_version in 3.11 3.12; do
+              folder_name="testmon-data_${os}"
+              artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
+              echo "Processing $os with Python $python_version..."
+              if [ -f "${artifact_folder}/.testmondata" ]; then
+                echo "Changes detected for $os with Python $python_version, updating..."
+                mkdir -p $folder_name
+                mv "${artifact_folder}/.testmondata" "$folder_name/.testmondata_python_${python_version}"
+                git add $folder_name
+                changes_made=true
+              else
+                echo "No testmon data found for $os with Python $python_version"
+                echo "Contents of ${artifact_folder}:"
+                ls -la "${artifact_folder}"
+              fi
+            done
           done
 
           if [ "$changes_made" = true ]; then
