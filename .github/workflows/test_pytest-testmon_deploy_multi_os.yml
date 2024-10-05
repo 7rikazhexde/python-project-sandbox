@@ -26,7 +26,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
-        python-version: ['3.11','3.12']
+        python-version: ['3.12']
     runs-on: ${{ matrix.os }}
     permissions:
       contents: write
@@ -34,7 +34,8 @@ jobs:
     # ジョブの出力を定義（テスト実行の有無と、OS・Pythonバージョンの情報を後続のジョブに伝える）
     outputs:
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
-      matrix: ${{ toJson(matrix) }}
+      os: ${{ toJson(matrix.os) }}
+      python-version: ${{ toJson(matrix.python-version) }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
@@ -150,26 +151,35 @@ jobs:
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         env:
-          MATRIX: ${{ needs.test-and-deploy-testmon.outputs.matrix }}
+          OS_LIST: ${{ needs.test-and-deploy-testmon.outputs.os }}
+          PYTHON_VERSIONS: ${{ needs.test-and-deploy-testmon.outputs.python-version }}
         run: |
           echo "Deploying testmon data to GitHub Pages..."
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
 
-          changes_made=false
-          matrix=$(echo $MATRIX | jq -r '.')
-          os_list=$(echo $matrix | jq -r '.os')
-          python_versions=$(echo $matrix | jq -r '.python-version')
+          echo "OS_LIST: $OS_LIST"
+          echo "PYTHON_VERSIONS: $PYTHON_VERSIONS"
 
-          for os in $(echo $os_list | jq -r '.[]'); do
-            for python_version in $(echo $python_versions | jq -r '.[]'); do
+          changes_made=false
+          os_list=$(echo $OS_LIST | jq -r '.')
+          python_versions=$(echo $PYTHON_VERSIONS | jq -r '.')
+
+          echo "Parsed OS_LIST: $os_list"
+          echo "Parsed PYTHON_VERSIONS: $python_versions"
+
+          for os in $os_list; do
+            for python_version in $python_versions; do
               folder_name="testmon-data_${os}_python_${python_version}"
               artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
               echo "Processing $os with Python ${python_version}..."
+              echo "Checking for folder: ${artifact_folder}"
               if [ -d "${artifact_folder}" ]; then
                 echo "Changes detected for $os with Python ${python_version}, updating..."
                 mkdir -p $folder_name
                 mv "${artifact_folder}"/.testmondata "$folder_name/.testmondata" 2>/dev/null || true
+                echo "Contents of $folder_name after move:"
+                ls -la $folder_name
                 git add $folder_name
                 changes_made=true
               else
@@ -180,6 +190,7 @@ jobs:
 
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
+            git status
             git commit -m "Update testmon data on GitHub Pages"
             git push origin ghpages
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
