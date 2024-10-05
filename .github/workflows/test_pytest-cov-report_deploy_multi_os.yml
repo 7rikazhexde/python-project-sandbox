@@ -31,6 +31,7 @@ jobs:
     strategy:
       matrix:
         os: [ubuntu-latest, macos-13, windows-latest]
+        #python-version: ['3.11','3.12']
         python-version: ['3.11']
     runs-on: ${{ matrix.os }}
     env:
@@ -148,7 +149,8 @@ jobs:
 
           changes_made=false
           for os in ubuntu-latest macos-13 windows-latest; do
-            for python_version in 3.11 3.12; do
+            #for python_version in 3.11 3.12; do
+            for python_version in 3.11; do
               folder_name="pytest-cov-report_${os}_python_${python_version}"
               if [ -d coverage-results-$os-python-$python_version ]; then
                 if [ ! -d $folder_name ] || ! diff -r coverage-results-$os-python-$python_version $folder_name > /dev/null; then
@@ -187,7 +189,8 @@ jobs:
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
           for os in ubuntu-latest macos-13 windows-latest; do
-            for python_version in 3.11 3.12; do
+            #for python_version in 3.11 3.12; do
+            for python_version in 3.11; do
               URL_LIST="${URL_LIST}pytest-cov-report_${os}_python_${python_version}:\n\
             https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}_python_${python_version}/index.html\n\n"
             done
