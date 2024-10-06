@@ -213,43 +213,43 @@ jobs:
             python_versions+=("${parts[1]}")
           done
 
-          os_json=$(jq -n --arg vals "${os_list[*]}" '$vals | split(" ") | unique')
-          python_versions_json=$(jq -n --arg vals "${python_versions[*]}" '$vals | split(" ") | unique')
+          os_json=$(jq -n --arg vals "${os_list[*]}" '$vals | split(" ") | unique | join(",")')
+          python_versions_json=$(jq -n --arg vals "${python_versions[*]}" '$vals | split(" ") | unique | join(",")')
 
           echo "os_json=$os_json" >> $GITHUB_OUTPUT
           echo "python_versions_json=$python_versions_json" >> $GITHUB_OUTPUT
 
       - name: Trigger pytest-cov workflow
-        if: steps.prepare_configs.outputs.os_json != '[]' && steps.prepare_configs.outputs.python_versions_json != '[]'
+        if: steps.prepare_configs.outputs.os_json != '' && steps.prepare_configs.outputs.python_versions_json != ''
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
           client-payload: |-
             {
-              "os": ${{ steps.prepare_configs.outputs.os_json }},
-              "python_versions": ${{ steps.prepare_configs.outputs.python_versions_json }},
+              "os": [${{ steps.prepare_configs.outputs.os_json }}],
+              "python_versions": [${{ steps.prepare_configs.outputs.python_versions_json }}],
               "skip_tests": false
             }
 
       - name: Trigger pytest-html workflow
-        if: steps.prepare_configs.outputs.os_json != '[]' && steps.prepare_configs.outputs.python_versions_json != '[]'
+        if: steps.prepare_configs.outputs.os_json != '' && steps.prepare_configs.outputs.python_versions_json != ''
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
           client-payload: |-
             {
-              "os": ${{ steps.prepare_configs.outputs.os_json }},
-              "python_versions": ${{ steps.prepare_configs.outputs.python_versions_json }},
+              "os": [${{ steps.prepare_configs.outputs.os_json }}],
+              "python_versions": [${{ steps.prepare_configs.outputs.python_versions_json }}],
               "skip_tests": false
             }
 
       - name: Log workflow triggers
-        if: steps.prepare_configs.outputs.os_json != '[]' && steps.prepare_configs.outputs.python_versions_json != '[]'
+        if: steps.prepare_configs.outputs.os_json != '' && steps.prepare_configs.outputs.python_versions_json != ''
         run: |
           echo "Triggered pytest-cov and pytest-html workflows."
           echo "Check the Actions tab for these workflows to start."
 
       - name: Log no triggers
-        if: steps.prepare_configs.outputs.os_json == '[]' || steps.prepare_configs.outputs.python_versions_json == '[]'
+        if: steps.prepare_configs.outputs.os_json == '' || steps.prepare_configs.outputs.python_versions_json == ''
         run: |
           echo "No valid configurations found. Skipping pytest-cov and pytest-html workflows."
