@@ -124,52 +124,59 @@ jobs:
           git config --local user.name "github-actions[bot]"
           echo "Git configuration set."
 
+      - name: Debug matrix input
+        run: |
+          echo "Raw matrix input: ${{ needs.test-and-deploy-testmon.outputs.matrix }}"
+
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
-        env:
-          MATRIX: ${{ needs.test-and-deploy-testmon.outputs.matrix }}
         run: |
           echo "Deploying testmon data to GitHub Pages..."
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
 
+          MATRIX='${{ needs.test-and-deploy-testmon.outputs.matrix }}'
           echo "MATRIX: $MATRIX"
 
           # 問題特定のためのデバッグ出力
           echo "Debug: MATRIX type: $(echo $MATRIX | jq -r 'type')"
 
-          # MATRIXがnullの場合のエラーハンドリング
-          if [ "$MATRIX" = "null" ]; then
-            echo "Error: MATRIX is null"
+          # MATRIXがnullまたは空の場合のエラーハンドリング
+          if [ -z "$MATRIX" ] || [ "$MATRIX" = "null" ]; then
+            echo "Error: MATRIX is null or empty"
             exit 1
           fi
 
-          os=$(echo $MATRIX | jq -r '.os')  # ここを修正
-          python_version=$(echo $MATRIX | jq -r '.["python-version"]')  # ここを修正
+          os=$(echo $MATRIX | jq -r '.os[]')
+          python_version=$(echo $MATRIX | jq -r '.["python-version"][]')
 
           echo "Parsed OS: $os"
           echo "Parsed Python Version: $python_version"
 
-          folder_name="testmon-data_${os}_python_${python_version}"
-          artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
-          echo "Processing $os with Python ${python_version}..."
-          echo "Checking for folder: ${artifact_folder}"
-          if [ -d "${artifact_folder}" ]; then
-            echo "Testmon data found for $os with Python ${python_version}, updating..."
-            mkdir -p $folder_name
-            mv "${artifact_folder}"/.testmondata "$folder_name/.testmondata" 2>/dev/null || true
-            echo "Contents of $folder_name after move:"
-            ls -la $folder_name
-            git add $folder_name
-            echo "Changes made, committing and pushing..."
-            git status
-            git commit -m "Update testmon data on GitHub Pages"
-            git push origin ghpages
-            echo "deploy_status=updated" >> $GITHUB_OUTPUT
-          else
-            echo "No testmon data found for $os with Python ${python_version}"
-            echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
-          fi
+          for current_os in $os; do
+            for current_python in $python_version; do
+              folder_name="testmon-data_${current_os}_python_${current_python}"
+              artifact_folder="downloaded-artifacts/testmon-data-${current_os}-python-${current_python}"
+              echo "Processing $current_os with Python ${current_python}..."
+              echo "Checking for folder: ${artifact_folder}"
+              if [ -d "${artifact_folder}" ]; then
+                echo "Testmon data found for $current_os with Python ${current_python}, updating..."
+                mkdir -p $folder_name
+                mv "${artifact_folder}"/.testmondata "$folder_name/.testmondata" 2>/dev/null || true
+                echo "Contents of $folder_name after move:"
+                ls -la $folder_name
+                git add $folder_name
+                echo "Changes made, committing..."
+                git commit -m "Update testmon data for $current_os Python ${current_python}" || echo "No changes to commit"
+              else
+                echo "No testmon data found for $current_os with Python ${current_python}"
+              fi
+            done
+          done
+
+          echo "Pushing changes..."
+          git push origin ghpages || echo "No changes to push"
+          echo "deploy_status=updated" >> $GITHUB_OUTPUT
 
       - name: List deployed files
         if: steps.deploy_testmon.outputs.deploy_status == 'updated'
