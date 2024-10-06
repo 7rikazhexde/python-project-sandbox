@@ -81,7 +81,7 @@ jobs:
             echo "valid_config=" >> $GITHUB_OUTPUT
           else
             echo "Tests executed. Proceeding with deployment and further workflows."
-            echo "valid_config=${{ matrix.os }}:${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+            echo "valid_config={\"os\":\"${{ matrix.os }}\",\"python_version\":\"${{ matrix.python-version }}\"}" >> $GITHUB_OUTPUT
           fi
 
       - name: Create testmon directory and move .testmondata
@@ -119,12 +119,12 @@ jobs:
       - name: Collect valid configurations
         id: collect-configs
         run: |
-          valid_configs=$(echo '${{ toJson(needs.test-and-deploy-testmon.outputs) }}' | jq -r '. | to_entries | map(select(.value != "")) | map(.value) | join(" ")')
+          valid_configs=$(echo '${{ toJson(needs.test-and-deploy-testmon.outputs) }}' | jq -r 'to_entries[] | select(.value != "") | .value' | jq -s -c '.')
           echo "valid_configs=$valid_configs" >> $GITHUB_OUTPUT
 
   deploy-testmon:
     needs: [test-and-deploy-testmon, collect-valid-configs]
-    if: needs.collect-valid-configs.outputs.valid_configs != ''
+    if: needs.collect-valid-configs.outputs.valid_configs != '[]'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -151,11 +151,10 @@ jobs:
           git checkout ghpages
 
           changes_made=false
-          IFS=' ' read -ra configs <<< "${{ needs.collect-valid-configs.outputs.valid_configs }}"
-          for config in "${configs[@]}"; do
-            IFS=':' read -ra parts <<< "$config"
-            os="${parts[0]}"
-            python_version="${parts[1]}"
+          valid_configs='${{ needs.collect-valid-configs.outputs.valid_configs }}'
+          echo "$valid_configs" | jq -c '.[]' | while read -r config; do
+            os=$(echo "$config" | jq -r '.os')
+            python_version=$(echo "$config" | jq -r '.python_version')
             folder_name="testmon-data_${os}_python_${python_version}"
             artifact_folder="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
             echo "Processing $os with Python $python_version..."
@@ -195,61 +194,44 @@ jobs:
 
   trigger-other-workflows:
     needs: [collect-valid-configs, deploy-testmon]
-    if: needs.collect-valid-configs.outputs.valid_configs != ''
+    if: needs.collect-valid-configs.outputs.valid_configs != '[]'
     runs-on: ubuntu-latest
     steps:
       - name: Prepare valid configurations
         id: prepare_configs
         run: |
           valid_configs='${{ needs.collect-valid-configs.outputs.valid_configs }}'
-          IFS=' ' read -ra configs <<< "$valid_configs"
+          os_list=$(echo "$valid_configs" | jq -r '.[].os' | sort -u | jq -R -s -c 'split("\n")[:-1]')
+          python_versions_list=$(echo "$valid_configs" | jq -r '.[].python_version' | sort -u | jq -R -s -c 'split("\n")[:-1]')
 
-          os_list=()
-          python_versions=()
-
-          for config in "${configs[@]}"; do
-            IFS=':' read -ra parts <<< "$config"
-            os_list+=("${parts[0]}")
-            python_versions+=("${parts[1]}")
-          done
-
-          os_json=$(jq -n --arg vals "${os_list[*]}" '$vals | split(" ") | unique | join(",")')
-          python_versions_json=$(jq -n --arg vals "${python_versions[*]}" '$vals | split(" ") | unique | join(",")')
-
-          echo "os_json=$os_json" >> $GITHUB_OUTPUT
-          echo "python_versions_json=$python_versions_json" >> $GITHUB_OUTPUT
+          echo "os_json=$os_list" >> $GITHUB_OUTPUT
+          echo "python_versions_json=$python_versions_list" >> $GITHUB_OUTPUT
 
       - name: Trigger pytest-cov workflow
-        if: steps.prepare_configs.outputs.os_json != '' && steps.prepare_configs.outputs.python_versions_json != ''
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
           client-payload: |-
             {
-              "os": [${{ steps.prepare_configs.outputs.os_json }}],
-              "python_versions": [${{ steps.prepare_configs.outputs.python_versions_json }}],
+              "os": ${{ steps.prepare_configs.outputs.os_json }},
+              "python_versions": ${{ steps.prepare_configs.outputs.python_versions_json }},
               "skip_tests": false
             }
 
       - name: Trigger pytest-html workflow
-        if: steps.prepare_configs.outputs.os_json != '' && steps.prepare_configs.outputs.python_versions_json != ''
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
           client-payload: |-
             {
-              "os": [${{ steps.prepare_configs.outputs.os_json }}],
-              "python_versions": [${{ steps.prepare_configs.outputs.python_versions_json }}],
+              "os": ${{ steps.prepare_configs.outputs.os_json }},
+              "python_versions": ${{ steps.prepare_configs.outputs.python_versions_json }},
               "skip_tests": false
             }
 
       - name: Log workflow triggers
-        if: steps.prepare_configs.outputs.os_json != '' && steps.prepare_configs.outputs.python_versions_json != ''
         run: |
           echo "Triggered pytest-cov and pytest-html workflows."
+          echo "OS List: ${{ steps.prepare_configs.outputs.os_json }}"
+          echo "Python Versions: ${{ steps.prepare_configs.outputs.python_versions_json }}"
           echo "Check the Actions tab for these workflows to start."
-
-      - name: Log no triggers
-        if: steps.prepare_configs.outputs.os_json == '' || steps.prepare_configs.outputs.python_versions_json == ''
-        run: |
-          echo "No valid configurations found. Skipping pytest-cov and pytest-html workflows."
