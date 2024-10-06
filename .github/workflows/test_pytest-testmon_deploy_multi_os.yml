@@ -1,5 +1,24 @@
 name: pytest-testmon Deploy Multi-OS
 
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - mainブランチへのプッシュ時に起動
+#    - Dependabotによる実行やバージョンバンプのコミットは除外
+# 2. 複数の環境（OS、Pythonバージョン）でのセットアップと前回の.testmondataの取得
+#    - Ubuntu, macOS, Windowsの最新バージョンで実行
+#    - Python 3.11と3.12を使用
+# 3. 各OS・Pythonバージョンごとに個別の.testmondataファイルを取得
+# 4. pytest-testmonを使用してテスト実行
+#    - 前回の.testmondataがある場合、それを使用して差分テストを実行
+# 5. testmon結果の確認とテスト実行有無の判定
+#    - テストが実行された場合、後続のジョブをトリガー
+# 6. 更新された.testmondataファイルのアップロード
+#    - テストが実行された場合のみ実行
+# 7. GitHub Pagesへの.testmondataファイルのデプロイ
+#    - テストが実行され、かつ変更がある場合のみ実行
+# 8. pytest-covとpytest-htmlワークフローのトリガー
+#    - テストが実行された場合のみトリガー
+
 on:
   push:
     branches:
@@ -7,22 +26,19 @@ on:
 
 jobs:
   test-and-deploy-testmon:
+    # Dependabotによる実行やバージョンバンプのコミットを除外
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     strategy:
       matrix:
-        os: &os_versions
-          - ubuntu-latest
-          - macos-13
-          - windows-latest
-        python-version: &python_versions
-          - '3.11'
-          - '3.12'
+        os: [ubuntu-latest, macos-13, windows-latest]
+        python-version: ['3.11','3.12']
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
     permissions:
       contents: write
       pull-requests: write
+    # ジョブの出力を定義（テスト実行の有無を後続のジョブに伝える）
     outputs:
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
     steps:
@@ -51,29 +67,105 @@ jobs:
       - name: Install dependencies
         run: |
           poetry install
+          echo "Installed dependencies:"
+          poetry show --tree
 
-      - name: Run pytest with testmon
-        id: pytest-testmon
+      - name: Fetch previous testmon data
+        shell: bash
         run: |
-          pytest --testmon
+          echo "Fetching previous testmon data..."
+          git fetch origin ghpages:ghpages || true
+          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
+          git checkout ghpages -- $folder_name/.testmondata || true
+          if [ -f $folder_name/.testmondata ]; then
+            echo "Previous testmon data found. Moving to current directory."
+            mv $folder_name/.testmondata .testmondata
+            rm -rf $folder_name
+          else
+            echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
+          fi
+        continue-on-error: true
+
+      - name: Run tests with testmon
+        id: pytest-testmon
+        shell: bash
+        run: |
+          echo "Running tests with testmon..."
+          output=$(poetry run pytest --testmon -v)
+          echo "$output"
+
+          # testmonの出力をGitHub Actionsの出力変数に保存
+          echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$output" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
+          # 出力を確認して、テストが実行されなかった場合はフラグを設定
+          if echo "$output" | grep -q "collected 0 items"; then
+           echo "No tests executed. Skipping deployment and further workflows."
+           echo "tests_executed=false" >> $GITHUB_OUTPUT
+          else
+           echo "Tests executed. Proceeding with deployment and further workflows."
+           echo "tests_executed=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Create testmon directory and move .testmondata
+        shell: bash
+        run: |
+          echo "Creating testmon directory..."
+          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
+          mkdir -p "$folder_name"
+          echo "Moving .testmondata file..."
+          if [ -f ".testmondata" ]; then
+            mv ".testmondata" "$folder_name/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
+          else
+            echo "Warning: .testmondata file not found in root directory."
+          fi
+          echo "Contents of $folder_name:"
+          ls -la "$folder_name"
+
+      - name: Upload testmon data
+        uses: actions/upload-artifact@v4.4.0
+        with:
+          name: testmon-data-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}/.testmondata
+          if-no-files-found: warn
+          include-hidden-files: true
+        if: steps.pytest-testmon.outputs.tests_executed == 'true'
 
   deploy-testmon:
     needs: test-and-deploy-testmon
+    if: contains(needs.test-and-deploy-testmon.result, 'success')
     runs-on: ubuntu-latest
     steps:
-      - name: Checkout ghpages branch
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.0
+        with:
+          fetch-depth: 0
+
+      - name: Download testmon data
+        uses: actions/download-artifact@v4.1.8
+        with:
+          path: downloaded-artifacts
+
+      - name: Setup Git
         run: |
-          git fetch origin ghpages
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          echo "Git configuration set."
+
+      - name: Deploy testmon data to GitHub Pages
+        id: deploy_testmon
+        run: |
+          echo "Deploying testmon data to GitHub Pages..."
+          git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
 
-      - name: Deploy .testmondata for all OS and Python versions
-        run: |
-          artifact_folder="${{ runner.temp }}/artifacts"
           changes_made=false
-          for os in *os_versions; do
-            for python_version in *python_versions; do
-              folder_name="$os/$python_version"
-              echo "Processing testmon data for $os with Python $python_version..."
+          for os in ubuntu-latest macos-13 windows-latest; do
+            for python_version in 3,11 3.12; do
+              folder_name="testmon-data_${os}_python_${python_version}"
+              artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
+              echo "Processing $os with Python $python_version..."
               if [ -f "${artifact_folder}/.testmondata" ]; then
                 echo "Changes detected for $os with Python $python_version, updating..."
                 mkdir -p $folder_name
@@ -82,6 +174,8 @@ jobs:
                 changes_made=true
               else
                 echo "No testmon data found for $os with Python $python_version"
+                echo "Contents of ${artifact_folder}:"
+                ls -la "${artifact_folder}"
               fi
             done
           done
@@ -90,9 +184,20 @@ jobs:
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages"
             git push origin ghpages
+            echo "deploy_status=updated" >> $GITHUB_OUTPUT
           else
             echo "No changes to commit"
+            echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
           fi
+
+      - name: List deployed files
+        if: steps.deploy_testmon.outputs.deploy_status == 'updated'
+        run: |
+          git checkout ghpages
+          echo "Deployed testmon data files:"
+          find . -name ".testmondata"
+          echo "Contents of ghpages branch:"
+          ls -R
 
   trigger-other-workflows:
     needs: [test-and-deploy-testmon, deploy-testmon]
