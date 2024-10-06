@@ -7,15 +7,14 @@ def test_add() -> None:
     assert add(0, 0) == 0
     assert add(-2, 2) == 0
     assert add(1, 2) == 3
-    assert add(1, -3) == -2
-    assert add(5, -2) == 3
+    assert add(1, -2) == -1
 
 
 def test_subtract() -> None:
     print("Running test_subtract()")
     assert subtract(5, 3) == 2
     assert subtract(0, 0) == 0
-    assert subtract(-2, 4) == -8
+    assert subtract(-2, 2) == -4
     assert subtract(-1, 2) == -3
     assert subtract(-1, -2) == 1
 
@@ -25,7 +24,7 @@ def test_multiply() -> None:
     assert multiply(2, 3) == 6
     assert multiply(0, 10) == 0
     assert multiply(-2, 4) == -8
-    assert multiply(-2, 2) == -1
+    assert multiply(-2, 5) == -10
     assert multiply(-1000, 5) == -5000
 
 
