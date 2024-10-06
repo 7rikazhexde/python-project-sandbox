@@ -15,7 +15,6 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
         run: |
-          echo "${GH_TOKEN}" | gh auth login --with-token
           gh api repos/7rikazhexde/trial-test/dispatches \
             -f event_type=test \
             -f client_payload='{"os": ["ubuntu-latest", "macos-13", "windows-latest"], "python_versions": ["3.11", "3.12"]}'
