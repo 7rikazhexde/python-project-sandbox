@@ -17,9 +17,8 @@ jobs:
     permissions:
       contents: write
       pull-requests: write
-    # ジョブの出力を定義（テスト実行の有無と、OS・Pythonバージョンの情報を後続のジョブに伝える）
     outputs:
-      matrix: ${{ toJson(strategy.matrix) }}
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
     steps:
       - name: Checkout repository
@@ -66,6 +65,12 @@ jobs:
           fi
         continue-on-error: true
 
+      - name: Set matrix output
+        id: set-matrix
+        run: |
+          echo "matrix=${{ toJson(matrix) }}" >> $GITHUB_OUTPUT
+          echo "Matrix output: ${{ toJson(matrix) }}"
+
       - name: Run tests with testmon
         id: pytest-testmon
         shell: bash
@@ -81,11 +86,11 @@ jobs:
 
           # 出力を確認して、テストが実行されなかった場合はフラグを設定
           if echo "$output" | grep -q "collected 0 items"; then
-           echo "No tests executed. Skipping deployment and further workflows."
-           echo "tests_executed=false" >> $GITHUB_OUTPUT
+            echo "No tests executed. Skipping deployment and further workflows."
+            echo "tests_executed=false" >> $GITHUB_OUTPUT
           else
-           echo "Tests executed. Proceeding with deployment and further workflows."
-           echo "tests_executed=true" >> $GITHUB_OUTPUT
+            echo "Tests executed. Proceeding with deployment and further workflows."
+            echo "tests_executed=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Upload testmon data
@@ -96,16 +101,9 @@ jobs:
           if-no-files-found: warn
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
 
-      - name: Debug outputs
-        run: |
-          echo "Debug: matrix output"
-          echo '${{ toJson(strategy.matrix) }}'
-          echo "Debug: tests_executed output"
-          echo '${{ steps.pytest-testmon.outputs.tests_executed }}'
-
   deploy-testmon:
     needs: test-and-deploy-testmon
-    if: needs.test-and-deploy-testmon.result == 'success'
+    if: needs.test-and-deploy-testmon.result == 'success' && needs.test-and-deploy-testmon.outputs.tests_executed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -124,22 +122,20 @@ jobs:
           git config --local user.name "github-actions[bot]"
           echo "Git configuration set."
 
-      - name: Debug matrix input
+      - name: Verify ghpages branch
         run: |
-          echo "Raw matrix input: ${{ needs.test-and-deploy-testmon.outputs.matrix }}"
+          git fetch origin ghpages:ghpages || echo "ghpages branch does not exist"
+          git rev-parse --verify ghpages || git checkout -b ghpages
 
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
+        env:
+          MATRIX: ${{ needs.test-and-deploy-testmon.outputs.matrix }}
         run: |
           echo "Deploying testmon data to GitHub Pages..."
-          git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
 
-          MATRIX='${{ needs.test-and-deploy-testmon.outputs.matrix }}'
           echo "MATRIX: $MATRIX"
-
-          # 問題特定のためのデバッグ出力
-          echo "Debug: MATRIX type: $(echo $MATRIX | jq -r 'type')"
 
           # MATRIXがnullまたは空の場合のエラーハンドリング
           if [ -z "$MATRIX" ] || [ "$MATRIX" = "null" ]; then
@@ -147,8 +143,10 @@ jobs:
             exit 1
           fi
 
-          os=$(echo $MATRIX | jq -r '.os[]')
-          python_version=$(echo $MATRIX | jq -r '.["python-version"][]')
+          # Pythonを使用してJSONをパース
+          echo "Parsing MATRIX..."
+          os=$(python -c "import json,os;print(' '.join(json.loads(os.environ['MATRIX'])['os']))")
+          python_version=$(python -c "import json,os;print(' '.join(json.loads(os.environ['MATRIX'])['python-version']))")
 
           echo "Parsed OS: $os"
           echo "Parsed Python Version: $python_version"
@@ -166,7 +164,6 @@ jobs:
                 echo "Contents of $folder_name after move:"
                 ls -la $folder_name
                 git add $folder_name
-                echo "Changes made, committing..."
                 git commit -m "Update testmon data for $current_os Python ${current_python}" || echo "No changes to commit"
               else
                 echo "No testmon data found for $current_os with Python ${current_python}"
@@ -189,7 +186,7 @@ jobs:
 
   trigger-other-workflows:
     needs: [test-and-deploy-testmon, deploy-testmon]
-    if: needs.test-and-deploy-testmon.result == 'success'
+    if: needs.test-and-deploy-testmon.result == 'success' && needs.test-and-deploy-testmon.outputs.tests_executed == 'true'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger pytest-cov workflow
@@ -197,14 +194,17 @@ jobs:
         with:
           event-type: run-pytest-cov
           client-payload: '{"skip_tests": false}'
+        continue-on-error: true
 
       - name: Trigger pytest-html workflow
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
           client-payload: '{"skip_tests": false}'
+        continue-on-error: true
 
       - name: Log workflow triggers
         run: |
-          echo "Triggered pytest-cov and pytest-html workflows."
+          echo "Attempted to trigger pytest-cov and pytest-html workflows."
           echo "Check the Actions tab for these workflows to start."
+          echo "If triggers failed, check repository dispatch permissions and settings."
