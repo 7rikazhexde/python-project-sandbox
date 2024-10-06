@@ -21,7 +21,7 @@ name: pytest-testmon Deploy Multi-OS
 on:
   repository_dispatch:
     types:
-      - test
+      - test_pytest-cov-report_deploy_multi_os
 
 jobs:
   test-and-deploy-testmon:
@@ -171,7 +171,7 @@ jobs:
           for os in $os_list; do
             for python_version in $python_versions_list; do
               folder_name="testmon-data_${os}_python_${python_version}"
-              artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
+              artifact_folder="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
               echo "Processing $os with Python $python_version..."
               if [ -f "${artifact_folder}/.testmondata" ]; then
                 echo "Changes detected for $os with Python $python_version, updating..."
