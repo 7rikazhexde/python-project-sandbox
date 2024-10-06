@@ -32,8 +32,8 @@ jobs:
       matrix:
         #os: [ubuntu-latest, macos-13, windows-latest]
         #python-version: ['3.11','3.12']
-        os: ${{ fromJson(github.event.client_payload.matrix.os) }}
-        python-version: ${{ fromJson(github.event.client_payload.matrix.python_versions) }}
+        os: ${{ fromJson(github.event.client_payload.os) }}
+        python-version: ${{ fromJson(github.event.client_payload.python_versions) }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
@@ -151,8 +151,8 @@ jobs:
           changes_made=false
           #for os in ubuntu-latest macos-13 windows-latest; do
           #  for python_version in 3.11 3.12; do
-          os_list='${{ join(fromJson(github.event.client_payload.matrix).os, ' ') }}'
-          python_versions_list='${{ join(fromJson(github.event.client_payload.matrix).python_versions, ' ') }}'
+          os_list='${{ join(fromJson(github.event.client_payload.os), ' ') }}'
+          python_versions_list='${{ join(fromJson(github.event.client_payload.python_versions), ' ') }}'
           for os in $os_list; do
             for python_version in $python_versions_list; do
               folder_name="pytest-cov-report_${os}_python_${python_version}"
@@ -194,8 +194,8 @@ jobs:
           URL_LIST=""
           #for os in ubuntu-latest macos-13 windows-latest; do
           #  for python_version in 3.11 3.12; do
-          os_list='${{ join(fromJson(github.event.client_payload.matrix).os, ' ') }}'
-          python_versions_list='${{ join(fromJson(github.event.client_payload.matrix).python_versions, ' ') }}'
+          os_list='${{ join(fromJson(github.event.client_payload.os), ' ') }}'
+          python_versions_list='${{ join(fromJson(github.event.client_payload.python_versions), ' ') }}'
           for os in $os_list; do
             for python_version in $python_versions_list; do
               URL_LIST="${URL_LIST}pytest-cov-report_${os}_python_${python_version}:\n\
