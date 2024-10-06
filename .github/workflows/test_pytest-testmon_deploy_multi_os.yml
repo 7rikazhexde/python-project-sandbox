@@ -141,10 +141,10 @@ jobs:
         with:
           path: downloaded-artifacts
 
-      - name: List downloaded artifacts
-        run: |
-          echo "Contents of downloaded-artifacts:"
-          ls -R downloaded-artifacts
+      #- name: List downloaded artifacts
+      #  run: |
+      #    echo "Contents of downloaded-artifacts:"
+      #    ls -R downloaded-artifacts
 
       - name: Setup Git
         run: |
