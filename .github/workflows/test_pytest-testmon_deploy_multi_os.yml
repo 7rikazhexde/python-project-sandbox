@@ -96,6 +96,13 @@ jobs:
           if-no-files-found: warn
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
 
+      - name: Debug outputs
+        run: |
+          echo "Debug: matrix output"
+          echo '${{ toJson(strategy.matrix) }}'
+          echo "Debug: tests_executed output"
+          echo '${{ steps.pytest-testmon.outputs.tests_executed }}'
+
   deploy-testmon:
     needs: test-and-deploy-testmon
     if: needs.test-and-deploy-testmon.result == 'success'
