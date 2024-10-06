@@ -2,10 +2,9 @@ name: pytest-testmon Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - send-dispatch(test_pytest-testmon_deploy_multi_os.yml)
+#    - リポジトリディスパッチイベント（test_pytest-testmon_deploy_multi_os）により起動
 # 2. 複数の環境（OS、Pythonバージョン）でのセットアップと前回の.testmondataの取得
-#    - Ubuntu, macOS, Windowsの最新バージョンで実行
-#    - Python 3.11と3.12を使用
+#    - client_payloadで指定されたOS、Pythonバージョンで実行
 # 3. 各OS・Pythonバージョンごとに個別の.testmondataファイルを取得
 # 4. pytest-testmonを使用してテスト実行
 #    - 前回の.testmondataがある場合、それを使用して差分テストを実行
@@ -21,7 +20,7 @@ name: pytest-testmon Deploy Multi-OS
 on:
   repository_dispatch:
     types:
-      - test_pytest-cov-report_deploy_multi_os
+      - test_pytest-testmon_deploy_multi_os
 
 jobs:
   test-and-deploy-testmon:
@@ -90,12 +89,10 @@ jobs:
           output=$(poetry run pytest --testmon -v)
           echo "$output"
 
-          # testmonの出力をGitHub Actionsの出力変数に保存
           echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
           echo "$output" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
 
-          # 出力を確認して、テストが実行されなかった場合はフラグを設定
           if echo "$output" | grep -q "collected 0 items"; then
            echo "No tests executed. Skipping deployment and further workflows."
            echo "tests_executed=false" >> $GITHUB_OUTPUT
@@ -126,6 +123,7 @@ jobs:
           path: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}/.testmondata
           if-no-files-found: warn
           include-hidden-files: true
+          retention-days: 1
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
 
   deploy-testmon:
@@ -182,7 +180,7 @@ jobs:
                 if [ -f "${artifact_folder}/.testmondata" ]; then
                   echo "Changes detected for $os with Python $python_version, updating..."
                   mkdir -p "$folder_name"
-                  mv "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
+                  cp "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
                   git add "$folder_name"
                   changes_made=true
                 else
@@ -196,8 +194,8 @@ jobs:
 
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
-            git commit -m "Update testmon data on GitHub Pages"
-            git push origin ghpages
+            git commit -m "Update testmon data on GitHub Pages" || echo "No changes to commit"
+            git push origin ghpages || echo "No changes to push"
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
           else
             echo "No changes to commit"
@@ -205,7 +203,7 @@ jobs:
           fi
 
       - name: List deployed files
-        if: steps.deploy_testmon.outputs.deploy_status == 'updated'
+        if: always()
         run: |
           git checkout ghpages
           echo "Deployed testmon data files:"
