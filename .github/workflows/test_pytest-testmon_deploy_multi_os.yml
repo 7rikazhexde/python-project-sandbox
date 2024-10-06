@@ -21,7 +21,7 @@ name: pytest-testmon Deploy Multi-OS
 on:
   repository_dispatch:
     types:
-      - test
+      - test_pytest-cov-report_deploy_multi_os
 
 jobs:
   test-and-deploy-testmon:

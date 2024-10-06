@@ -16,7 +16,7 @@ jobs:
           GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}  # シークレット変数
         run: |
           gh api repos/7rikazhexde/trial-test/dispatches \
-            -f event_type=test \
+            -f event_type=test_pytest-cov-report_deploy_multi_os \
             -f client_payload[os][]=ubuntu-latest \
             -f client_payload[os][]=macos-13 \
             -f client_payload[os][]=windows-latest \
