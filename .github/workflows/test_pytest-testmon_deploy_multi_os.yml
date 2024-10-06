@@ -151,12 +151,14 @@ jobs:
 
       - name: Prepare os_list and python_versions
         run: |
-          os_list=(${{ toJSON(github.event.client_payload.os) }} | jq -r '.[]')
-          python_versions_list=(${{ toJSON(github.event.client_payload.python_versions) }} | jq -r '.[]')
-          echo "OS List: ${os_list[@]}"
-          echo "Python Versions: ${python_versions_list[@]}"
-          echo "os_list=(${os_list[@]})" >> $GITHUB_ENV
-          echo "python_versions_list=(${python_versions_list[@]})" >> $GITHUB_ENV
+          os_list='${{ join(github.event.client_payload.os, ' ') }}'
+          python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
+
+          echo "OS List: $os_list"
+          echo "Python Versions List: $python_versions_list"
+
+          echo "os_list=$os_list" >> $GITHUB_ENV
+          echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
 
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
@@ -166,8 +168,8 @@ jobs:
           git checkout ghpages
 
           changes_made=false
-          for os in "${os_list[@]}"; do
-            for python_version in "${python_versions_list[@]}"; do
+          for os in $os_list; do
+            for python_version in $python_versions_list; do
               folder_name="testmon-data_${os}_python_${python_version}"
               artifact_folder="downloaded-artifacts/testmon-data-${os}-python-${python_version}"
               echo "Processing $os with Python $python_version..."
