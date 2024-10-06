@@ -30,8 +30,10 @@ jobs:
   test-and-report:
     strategy:
       matrix:
-        os: [ubuntu-latest, macos-13, windows-latest]
-        python-version: ['3.11','3.12']
+        #os: [ubuntu-latest, macos-13, windows-latest]
+        #python-version: ['3.11','3.12']
+        os: ${{ fromJson(github.event.client_payload.matrix.os) }}
+        python-version: ${{ fromJson(github.event.client_payload.matrix.python_versions) }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
@@ -147,8 +149,10 @@ jobs:
           git pull origin ghpages --rebase
 
           changes_made=false
-          for os in ubuntu-latest macos-13 windows-latest; do
-            for python_version in 3.11 3.12; do
+          #for os in ubuntu-latest macos-13 windows-latest; do
+          #  for python_version in 3.11 3.12; do
+          for os in ${{ join(fromJson(github.event.client_payload.matrix.os), ' ') }}; do
+            for python_version in ${{ join(fromJson(github.event.client_payload.matrix.python_versions), ' ') }}; do
               folder_name="pytest-html-report_${os}_python_${python_version}"
               mkdir -p $folder_name
               if [ -f test-results-$os-python-$python_version/report_page.html ]; then
@@ -190,8 +194,10 @@ jobs:
           REPO_OWNER=${REPO_INFO[0]}
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
-          for os in ubuntu-latest macos-13 windows-latest; do
-            for python_version in 3.11 3.12; do
+          #for os in ubuntu-latest macos-13 windows-latest; do
+          #  for python_version in 3.11 3.12; do
+          for os in ${{ join(fromJson(github.event.client_payload.matrix.os), ' ') }}; do
+            for python_version in ${{ join(fromJson(github.event.client_payload.matrix.python_versions), ' ') }}; do
               URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
             https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
             done
