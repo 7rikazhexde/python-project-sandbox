@@ -18,7 +18,7 @@ jobs:
       contents: write
       pull-requests: write
     outputs:
-      valid_configs: ${{ steps.collect-valid-configs.outputs.valid_configs }}
+      valid_config: ${{ steps.pytest-testmon.outputs.valid_config }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
@@ -78,14 +78,14 @@ jobs:
 
           if echo "$output" | grep -q "collected 0 items"; then
             echo "No tests executed. Skipping deployment and further workflows for this configuration."
-            echo "tests_executed=false" >> $GITHUB_OUTPUT
+            echo "valid_config=" >> $GITHUB_OUTPUT
           else
             echo "Tests executed. Proceeding with deployment and further workflows."
-            echo "tests_executed=true" >> $GITHUB_OUTPUT
+            echo "valid_config=${{ matrix.os }}:${{ matrix.python-version }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Create testmon directory and move .testmondata
-        if: steps.pytest-testmon.outputs.tests_executed == 'true'
+        if: steps.pytest-testmon.outputs.valid_config != ''
         shell: bash
         run: |
           echo "Creating testmon directory..."
@@ -108,7 +108,7 @@ jobs:
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 1
-        if: steps.pytest-testmon.outputs.tests_executed == 'true'
+        if: steps.pytest-testmon.outputs.valid_config != ''
 
   collect-valid-configs:
     needs: test-and-deploy-testmon
@@ -119,13 +119,8 @@ jobs:
       - name: Collect valid configurations
         id: collect-configs
         run: |
-          valid_configs=()
-          for result in ${{ needs.test-and-deploy-testmon.result }}; do
-            if [ "$result" = "success" ]; then
-              valid_configs+=("${{ matrix.os }}:${{ matrix.python-version }}")
-            fi
-          done
-          echo "valid_configs=${valid_configs[*]}" >> $GITHUB_OUTPUT
+          valid_configs=$(echo '${{ toJson(needs.test-and-deploy-testmon.outputs) }}' | jq -r '. | to_entries | map(select(.value != "")) | map(.value) | join(" ")')
+          echo "valid_configs=$valid_configs" >> $GITHUB_OUTPUT
 
   deploy-testmon:
     needs: [test-and-deploy-testmon, collect-valid-configs]
@@ -225,6 +220,7 @@ jobs:
           echo "python_versions_json=$python_versions_json" >> $GITHUB_OUTPUT
 
       - name: Trigger pytest-cov workflow
+        if: steps.prepare_configs.outputs.os_json != '[]' && steps.prepare_configs.outputs.python_versions_json != '[]'
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
@@ -236,6 +232,7 @@ jobs:
             }
 
       - name: Trigger pytest-html workflow
+        if: steps.prepare_configs.outputs.os_json != '[]' && steps.prepare_configs.outputs.python_versions_json != '[]'
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
@@ -247,6 +244,12 @@ jobs:
             }
 
       - name: Log workflow triggers
+        if: steps.prepare_configs.outputs.os_json != '[]' && steps.prepare_configs.outputs.python_versions_json != '[]'
         run: |
           echo "Triggered pytest-cov and pytest-html workflows."
           echo "Check the Actions tab for these workflows to start."
+
+      - name: Log no triggers
+        if: steps.prepare_configs.outputs.os_json == '[]' || steps.prepare_configs.outputs.python_versions_json == '[]'
+        run: |
+          echo "No valid configurations found. Skipping pytest-cov and pytest-html workflows."
