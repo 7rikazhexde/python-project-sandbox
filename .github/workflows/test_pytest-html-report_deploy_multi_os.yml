@@ -151,8 +151,10 @@ jobs:
           changes_made=false
           #for os in ubuntu-latest macos-13 windows-latest; do
           #  for python_version in 3.11 3.12; do
-          for os in ${{ join(fromJson(github.event.client_payload.matrix.os), ' ') }}; do
-            for python_version in ${{ join(fromJson(github.event.client_payload.matrix.python_versions), ' ') }}; do
+          os_list='${{ join(fromJson(github.event.client_payload.matrix).os, ' ') }}'
+          python_versions_list='${{ join(fromJson(github.event.client_payload.matrix).python_versions, ' ') }}'
+          for os in $os_list; do
+            for python_version in $python_versions_list; do
               folder_name="pytest-html-report_${os}_python_${python_version}"
               mkdir -p $folder_name
               if [ -f test-results-$os-python-$python_version/report_page.html ]; then
@@ -196,8 +198,10 @@ jobs:
           URL_LIST=""
           #for os in ubuntu-latest macos-13 windows-latest; do
           #  for python_version in 3.11 3.12; do
-          for os in ${{ join(fromJson(github.event.client_payload.matrix.os), ' ') }}; do
-            for python_version in ${{ join(fromJson(github.event.client_payload.matrix.python_versions), ' ') }}; do
+          os_list='${{ join(fromJson(github.event.client_payload.matrix).os, ' ') }}'
+          python_versions_list='${{ join(fromJson(github.event.client_payload.matrix).python_versions, ' ') }}'
+          for os in $os_list; do
+            for python_version in $python_versions_list; do
               URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
             https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
             done
