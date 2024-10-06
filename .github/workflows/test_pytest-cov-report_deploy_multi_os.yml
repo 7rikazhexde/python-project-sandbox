@@ -32,8 +32,8 @@ jobs:
       matrix:
         #os: [ubuntu-latest, macos-13, windows-latest]
         #python-version: ['3.11','3.12']
-        os: ${{ fromJson(github.event.client_payload.os) }}
-        python-version: ${{ fromJson(github.event.client_payload.python_versions) }}
+        os: ${{github.event.client_payload.os}}
+        python-version: ${{github.event.client_payload.python_versions}}
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
@@ -141,6 +141,15 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
+      - name: Prepare os_list and python_versions
+        run: |
+          os_list='${{ join(github.event.client_payload.os, ' ') }}'
+          python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
+          echo "OS List: $os_list"
+          echo "Python Versions List: $python_versions_list"
+          echo "os_list=$os_list" >> $GITHUB_ENV
+          echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
+
       - name: Check and Deploy to GitHub Pages
         id: check_and_deploy
         run: |
@@ -151,8 +160,6 @@ jobs:
           changes_made=false
           #for os in ubuntu-latest macos-13 windows-latest; do
           #  for python_version in 3.11 3.12; do
-          os_list='${{ join(fromJson(github.event.client_payload.os), ' ') }}'
-          python_versions_list='${{ join(fromJson(github.event.client_payload.python_versions), ' ') }}'
           for os in $os_list; do
             for python_version in $python_versions_list; do
               folder_name="pytest-cov-report_${os}_python_${python_version}"
@@ -194,8 +201,6 @@ jobs:
           URL_LIST=""
           #for os in ubuntu-latest macos-13 windows-latest; do
           #  for python_version in 3.11 3.12; do
-          os_list='${{ join(fromJson(github.event.client_payload.os), ' ') }}'
-          python_versions_list='${{ join(fromJson(github.event.client_payload.python_versions), ' ') }}'
           for os in $os_list; do
             for python_version in $python_versions_list; do
               URL_LIST="${URL_LIST}pytest-cov-report_${os}_python_${python_version}:\n\
