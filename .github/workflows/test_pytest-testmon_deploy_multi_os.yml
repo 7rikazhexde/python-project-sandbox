@@ -151,12 +151,12 @@ jobs:
 
       - name: Prepare os_list and python_versions
         run: |
-          os_list=$(echo "${{ toJSON(github.event.client_payload.os) }}" | jq -r '.[]')
-          python_versions_list=$(echo "${{ toJSON(github.event.client_payload.python_versions) }}" | jq -r '.[]')
-          echo "OS List: $os_list"
-          echo "Python Versions: $python_versions_list"
-          echo "os_list=(${os_list})" >> $GITHUB_ENV
-          echo "python_versions_list=(${python_versions_list})" >> $GITHUB_ENV
+          os_list=(${{ toJSON(github.event.client_payload.os) }} | jq -r '.[]')
+          python_versions_list=(${{ toJSON(github.event.client_payload.python_versions) }} | jq -r '.[]')
+          echo "OS List: ${os_list[@]}"
+          echo "Python Versions: ${python_versions_list[@]}"
+          echo "os_list=(${os_list[@]})" >> $GITHUB_ENV
+          echo "python_versions_list=(${python_versions_list[@]})" >> $GITHUB_ENV
 
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
