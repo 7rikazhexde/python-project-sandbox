@@ -223,10 +223,8 @@ jobs:
           #client-payload: '{"skip_tests": false}'
           client-payload: |-
             {
-              "matrix": {
-                "os": ${{ toJson(github.event.client_payload.os) }},
-                "python_versions": ${{ toJson(github.event.client_payload.python_versions) }}
-              },
+              "os": ${{ toJson(github.event.client_payload.os) }},
+              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
               "skip_tests": false
             }
 
@@ -237,10 +235,8 @@ jobs:
           #client-payload: '{"skip_tests": false}'
           client-payload: |-
             {
-              "matrix": {
-                "os": ${{ toJson(github.event.client_payload.os) }},
-                "python_versions": ${{ toJson(github.event.client_payload.python_versions) }}
-              },
+              "os": ${{ toJson(github.event.client_payload.os) }},
+              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
               "skip_tests": false
             }
 
