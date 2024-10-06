@@ -36,7 +36,6 @@ jobs:
       pull-requests: write
     outputs:
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
-      valid_configs: ${{ steps.pytest-testmon.outputs.valid_configs }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
@@ -95,17 +94,14 @@ jobs:
           echo "EOF" >> $GITHUB_OUTPUT
 
           if echo "$output" | grep -q "collected 0 items"; then
-            echo "No tests executed. Skipping deployment and further workflows for this configuration."
-            echo "tests_executed=false" >> $GITHUB_OUTPUT
-            echo "valid_configs=" >> $GITHUB_OUTPUT
+           echo "No tests executed. Skipping deployment and further workflows."
+           echo "tests_executed=false" >> $GITHUB_OUTPUT
           else
-            echo "Tests executed. Proceeding with deployment and further workflows."
-            echo "tests_executed=true" >> $GITHUB_OUTPUT
-            echo "valid_configs=${{ matrix.os }}:${{ matrix.python-version }}" >> $GITHUB_OUTPUT
+           echo "Tests executed. Proceeding with deployment and further workflows."
+           echo "tests_executed=true" >> $GITHUB_OUTPUT
           fi
 
       - name: Create testmon directory and move .testmondata
-        if: steps.pytest-testmon.outputs.tests_executed == 'true'
         shell: bash
         run: |
           echo "Creating testmon directory..."
@@ -144,6 +140,11 @@ jobs:
         uses: actions/download-artifact@v4.1.8
         with:
           path: downloaded-artifacts
+
+      #- name: List downloaded artifacts
+      #  run: |
+      #    echo "Contents of downloaded-artifacts:"
+      #    ls -R downloaded-artifacts
 
       - name: Setup Git
         run: |
@@ -215,35 +216,15 @@ jobs:
     if: needs.test-and-deploy-testmon.result == 'success'
     runs-on: ubuntu-latest
     steps:
-      - name: Prepare valid configurations
-        id: prepare_configs
-        run: |
-          valid_configs='${{ needs.test-and-deploy-testmon.outputs.valid_configs }}'
-          IFS=' ' read -ra configs <<< "$valid_configs"
-
-          os_list=()
-          python_versions=()
-
-          for config in "${configs[@]}"; do
-            IFS=':' read -ra parts <<< "$config"
-            os_list+=("${parts[0]}")
-            python_versions+=("${parts[1]}")
-          done
-
-          os_json=$(jq -n --arg vals "${os_list[*]}" '$vals | split(" ")')
-          python_versions_json=$(jq -n --arg vals "${python_versions[*]}" '$vals | split(" ")')
-
-          echo "os_json=$os_json" >> $GITHUB_OUTPUT
-          echo "python_versions_json=$python_versions_json" >> $GITHUB_OUTPUT
-
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
+          #client-payload: '{"skip_tests": false}'
           client-payload: |-
             {
-              "os": ${{ steps.prepare_configs.outputs.os_json }},
-              "python_versions": ${{ steps.prepare_configs.outputs.python_versions_json }},
+              "os": ${{ toJson(github.event.client_payload.os) }},
+              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
               "skip_tests": false
             }
 
@@ -251,10 +232,11 @@ jobs:
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
+          #client-payload: '{"skip_tests": false}'
           client-payload: |-
             {
-              "os": ${{ steps.prepare_configs.outputs.os_json }},
-              "python_versions": ${{ steps.prepare_configs.outputs.python_versions_json }},
+              "os": ${{ toJson(github.event.client_payload.os) }},
+              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
               "skip_tests": false
             }
 
