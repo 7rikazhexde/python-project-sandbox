@@ -8,6 +8,7 @@ def test_add() -> None:
     assert add(-2, 2) == 0
     assert add(1, 2) == 3
     assert add(1, -2) == -1
+    assert add(5, -2) == 3
 
 
 def test_subtract() -> None:
