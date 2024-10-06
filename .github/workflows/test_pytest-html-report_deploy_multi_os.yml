@@ -141,14 +141,14 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-      - name: Prepare os_list and python_versions
-        run: |
-          os_list='${{ join(github.event.client_payload.os, ' ') }}'
-          python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
-          echo "OS List: $os_list"
-          echo "Python Versions List: $python_versions_list"
-          echo "os_list=$os_list" >> $GITHUB_ENV
-          echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
+      #- name: Prepare os_list and python_versions
+      #  run: |
+      #    os_list='${{ join(github.event.client_payload.os, ' ') }}'
+      #    python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
+      #    echo "OS List: $os_list"
+      #    echo "Python Versions List: $python_versions_list"
+      #    echo "os_list=$os_list" >> $GITHUB_ENV
+      #    echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
 
       - name: Check and Deploy to GitHub Pages
         id: check_and_deploy
@@ -158,6 +158,8 @@ jobs:
           git pull origin ghpages --rebase
 
           changes_made=false
+          os_list="${{ join(github.event.client_payload.os, ' ') }}"
+          python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
           #for os in ubuntu-latest macos-13 windows-latest; do
           #  for python_version in 3.11 3.12; do
           for os in $os_list; do
@@ -203,6 +205,8 @@ jobs:
           REPO_OWNER=${REPO_INFO[0]}
           REPO_NAME=${REPO_INFO[1]}
           URL_LIST=""
+          os_list="${{ join(github.event.client_payload.os, ' ') }}"
+          python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
           #for os in ubuntu-latest macos-13 windows-latest; do
           #  for python_version in 3.11 3.12; do
           for os in $os_list; do
