@@ -69,11 +69,21 @@ jobs:
           echo "Running tests with testmon..."
           output=$(poetry run pytest --testmon -v)
           echo "$output"
+
+          echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
+          echo "$output" >> $GITHUB_OUTPUT
+          echo "EOF" >> $GITHUB_OUTPUT
+
           if echo "$output" | grep -q "collected 0 items"; then
+            echo "No tests executed. Skipping deployment and further workflows."
             echo "tests_executed=false" >> $GITHUB_OUTPUT
           else
+            echo "Tests executed. Proceeding with deployment and further workflows."
             echo "tests_executed=true" >> $GITHUB_OUTPUT
           fi
+
+          # Store the result in a file for later use
+          echo "${{ matrix.os }},${{ matrix.python-version }},${{ steps.pytest-testmon.outputs.tests_executed }}" >> test_results.txt
 
       - name: Create testmon directory and move .testmondata
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
@@ -101,48 +111,15 @@ jobs:
           retention-days: 1
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
 
-      - name: Upload test execution status
+      - name: Upload test results
         uses: actions/upload-artifact@v4
         with:
-          name: test-status-${{ matrix.os }}-${{ matrix.python-version }}
-          path: ${{ github.output }}
-
-  analyze-results:
-    needs: test-and-deploy-testmon
-    runs-on: ubuntu-latest
-    outputs:
-      os_list: ${{ steps.analyze.outputs.os_list }}
-      python_versions: ${{ steps.analyze.outputs.python_versions }}
-    steps:
-      - name: Download all artifacts
-        uses: actions/download-artifact@v4
-        with:
-          path: test-statuses
-
-      - name: Analyze test results
-        id: analyze
-        run: |
-          os_list=()
-          python_versions=()
-          for status_file in test-statuses/test-status-*; do
-            if grep -q "tests_executed=true" "$status_file"; then
-              IFS='-' read -ra parts <<< "$(basename "$status_file")"
-              os=${parts[2]}
-              python_version=${parts[3]}
-              os_list+=("$os")
-              python_versions+=("$python_version")
-            fi
-          done
-          echo "os_list=$(echo "${os_list[@]}" | jq -R -s -c 'split(" ") | unique')" >> $GITHUB_OUTPUT
-          echo "python_versions=$(echo "${python_versions[@]}" | jq -R -s -c 'split(" ") | unique')" >> $GITHUB_OUTPUT
-
-          # ログ出力
-          echo "Analyzed OS list: ${os_list[@]}"
-          echo "Analyzed Python versions: ${python_versions[@]}"
+          name: test-results
+          path: test_results.txt
 
   deploy-testmon:
-    needs: [test-and-deploy-testmon, analyze-results]
-    if: needs.analyze-results.outputs.os_list != '[]' && needs.analyze-results.outputs.python_versions != '[]'
+    needs: test-and-deploy-testmon
+    if: contains(needs.test-and-deploy-testmon.result, 'success')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -161,6 +138,17 @@ jobs:
           git config --local user.name "github-actions[bot]"
           echo "Git configuration set."
 
+      - name: Prepare os_list and python_versions
+        run: |
+          os_list='${{ join(github.event.client_payload.os, ' ') }}'
+          python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
+
+          echo "OS List: $os_list"
+          echo "Python Versions List: $python_versions_list"
+
+          echo "os_list=$os_list" >> $GITHUB_ENV
+          echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
+
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         run: |
@@ -169,11 +157,8 @@ jobs:
           git checkout ghpages
 
           changes_made=false
-          os_list=${{ needs.analyze-results.outputs.os_list }}
-          python_versions_list=${{ needs.analyze-results.outputs.python_versions }}
-
-          for os in $(echo "$os_list" | jq -r '.[]'); do
-            for python_version in $(echo "$python_versions_list" | jq -r '.[]'); do
+          for os in $os_list; do
+            for python_version in $python_versions_list; do
               folder_name="testmon-data_${os}_python_${python_version}"
               artifact_folder="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
               echo "Processing $os with Python $python_version..."
@@ -213,35 +198,65 @@ jobs:
           ls -R
 
   trigger-other-workflows:
-    needs: [analyze-results, deploy-testmon]
-    if: needs.analyze-results.outputs.os_list != '[]' && needs.analyze-results.outputs.python_versions != '[]'
+    needs: [test-and-deploy-testmon, deploy-testmon]
+    if: needs.test-and-deploy-testmon.result == 'success'
     runs-on: ubuntu-latest
     steps:
+      - name: Download test results
+        uses: actions/download-artifact@v4
+        with:
+          name: test-results
+
+      - name: Collect valid configurations
+        id: collect-configs
+        run: |
+          valid_os=()
+          valid_python_versions=()
+
+          while IFS=',' read -r os py_version status; do
+            if [ "$status" = "true" ]; then
+              valid_os+=("$os")
+              valid_python_versions+=("$py_version")
+            fi
+          done < test_results.txt
+
+          unique_os=$(echo "${valid_os[@]}" | tr ' ' '\n' | sort -u | jq -R . | jq -s .)
+          unique_python_versions=$(echo "${valid_python_versions[@]}" | tr ' ' '\n' | sort -u | jq -R . | jq -s .)
+
+          echo "valid_os=$unique_os" >> $GITHUB_OUTPUT
+          echo "valid_python_versions=$unique_python_versions" >> $GITHUB_OUTPUT
+
       - name: Trigger pytest-cov workflow
+        if: steps.collect-configs.outputs.valid_os != '[]' && steps.collect-configs.outputs.valid_python_versions != '[]'
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
           client-payload: |-
             {
-              "os": ${{ needs.analyze-results.outputs.os_list }},
-              "python_versions": ${{ needs.analyze-results.outputs.python_versions }},
+              "os": ${{ steps.collect-configs.outputs.valid_os }},
+              "python_versions": ${{ steps.collect-configs.outputs.valid_python_versions }},
               "skip_tests": false
             }
 
       - name: Trigger pytest-html workflow
+        if: steps.collect-configs.outputs.valid_os != '[]' && steps.collect-configs.outputs.valid_python_versions != '[]'
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
           client-payload: |-
             {
-              "os": ${{ needs.analyze-results.outputs.os_list }},
-              "python_versions": ${{ needs.analyze-results.outputs.python_versions }},
+              "os": ${{ steps.collect-configs.outputs.valid_os }},
+              "python_versions": ${{ steps.collect-configs.outputs.valid_python_versions }},
               "skip_tests": false
             }
 
       - name: Log workflow triggers
         run: |
-          echo "Triggered pytest-cov and pytest-html workflows."
-          echo "OS List: ${{ needs.analyze-results.outputs.os_list }}"
-          echo "Python Versions: ${{ needs.analyze-results.outputs.python_versions }}"
-          echo "Check the Actions tab for these workflows to start."
+          echo "Valid OS configurations: ${{ steps.collect-configs.outputs.valid_os }}"
+          echo "Valid Python versions: ${{ steps.collect-configs.outputs.valid_python_versions }}"
+          if [ "${{ steps.collect-configs.outputs.valid_os }}" != "[]" ] && [ "${{ steps.collect-configs.outputs.valid_python_versions }}" != "[]" ]; then
+            echo "Triggered pytest-cov and pytest-html workflows for the above configurations."
+            echo "Check the Actions tab for these workflows to start."
+          else
+            echo "No valid configurations found. Workflows were not triggered."
+          fi
