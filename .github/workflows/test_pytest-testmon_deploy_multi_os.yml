@@ -220,13 +220,29 @@ jobs:
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
-          client-payload: '{"skip_tests": false}'
+          #client-payload: '{"skip_tests": false}'
+          client-payload: |-
+            {
+              "matrix": {
+                "os": ${{ toJson(github.event.client_payload.os) }},
+                "python_versions": ${{ toJson(github.event.client_payload.python_versions) }}
+              },
+              "skip_tests": false
+            }
 
       - name: Trigger pytest-html workflow
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
-          client-payload: '{"skip_tests": false}'
+          #client-payload: '{"skip_tests": false}'
+          client-payload: |-
+            {
+              "matrix": {
+                "os": ${{ toJson(github.event.client_payload.os) }},
+                "python_versions": ${{ toJson(github.event.client_payload.python_versions) }}
+              },
+              "skip_tests": false
+            }
 
       - name: Log workflow triggers
         run: |

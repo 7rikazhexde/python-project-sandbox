@@ -21,4 +21,4 @@ jobs:
             -f client_payload[os][]=macos-13 \
             -f client_payload[os][]=windows-latest \
             -f client_payload[python_versions][]=3.11 \
-            #-f client_payload[python_versions][]=3.12
+            -f client_payload[python_versions][]=3.12
