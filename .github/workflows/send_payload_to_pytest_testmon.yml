@@ -13,8 +13,12 @@ jobs:
     steps:
       - name: Send Dispatch Event
         env:
-          GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
+          GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}  # シークレット変数
         run: |
           gh api repos/7rikazhexde/trial-test/dispatches \
             -f event_type=test \
-            -f client_payload='{"os": ["ubuntu-latest", "macos-13", "windows-latest"], "python_versions": ["3.11", "3.12"]}'
+            -f client_payload[os][]=ubuntu-latest \
+            -f client_payload[os][]=macos-13 \
+            -f client_payload[os][]=windows-latest \
+            -f client_payload[python_versions][]=3.11 \
+            -f client_payload[python_versions][]=3.12
