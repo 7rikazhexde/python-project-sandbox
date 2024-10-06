@@ -1,22 +1,5 @@
 name: pytest-testmon Deploy Multi-OS
 
-# ワークフローの処理の流れ:
-# 1. トリガー条件:
-#    - リポジトリディスパッチイベント（test_pytest-testmon_deploy_multi_os）により起動
-# 2. 複数の環境（OS、Pythonバージョン）でのセットアップと前回の.testmondataの取得
-#    - client_payloadで指定されたOS、Pythonバージョンで実行
-# 3. 各OS・Pythonバージョンごとに個別の.testmondataファイルを取得
-# 4. pytest-testmonを使用してテスト実行
-#    - 前回の.testmondataがある場合、それを使用して差分テストを実行
-# 5. testmon結果の確認とテスト実行有無の判定
-#    - テストが実行された場合、後続のジョブをトリガー
-# 6. 更新された.testmondataファイルのアップロード
-#    - テストが実行された場合のみ実行
-# 7. GitHub Pagesへの.testmondataファイルのデプロイ
-#    - テストが実行され、かつ変更がある場合のみ実行
-# 8. pytest-covとpytest-htmlワークフローのトリガー
-#    - テストが実行された場合のみトリガー
-
 on:
   repository_dispatch:
     types:
@@ -35,8 +18,7 @@ jobs:
       contents: write
       pull-requests: write
     outputs:
-      tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
-      valid_configs: ${{ steps.pytest-testmon.outputs.valid_configs }}
+      valid_configs: ${{ steps.collect-valid-configs.outputs.valid_configs }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.0
@@ -97,11 +79,9 @@ jobs:
           if echo "$output" | grep -q "collected 0 items"; then
             echo "No tests executed. Skipping deployment and further workflows for this configuration."
             echo "tests_executed=false" >> $GITHUB_OUTPUT
-            echo "valid_configs=" >> $GITHUB_OUTPUT
           else
             echo "Tests executed. Proceeding with deployment and further workflows."
             echo "tests_executed=true" >> $GITHUB_OUTPUT
-            echo "valid_configs=${{ matrix.os }}:${{ matrix.python-version }}" >> $GITHUB_OUTPUT
           fi
 
       - name: Create testmon directory and move .testmondata
@@ -130,9 +110,26 @@ jobs:
           retention-days: 1
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
 
-  deploy-testmon:
+  collect-valid-configs:
     needs: test-and-deploy-testmon
-    if: contains(needs.test-and-deploy-testmon.result, 'success')
+    runs-on: ubuntu-latest
+    outputs:
+      valid_configs: ${{ steps.collect-configs.outputs.valid_configs }}
+    steps:
+      - name: Collect valid configurations
+        id: collect-configs
+        run: |
+          valid_configs=()
+          for result in ${{ needs.test-and-deploy-testmon.result }}; do
+            if [ "$result" = "success" ]; then
+              valid_configs+=("${{ matrix.os }}:${{ matrix.python-version }}")
+            fi
+          done
+          echo "valid_configs=${valid_configs[*]}" >> $GITHUB_OUTPUT
+
+  deploy-testmon:
+    needs: [test-and-deploy-testmon, collect-valid-configs]
+    if: needs.collect-valid-configs.outputs.valid_configs != ''
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
@@ -151,17 +148,6 @@ jobs:
           git config --local user.name "github-actions[bot]"
           echo "Git configuration set."
 
-      - name: Prepare os_list and python_versions
-        run: |
-          os_list='${{ join(github.event.client_payload.os, ' ') }}'
-          python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
-
-          echo "OS List: $os_list"
-          echo "Python Versions List: $python_versions_list"
-
-          echo "os_list=$os_list" >> $GITHUB_ENV
-          echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
-
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         run: |
@@ -170,25 +156,27 @@ jobs:
           git checkout ghpages
 
           changes_made=false
-          for os in $os_list; do
-            for python_version in $python_versions_list; do
-              folder_name="testmon-data_${os}_python_${python_version}"
-              artifact_folder="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
-              echo "Processing $os with Python $python_version..."
-              if [ -d "$artifact_folder" ]; then
-                if [ -f "${artifact_folder}/.testmondata" ]; then
-                  echo "Changes detected for $os with Python $python_version, updating..."
-                  mkdir -p "$folder_name"
-                  cp "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
-                  git add "$folder_name"
-                  changes_made=true
-                else
-                  echo "No .testmondata file found in $artifact_folder"
-                fi
+          IFS=' ' read -ra configs <<< "${{ needs.collect-valid-configs.outputs.valid_configs }}"
+          for config in "${configs[@]}"; do
+            IFS=':' read -ra parts <<< "$config"
+            os="${parts[0]}"
+            python_version="${parts[1]}"
+            folder_name="testmon-data_${os}_python_${python_version}"
+            artifact_folder="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
+            echo "Processing $os with Python $python_version..."
+            if [ -d "$artifact_folder" ]; then
+              if [ -f "${artifact_folder}/.testmondata" ]; then
+                echo "Changes detected for $os with Python $python_version, updating..."
+                mkdir -p "$folder_name"
+                cp "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
+                git add "$folder_name"
+                changes_made=true
               else
-                echo "Artifact folder not found: $artifact_folder"
+                echo "No .testmondata file found in $artifact_folder"
               fi
-            done
+            else
+              echo "Artifact folder not found: $artifact_folder"
+            fi
           done
 
           if [ "$changes_made" = true ]; then
@@ -211,14 +199,14 @@ jobs:
           ls -R
 
   trigger-other-workflows:
-    needs: [test-and-deploy-testmon, deploy-testmon]
-    if: needs.test-and-deploy-testmon.result == 'success'
+    needs: [collect-valid-configs, deploy-testmon]
+    if: needs.collect-valid-configs.outputs.valid_configs != ''
     runs-on: ubuntu-latest
     steps:
       - name: Prepare valid configurations
         id: prepare_configs
         run: |
-          valid_configs='${{ needs.test-and-deploy-testmon.outputs.valid_configs }}'
+          valid_configs='${{ needs.collect-valid-configs.outputs.valid_configs }}'
           IFS=' ' read -ra configs <<< "$valid_configs"
 
           os_list=()
@@ -230,8 +218,8 @@ jobs:
             python_versions+=("${parts[1]}")
           done
 
-          os_json=$(jq -n --arg vals "${os_list[*]}" '$vals | split(" ")')
-          python_versions_json=$(jq -n --arg vals "${python_versions[*]}" '$vals | split(" ")')
+          os_json=$(jq -n --arg vals "${os_list[*]}" '$vals | split(" ") | unique')
+          python_versions_json=$(jq -n --arg vals "${python_versions[*]}" '$vals | split(" ") | unique')
 
           echo "os_json=$os_json" >> $GITHUB_OUTPUT
           echo "python_versions_json=$python_versions_json" >> $GITHUB_OUTPUT
