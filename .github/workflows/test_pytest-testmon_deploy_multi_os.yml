@@ -122,7 +122,7 @@ jobs:
       - name: Upload testmon data
         uses: actions/upload-artifact@v4.4.0
         with:
-          name: testmon-data-${{ matrix.os }}-python-${{ matrix.python-version }}
+          name: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}
           path: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}/.testmondata
           if-no-files-found: warn
           include-hidden-files: true
@@ -142,6 +142,11 @@ jobs:
         uses: actions/download-artifact@v4.1.8
         with:
           path: downloaded-artifacts
+
+      - name: List downloaded artifacts
+        run: |
+          echo "Contents of downloaded-artifacts:"
+          ls -R downloaded-artifacts
 
       - name: Setup Git
         run: |
@@ -173,16 +178,18 @@ jobs:
               folder_name="testmon-data_${os}_python_${python_version}"
               artifact_folder="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
               echo "Processing $os with Python $python_version..."
-              if [ -f "${artifact_folder}/.testmondata" ]; then
-                echo "Changes detected for $os with Python $python_version, updating..."
-                mkdir -p $folder_name
-                mv "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
-                git add $folder_name
-                changes_made=true
+              if [ -d "$artifact_folder" ]; then
+                if [ -f "${artifact_folder}/.testmondata" ]; then
+                  echo "Changes detected for $os with Python $python_version, updating..."
+                  mkdir -p "$folder_name"
+                  mv "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
+                  git add "$folder_name"
+                  changes_made=true
+                else
+                  echo "No .testmondata file found in $artifact_folder"
+                fi
               else
-                echo "No testmon data found for $os with Python $python_version"
-                echo "Contents of ${artifact_folder}:"
-                ls -la "${artifact_folder}"
+                echo "Artifact folder not found: $artifact_folder"
               fi
             done
           done
