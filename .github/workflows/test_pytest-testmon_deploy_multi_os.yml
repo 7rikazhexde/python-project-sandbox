@@ -198,11 +198,11 @@ jobs:
             git commit -m "Update testmon data on GitHub Pages" || echo "No changes to commit"
             git push origin ghpages || echo "No changes to push"
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
-            echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
+            echo "updated_testmon_json=$(echo $updated_testmon_json | jq -c .)" >> $GITHUB_OUTPUT
           else
             echo "No changes to commit"
             echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
-            echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
+            echo "updated_testmon_json=$(echo $updated_testmon_json | jq -c .)" >> $GITHUB_OUTPUT
           fi
 
       - name: List deployed files
@@ -221,11 +221,11 @@ jobs:
     steps:
       - name: Output raw updated_testmon_json
         run: |
-          echo "Raw updated_testmon_json: ${{ steps.deploy_testmon.outputs.updated_testmon_json }}"
+          echo "Raw updated_testmon_json: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
 
       - name: Output toJson updated_testmon_json
         run: |
-          echo "toJson updated_testmon_json: ${{ toJson(steps.deploy_testmon.outputs.updated_testmon_json) }}"
+          echo "toJson updated_testmon_json: ${{ toJson(fromJson(needs.deploy-testmon.outputs.updated_testmon_json)) }}"
 
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
@@ -233,7 +233,7 @@ jobs:
           event-type: run-pytest-cov
           client-payload: |-
             {
-              "os_python_combinations": ${{ toJson(steps.deploy_testmon.outputs.updated_testmon_json) }},
+              "os_python_combinations": ${{ needs.deploy-testmon.outputs.updated_testmon_json }},
               "skip_tests": false
             }
 
@@ -243,7 +243,7 @@ jobs:
           event-type: run-pytest-html
           client-payload: |-
             {
-              "os_python_combinations": ${{ toJson(steps.deploy_testmon.outputs.updated_testmon_json) }},
+              "os_python_combinations": ${{ needs.deploy-testmon.outputs.updated_testmon_json }},
               "skip_tests": false
             }
 
