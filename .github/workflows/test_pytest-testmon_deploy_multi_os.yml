@@ -235,7 +235,7 @@ jobs:
           event-type: run-pytest-cov
           client-payload: |-
             {
-              "os_python_combinations": ${{ toJson(needs.deploy-testmon.outputs.updated_testmon_json) }},
+              "os_python_combinations": ${{ needs.deploy-testmon.outputs.updated_testmon_json }},
               "skip_tests": false
             }
 
@@ -245,7 +245,7 @@ jobs:
           event-type: run-pytest-html
           client-payload: |-
             {
-              "os_python_combinations": ${{ toJson(needs.deploy-testmon.outputs.updated_testmon_json) }},
+              "os_python_combinations": ${{ needs.deploy-testmon.outputs.updated_testmon_json }},
               "skip_tests": false
             }
 
