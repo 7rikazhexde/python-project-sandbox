@@ -141,11 +141,6 @@ jobs:
         with:
           path: downloaded-artifacts
 
-      #- name: List downloaded artifacts
-      #  run: |
-      #    echo "Contents of downloaded-artifacts:"
-      #    ls -R downloaded-artifacts
-
       - name: Setup Git
         run: |
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
@@ -171,6 +166,7 @@ jobs:
           git checkout ghpages
 
           changes_made=false
+          updated_testmon_json="["
           for os in $os_list; do
             for python_version in $python_versions_list; do
               folder_name="testmon-data_${os}_python_${python_version}"
@@ -183,6 +179,7 @@ jobs:
                   cp "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
                   git add "$folder_name"
                   changes_made=true
+                  updated_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 else
                   echo "No .testmondata file found in $artifact_folder"
                 fi
@@ -192,14 +189,20 @@ jobs:
             done
           done
 
+          # JSONの末尾のカンマを削除して配列を閉じる
+          updated_testmon_json="${updated_testmon_json%,}]"
+          echo "$updated_testmon_json" | jq .
+
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages" || echo "No changes to commit"
             git push origin ghpages || echo "No changes to push"
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
+            echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
           else
             echo "No changes to commit"
             echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
+            echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
           fi
 
       - name: List deployed files
@@ -213,18 +216,16 @@ jobs:
 
   trigger-other-workflows:
     needs: [test-and-deploy-testmon, deploy-testmon]
-    if: needs.test-and-deploy-testmon.result == 'success'
+    if: needs.test-and-deploy-testmon.result == 'success' && needs.deploy-testmon.outputs.updated_testmon_json != '[]'
     runs-on: ubuntu-latest
     steps:
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
-          #client-payload: '{"skip_tests": false}'
           client-payload: |-
             {
-              "os": ${{ toJson(github.event.client_payload.os) }},
-              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
+              "os_python_combinations": ${{ steps.deploy_testmon.outputs.updated_testmon_json }},
               "skip_tests": false
             }
 
@@ -232,11 +233,9 @@ jobs:
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
-          #client-payload: '{"skip_tests": false}'
           client-payload: |-
             {
-              "os": ${{ toJson(github.event.client_payload.os) }},
-              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
+              "os_python_combinations": ${{ steps.deploy_testmon.outputs.updated_testmon_json }},
               "skip_tests": false
             }
 
