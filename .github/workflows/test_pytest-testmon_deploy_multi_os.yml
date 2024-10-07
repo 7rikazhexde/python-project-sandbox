@@ -221,13 +221,10 @@ jobs:
     if: needs.test-and-deploy-testmon.result == 'success' && needs.deploy-testmon.outputs.updated_testmon_json != '[]'
     runs-on: ubuntu-latest
     steps:
-      - name: Output raw updated_testmon_json
+      - name: Output os and python versions
         run: |
-          echo "Raw updated_testmon_json: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
-
-      - name: Output toJson updated_testmon_json
-        run: |
-          echo "toJson updated_testmon_json: ${{ toJson(needs.deploy-testmon.outputs.updated_testmon_json) }}"
+          echo "OS: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
+          echo "Python versions: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
 
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
@@ -235,7 +232,8 @@ jobs:
           event-type: run-pytest-cov
           client-payload: |-
             {
-              "os_python_combinations": ${{ toJson(needs.deploy-testmon.outputs.updated_testmon_json) }},
+              "os": ${{ toJson(github.event.client_payload.os) }},
+              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
               "skip_tests": false
             }
 
@@ -245,11 +243,11 @@ jobs:
           event-type: run-pytest-html
           client-payload: |-
             {
-              "os_python_combinations": ${{ toJson(needs.deploy-testmon.outputs.updated_testmon_json) }},
+              "os": ${{ toJson(github.event.client_payload.os) }},
+              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
               "skip_tests": false
             }
 
       - name: Log workflow triggers
         run: |
           echo "Triggered pytest-cov and pytest-html workflows."
-          echo "Check the Actions tab for these workflows to start."
