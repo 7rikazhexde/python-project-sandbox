@@ -216,16 +216,24 @@ jobs:
 
   trigger-other-workflows:
     needs: [test-and-deploy-testmon, deploy-testmon]
-    if: needs.test-and-deploy-testmon.result == 'success' && needs.deploy-testmon.outputs.updated_testmon_json != '[]'
+    if: needs.test-and-deploy-testmon.result == 'success'
     runs-on: ubuntu-latest
     steps:
+      - name: Output raw updated_testmon_json
+        run: |
+          echo "Raw updated_testmon_json: ${{ steps.deploy_testmon.outputs.updated_testmon_json }}"
+
+      - name: Output toJson updated_testmon_json
+        run: |
+          echo "toJson updated_testmon_json: ${{ toJson(steps.deploy_testmon.outputs.updated_testmon_json) }}"
+
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
           client-payload: |-
             {
-              "os_python_combinations": ${{ steps.deploy_testmon.outputs.updated_testmon_json }},
+              "os_python_combinations": ${{ toJson(steps.deploy_testmon.outputs.updated_testmon_json) }},
               "skip_tests": false
             }
 
@@ -235,7 +243,7 @@ jobs:
           event-type: run-pytest-html
           client-payload: |-
             {
-              "os_python_combinations": ${{ steps.deploy_testmon.outputs.updated_testmon_json }},
+              "os_python_combinations": ${{ toJson(steps.deploy_testmon.outputs.updated_testmon_json) }},
               "skip_tests": false
             }
 
