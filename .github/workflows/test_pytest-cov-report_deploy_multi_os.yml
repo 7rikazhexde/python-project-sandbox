@@ -32,8 +32,9 @@ jobs:
       matrix:
         #os: [ubuntu-latest, macos-13, windows-latest]
         #python-version: ['3.11','3.12']
-        os: ${{github.event.client_payload.os}}
-        python-version: ${{github.event.client_payload.python_versions}}
+        #os: ${{github.event.client_payload.os}}
+        #python-version: ${{github.event.client_payload.python_versions}}
+        include: ${{ fromJson(github.event.client_payload.os_python_combinations) }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
