@@ -30,10 +30,6 @@ jobs:
   test-and-report:
     strategy:
       matrix:
-        #os: [ubuntu-latest, macos-13, windows-latest]
-        #python-version: ['3.11','3.12']
-        #os: ${{github.event.client_payload.os}}
-        #python-version: ${{github.event.client_payload.python_versions}}
         include: ${{ fromJson(github.event.client_payload.os_python_combinations) }}
     runs-on: ${{ matrix.os }}
     env:
@@ -47,7 +43,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Set up Python
+      - name: Set up Python ${{ matrix.python_version }}
         uses: actions/setup-python@v5.2.0
         with:
           python-version: ${{ matrix.python-version }}
