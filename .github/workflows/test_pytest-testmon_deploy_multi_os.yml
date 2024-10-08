@@ -221,28 +221,27 @@ jobs:
     if: needs.test-and-deploy-testmon.result == 'success' && needs.deploy-testmon.outputs.updated_testmon_json != '[]'
     runs-on: ubuntu-latest
     steps:
-      - name: Output updated_testmon_json
+      - name: Output os and python versions
         run: |
-          echo "Updated testmon JSON: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
+          echo "OS: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
+          echo "Python versions: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
 
-      - name: Extract os and python_versions from updated_testmon_json
-        id: extract_data
+      - name: Prepare client payload
+        id: prepare-payload
         run: |
-          os_list=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -r '.[].os' | sort | uniq)
-          python_versions_list=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -r '.[].python_version' | sort | uniq)
-          echo "os_list=$os_list" >> $GITHUB_ENV
-          echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
-          echo "OS List: $os_list"
-          echo "Python Versions List: $python_versions_list"
+          os_list=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].os] | unique')
+          python_versions=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].python_version] | unique')
+          echo "os_list=$os_list" >> $GITHUB_OUTPUT
+          echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
 
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
-          client-payload: |-
+          client-payload: |
             {
-              "os": ${{ toJson(env.os_list.split(' ')) }},
-              "python_versions": ${{ toJson(env.python_versions_list.split(' ')) }},
+              "os": ${{ steps.prepare-payload.outputs.os_list }},
+              "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
               "skip_tests": false
             }
 
@@ -250,10 +249,10 @@ jobs:
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-html
-          client-payload: |-
+          client-payload: |
             {
-              "os": ${{ toJson(env.os_list.split(' ')) }},
-              "python_versions": ${{ toJson(env.python_versions_list.split(' ')) }},
+              "os": ${{ steps.prepare-payload.outputs.os_list }},
+              "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
               "skip_tests": false
             }
 
