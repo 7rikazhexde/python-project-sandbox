@@ -127,7 +127,7 @@ jobs:
           message="'test_summary' workflow completed with status: $status
 
           Check URL:
-          https://github.com/7rikazhexde/trial-test/actions/workflows/test_summary.yml"
+          https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_summary.yml"
 
           curl -X POST https://notify-api.line.me/api/notify \
             -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \

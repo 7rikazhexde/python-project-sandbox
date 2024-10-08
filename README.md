@@ -1,32 +1,32 @@
-# trial-test
+# python-project-sandbox
 
 An experimental project to test out various tools.
 
 ## Pytest Coverage Comment
 
-[![Test Multi-OS](https://github.com/7rikazhexde/trial-test/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_multi_os.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/trial-test/tree/coverage)
+[![Test Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_multi_os.yml) [![Coverage Status](https://img.shields.io/badge/Coverage-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage)
 
 ## pytest-html
 
-[![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/trial-test/actions/workflows/test_pytest-html-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_pytest-html-report_deploy_multi_os.yml)
+[![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml)
 
 | Python Version | ubuntu-latest | macos-13 | windows-latest |
 |----------------|---------------|----------|----------------|
-| 3.11 | [report-url](https://7rikazhexde.github.io/trial-test/pytest-html-report_ubuntu-latest_python_3.11/report_page.html) | [report-url](https://7rikazhexde.github.io/trial-test/pytest-html-report_macos-13_python_3.11/report_page.html) | [report-url](https://7rikazhexde.github.io/trial-test/pytest-html-report_windows-latest_python_3.11/report_page.html) |
-| 3.12 | [report-url](https://7rikazhexde.github.io/trial-test/pytest-html-report_ubuntu-latest_python_3.12/report_page.html) | [report-url](https://7rikazhexde.github.io/trial-test/pytest-html-report_macos-13_python_3.12/report_page.html) | [report-url](https://7rikazhexde.github.io/trial-test/pytest-html-report_windows-latest_python_3.12/report_page.html) |
+| 3.11 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_ubuntu-latest_python_3.11/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_macos-13_python_3.11/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_windows-latest_python_3.11/report_page.html) |
+| 3.12 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_ubuntu-latest_python_3.12/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_macos-13_python_3.12/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_windows-latest_python_3.12/report_page.html) |
 
 ## pytest-cov
 
-[![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/trial-test/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/trial-test/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml)
+[![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml)
 
 | Python Version | ubuntu-latest | macos-13 | windows-latest |
 |----------------|---------------|----------|----------------|
-| 3.11 | [report-url](https://7rikazhexde.github.io/trial-test/pytest-cov-report_ubuntu-latest_python_3.11/index.html) | [report-url](https://7rikazhexde.github.io/trial-test/pytest-cov-report_macos-13_python_3.11/index.html) | [report-url](https://7rikazhexde.github.io/trial-test/pytest-cov-report_windows-latest_python_3.11/index.html) |
-| 3.12 | [report-url](https://7rikazhexde.github.io/trial-test/pytest-cov-report_ubuntu-latest_python_3.12/index.html) | [report-url](https://7rikazhexde.github.io/trial-test/pytest-cov-report_macos-13_python_3.12/index.html) | [report-url](https://7rikazhexde.github.io/trial-test/pytest-cov-report_windows-latest_python_3.12/index.html) |
+| 3.11 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_ubuntu-latest_python_3.11/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_macos-13_python_3.11/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_windows-latest_python_3.11/index.html) |
+| 3.12 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_ubuntu-latest_python_3.12/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_macos-13_python_3.12/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_windows-latest_python_3.12/index.html) |
 
 ## Tabale of contents
 
-- [trial-test](#trial-test)
+- [python-project-sandbox](#python-project-sandbox)
   - [Pytest Coverage Comment](#pytest-coverage-comment)
   - [pytest-html](#pytest-html)
   - [pytest-cov](#pytest-cov)
@@ -56,7 +56,7 @@ This project is using [pre-commit](https://github.com/pre-commit/pre-commit) via
 2. Run update pyproject.toml version up script
 
 > [!NOTE]
-> This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/trial-test/blob/main/.github/workflows/update-version-and-release.yml).\
+> This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/python-project-sandbox/blob/main/.github/workflows/update-version-and-release.yml).\
 > Please check the workflow for details.
 
 - [update_pyproject_version.py](ci/update_pyproject_version.py)
@@ -65,7 +65,7 @@ This project is using [pre-commit](https://github.com/pre-commit/pre-commit) via
 
   ```toml
   [tool.poetry]
-  name = "trial-test"
+  name = "python-project-sandbox"
   version = "0.1.19" # Automatic increase
   description = "An experimental project to test out various tools."
   authors = ["7rikaz"]
@@ -115,7 +115,7 @@ poetry run pre-commit run --all-files
 ## post-commit
 
 > [!NOTE]
-> This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/trial-test/blob/main/.github/workflows/update-version-and-release.yml). Please check the workflow for details.
+> This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/python-project-sandbox/blob/main/.github/workflows/update-version-and-release.yml). Please check the workflow for details.
 
 ### Overview
 

@@ -84,7 +84,7 @@ jobs:
           message: |
             Call "test_githubpages_deploy" from Github Action
             Env: ${{ matrix.os }} / ${{ matrix.python-version }}
-            Check URL: https://7rikazhexde.github.io/trial-test/${{ matrix.os }}/report_page.html
+            Check URL: https://7rikazhexde.github.io/python-project-sandbox/${{ matrix.os }}/report_page.html
 
   test_and_deploy_macos:
     strategy:
@@ -163,7 +163,7 @@ jobs:
           message: |
             Call "test_githubpages_deploy" from Github Action
             Env: ${{ matrix.os }} / ${{ matrix.python-version }}
-            Check URL: https://7rikazhexde.github.io/trial-test/${{ matrix.os }}/report_page.html
+            Check URL: https://7rikazhexde.github.io/python-project-sandbox/${{ matrix.os }}/report_page.html
 
   test_and_deploy_windows:
     strategy:
@@ -246,4 +246,4 @@ jobs:
           message: |
             Call "test_githubpages_deploy" from Github Action
             Env: ${{ matrix.os }} / ${{ matrix.python-version }}
-            Check URL: https://7rikazhexde.github.io/trial-test/${{ matrix.os }}/report_page.html
+            Check URL: https://7rikazhexde.github.io/python-project-sandbox/${{ matrix.os }}/report_page.html

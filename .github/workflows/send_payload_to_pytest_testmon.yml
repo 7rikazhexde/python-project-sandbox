@@ -15,7 +15,7 @@ jobs:
       #  env:
       #    GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
       #  run: |
-      #    gh api repos/7rikazhexde/trial-test/dispatches \
+      #    gh api repos/7rikazhexde/python-project-sandbox/dispatches \
       #      -f event_type=test_pytest-testmon_deploy_multi_os \
       #      -f client_payload[os][]=ubuntu-latest \
       #      -f client_payload[os][]=macos-13 \
@@ -29,7 +29,7 @@ jobs:
           PYTHON_VERSIONS: "3.11 3.12"
           #PYTHON_VERSIONS: "3.12"
         run: |
-          payload_cmd="gh api repos/7rikazhexde/trial-test/dispatches -f event_type=test_pytest-testmon_deploy_multi_os"
+          payload_cmd="gh api repos/7rikazhexde/python-project-sandbox/dispatches -f event_type=test_pytest-testmon_deploy_multi_os"
 
           for os in $OS_LIST; do
             payload_cmd+=" -f client_payload[os][]=$os"

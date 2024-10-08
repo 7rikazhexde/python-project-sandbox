@@ -1,5 +1,5 @@
 [tool.poetry]
-name = "trial-test"
+name = "python-project-sandbox"
 version = "1.0.28"
 description = "An experimental project to test out various tools."
 authors = ["7rikaz"]

@@ -71,4 +71,4 @@ jobs:
           message: |
             Call "test_githubpages_deploy" from Github Action
             Env: ${{ matrix.os }} / ${{ matrix.python-version }}
-            Chack URL: https://7rikazhexde.github.io/trial-test/report_page.html
+            Chack URL: https://7rikazhexde.github.io/python-project-sandbox/report_page.html
