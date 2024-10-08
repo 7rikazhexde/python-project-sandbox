@@ -226,14 +226,22 @@ jobs:
           echo "OS: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
           echo "Python versions: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
 
+      - name: Prepare client payload
+        id: prepare-payload
+        run: |
+          os_list=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -r '[.[].os] | unique')
+          python_versions=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -r '[.[].python_version] | unique')
+          echo "os_list=$os_list" >> $GITHUB_OUTPUT
+          echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
+
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
         with:
           event-type: run-pytest-cov
           client-payload: |-
             {
-              "os": ${{ toJson(github.event.client_payload.os) }},
-              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
+              "os": ${{ steps.prepare-payload.outputs.os_list }},
+              "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
               "skip_tests": false
             }
 
@@ -243,8 +251,8 @@ jobs:
           event-type: run-pytest-html
           client-payload: |-
             {
-              "os": ${{ toJson(github.event.client_payload.os) }},
-              "python_versions": ${{ toJson(github.event.client_payload.python_versions) }},
+              "os": ${{ steps.prepare-payload.outputs.os_list }},
+              "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
               "skip_tests": false
             }
 
