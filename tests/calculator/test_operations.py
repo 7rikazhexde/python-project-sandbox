@@ -3,7 +3,7 @@ from project_a.calculator.operations import add, divide, multiply, subtract
 
 def test_add() -> None:
     print("Running test_add()")
-    assert add(2, 3) == 5
+    assert add(2, 4) == 6
     assert add(0, 0) == 0
     assert add(-2, 2) == 0
     assert add(1, 3) == 4
