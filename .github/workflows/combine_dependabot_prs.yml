@@ -29,9 +29,9 @@ jobs:
   combine-prs:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v2
+      - uses: actions/checkout@v4.2.1
       - name: Combine PRs
-        uses: github/combine-prs@v3.0.0
+        uses: github/combine-prs@v5.1.0
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         with:
