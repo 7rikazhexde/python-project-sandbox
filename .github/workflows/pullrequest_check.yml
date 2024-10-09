@@ -79,10 +79,17 @@ jobs:
           echo "COVERAGE=$coverage_percentage" >> $GITHUB_ENV
       - name: Check coverage
         shell: bash
-        if: ${{ env.COVERAGE < 90 }}
+        #if: ${{ env.COVERAGE < 90 }}
+        #run: |
+        #  echo "Test coverage is below 90%. Current coverage: ${{ env.COVERAGE }}%"
+        #  exit 1
         run: |
-          echo "Test coverage is below 90%. Current coverage: ${{ env.COVERAGE }}%"
-          exit 1
+          if [ "$COVERAGE" -lt 90 ]; then
+            echo "Test coverage is below 90%. Current coverage: $COVERAGE%"
+            exit 1
+          else
+            echo "Test coverage is above or equal to 90%. Current coverage: $COVERAGE%"
+          fi
       - name: Pytest coverage comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.52
