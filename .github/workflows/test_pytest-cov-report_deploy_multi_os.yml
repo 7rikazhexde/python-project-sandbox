@@ -104,7 +104,7 @@ jobs:
         shell: bash
 
       - name: Upload pytest-cov results
-        uses: actions/upload-artifact@v4.4.1
+        uses: actions/upload-artifact@v4.4.2
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
