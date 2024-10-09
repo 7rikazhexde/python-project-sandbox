@@ -10,6 +10,11 @@ jobs:
     # Dependabotによる実行やバージョンバンプのコミットを除外
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
+      OS_LIST: "ubuntu-latest macos-13 windows-latest"
+      PYTHON_VERSIONS: "3.11 3.12"
+      #PYTHON_VERSIONS: "3.12"
     steps:
       #- name: Send Dispatch Event
       #  env:
@@ -23,11 +28,11 @@ jobs:
       #      -f client_payload[python_versions][]=3.11 \
       #      -f client_payload[python_versions][]=3.12
       - name: Send Dispatch Event
-        env:
-          GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
-          OS_LIST: "ubuntu-latest macos-13 windows-latest"
-          PYTHON_VERSIONS: "3.11 3.12"
-          #PYTHON_VERSIONS: "3.12"
+        #env:
+        #  GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
+        #  OS_LIST: "ubuntu-latest macos-13 windows-latest"
+        #  PYTHON_VERSIONS: "3.11 3.12"
+        #  #PYTHON_VERSIONS: "3.12"
         run: |
           payload_cmd="gh api repos/7rikazhexde/python-project-sandbox/dispatches -f event_type=test_pytest-testmon_deploy_multi_os"
 
