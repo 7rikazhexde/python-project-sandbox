@@ -1,4 +1,4 @@
-name: Send Payload Action to Pytest Testmon
+name: Use Send Payload Action to Pytest Testmon
 
 on:
   push:
@@ -13,10 +13,10 @@ jobs:
         uses: actions/checkout@v4.2.1
 
       - name: Send Payload to Pytest Testmon
-        uses: ./.github  # ローカルで定義されたアクションを使用
+        uses: ./.github
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
-          target_branch: 'ghpages'
+          ghpages_branch: 'ghpages'
           os_list: 'ubuntu-latest macos-13 windows-latest'
           python_versions: '3.11 3.12'
         env:

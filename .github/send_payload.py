@@ -7,7 +7,7 @@ data: Dict[str, Union[str, List[str]]] = {
     "repository_name": os.getenv(
         "REPOSITORY_NAME", "7rikazhexde/python-project-sandbox"
     ),
-    "target_branch": os.getenv("TARGET_BRANCH", "main"),
+    "ghpages_branch": os.getenv("GHPAGES_BRANCH", "gh_pages"),
     "os": os.getenv("OS_LIST", "ubuntu-latest macos-13 windows-latest").split(),
     "python_versions": os.getenv("PYTHON_VERSIONS", "3.11 3.12").split(),
 }
