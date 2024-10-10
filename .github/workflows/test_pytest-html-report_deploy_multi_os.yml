@@ -104,7 +104,7 @@ jobs:
         shell: bash
 
       - name: Upload pytest-html results
-        uses: actions/upload-artifact@v4.4.2
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: test_results_${{ matrix.os }}_python_${{ matrix.python-version }}
