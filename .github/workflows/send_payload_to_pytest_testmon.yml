@@ -19,3 +19,5 @@ jobs:
           target_branch: 'ghpages'
           os_list: 'ubuntu-latest macos-13 windows-latest'
           python_versions: '3.11 3.12'
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
