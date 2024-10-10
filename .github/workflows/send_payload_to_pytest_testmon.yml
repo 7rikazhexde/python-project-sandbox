@@ -18,6 +18,7 @@ jobs:
           repository_name: '7rikazhexde/python-project-sandbox'
           ghpages_branch: 'ghpages'
           os_list: 'ubuntu-latest macos-13 windows-latest'
-          python_versions: '3.11 3.12'
+          #python_versions: '3.11 3.12'
+          python_versions: '3.12'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

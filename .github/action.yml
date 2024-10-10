@@ -37,7 +37,7 @@ runs:
       shell: bash
       env:
         REPOSITORY_NAME: ${{ inputs.repository_name }}
-        TARGET_BRANCH: ${{ inputs.ghpages_branch }}
+        GHPAGES_BRANCH: ${{ inputs.ghpages_branch }}
         OS_LIST: ${{ inputs.os_list }}
         PYTHON_VERSIONS: ${{ inputs.python_versions }}
         GH_TOKEN: ${{ env.GH_TOKEN }}
