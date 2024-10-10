@@ -1,5 +1,6 @@
 name: 'Send Payload to Pytest Testmon'
 description: 'Dynamically build and send dispatch payload to trigger pytest testmon tests across multiple OS and Python versions'
+
 inputs:
   repository_name:
     description: 'Repository name'
@@ -17,6 +18,7 @@ inputs:
     description: 'Space-separated list of Python versions to test'
     required: true
     default: '3.11 3.12'
+
 runs:
   using: "composite"
   steps:
@@ -27,10 +29,12 @@ runs:
 
     - name: Install GitHub CLI
       run: sudo apt-get install -y gh
+      shell: bash
 
     - name: Run Python script
       run: |
         python3 send_payload.py
+      shell: bash
       env:
         REPOSITORY_NAME: ${{ inputs.repository_name }}
         TARGET_BRANCH: ${{ inputs.target_branch }}
