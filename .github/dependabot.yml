@@ -7,7 +7,7 @@ updates:
   　groups:
       dependencies:
         patterns:
-          - '*'
+          - "*"
     open-pull-requests-limit: 10
 
   - package-ecosystem: "github-actions"
@@ -17,5 +17,5 @@ updates:
     groups:
       dependencies:
         patterns:
-          - '*'
+          - "*"
     open-pull-requests-limit: 10
