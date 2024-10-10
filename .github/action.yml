@@ -33,7 +33,7 @@ runs:
 
     - name: Run Python script
       run: |
-        python3 send_payload.py
+        python3 .github/send_payload.py
       shell: bash
       env:
         REPOSITORY_NAME: ${{ inputs.repository_name }}
