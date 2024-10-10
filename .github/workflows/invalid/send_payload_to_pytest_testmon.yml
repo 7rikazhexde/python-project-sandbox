@@ -1,0 +1,58 @@
+name: Send Payload to Pytest Testmon
+
+on:
+  push:
+    branches:
+      - 'main'
+
+jobs:
+  send-dispatch:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Build and Send Dispatch Payload
+        run: |
+          # 変数を配列や辞書にセット
+          declare -A variables  # 連想配列を使う
+          variables[repository_name]="7rikazhexde/python-project-sandbox"
+          variables[target_branch]="ghpages"
+
+          os_list=("ubuntu-latest" "macos-13" "windows-latest")  # OSのリスト
+          python_versions=("3.11" "3.12")  # Pythonバージョンのリスト
+
+          # 動的にペイロードを作成する関数
+          build_payload() {
+            local key=$1
+            local value=$2
+
+            # 値が配列の場合はリストとして処理
+            if [[ "$(declare -p "$value" 2>/dev/null)" =~ "declare -a" ]]; then
+              for item in "${!value}"; do
+                payload_cmd+=" -f client_payload[$key][]=$item"
+              done
+            else
+              # 単一の値の場合は直接ペイロードに追加
+              payload_cmd+=" -f client_payload[$key]=$value"
+            fi
+          }
+
+          # 変数を動的に処理してペイロードを作成する関数
+          process_variables() {
+            for key in "${!variables[@]}"; do
+              build_payload "$key" "${variables[$key]}"
+            done
+
+            build_payload "os" "os_list"  # OSリストをペイロードに追加
+            build_payload "python_versions" "python_versions"  # Pythonバージョンをペイロードに追加
+          }
+
+          # ベースとなるペイロードコマンドを作成
+          payload_cmd="gh api repos/${variables[repository_name]}/dispatches -f event_type=test_pytest-testmon_deploy_multi_os"
+
+          # 動的に変数を処理してペイロードを作成
+          process_variables
+
+          # ペイロードコマンドの確認用出力
+          echo "Executing command: $payload_cmd"
+
+          # 実行
+          eval $payload_cmd

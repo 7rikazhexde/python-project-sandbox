@@ -1,4 +1,4 @@
-name: Send Payload to Pytest Testmon
+name: Send Payload Action to Pytest Testmon
 
 on:
   push:
@@ -6,42 +6,16 @@ on:
       - 'main'
 
 jobs:
-  send-dispatch:
-    # Dependabotによる実行やバージョンバンプのコミットを除外
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
+  test-and-send-dispatch:
     runs-on: ubuntu-latest
-    env:
-      GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
-      OS_LIST: "ubuntu-latest macos-13 windows-latest"
-      PYTHON_VERSIONS: "3.11 3.12"
-      #PYTHON_VERSIONS: "3.12"
     steps:
-      #- name: Send Dispatch Event
-      #  env:
-      #    GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
-      #  run: |
-      #    gh api repos/7rikazhexde/python-project-sandbox/dispatches \
-      #      -f event_type=test_pytest-testmon_deploy_multi_os \
-      #      -f client_payload[os][]=ubuntu-latest \
-      #      -f client_payload[os][]=macos-13 \
-      #      -f client_payload[os][]=windows-latest \
-      #      -f client_payload[python_versions][]=3.11 \
-      #      -f client_payload[python_versions][]=3.12
-      - name: Send Dispatch Event
-        #env:
-        #  GH_TOKEN: ${{ secrets.SEND_PAYLOAD_PYTEST_TESTMON }}
-        #  OS_LIST: "ubuntu-latest macos-13 windows-latest"
-        #  PYTHON_VERSIONS: "3.11 3.12"
-        #  #PYTHON_VERSIONS: "3.12"
-        run: |
-          payload_cmd="gh api repos/7rikazhexde/python-project-sandbox/dispatches -f event_type=test_pytest-testmon_deploy_multi_os"
+      - name: Checkout code
+        uses: actions/checkout@v4.2.1
 
-          for os in $OS_LIST; do
-            payload_cmd+=" -f client_payload[os][]=$os"
-          done
-
-          for version in $PYTHON_VERSIONS; do
-            payload_cmd+=" -f client_payload[python_versions][]=$version"
-          done
-
-          eval $payload_cmd
+      - name: Send Payload to Pytest Testmon
+        uses: ./  # ローカルで定義されたアクションを使用
+        with:
+          repository_name: '7rikazhexde/python-project-sandbox'
+          target_branch: 'ghpages'
+          os_list: 'ubuntu-latest macos-13 windows-latest'
+          python_versions: '3.11 3.12'

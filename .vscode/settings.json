@@ -8,13 +8,14 @@
     // GitHub Actions ワークフローのピン留め設定
     // この設定により、指定されたワークフローファイルに対して拡張機能がより詳細な検証と支援を提供する
     "github-actions.workflows.pinned.workflows": [
-        ".github/workflows/update-version-and-release.yml",
+        //".github/workflows/update-version-and-release.yml",
         ".github/workflows/dependabot_prch.yml",
         ".github/workflows/pullrequest_check.yml",
         ".github/workflows/test_multi_os.yml",
+        ".github/workflows/test_pytest-testmon_deploy_multi_os.yml",
         ".github/workflows/test_pytest-cov-report_deploy_multi_os.yml",
         ".github/workflows/test_pytest-cov-report_deploy_multi_os.yml",
-        ".github/workflows/update-requirements-after-dependabot.yml"
+        //".github/workflows/update-requirements-after-dependabot.yml"
     ],
     // ピン留めされたワークフローの自動リフレッシュを有効にする
     // これにより、拡張機能は最新のリポジトリ状態（シークレットの存在など）を反映する
