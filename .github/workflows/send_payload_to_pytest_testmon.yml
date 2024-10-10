@@ -13,7 +13,7 @@ jobs:
         uses: actions/checkout@v4.2.1
 
       - name: Send Payload to Pytest Testmon
-        uses: ./  # ローカルで定義されたアクションを使用
+        uses: ./action  # ローカルで定義されたアクションを使用
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
           target_branch: 'ghpages'
