@@ -253,6 +253,10 @@ jobs:
           python_versions=$(echo "$updated_json" | jq -c '[.[].python_version] | unique')
           os_python_pairs=$(echo "$updated_json" | jq -c '[.[] | {os: .os, python_version: .python_version}]')
 
+          echo "os_list: $os_list"
+          echo "python_versions: $python_versions"
+          echo "os_python_pairs: $os_python_pairs"
+
           # GitHub Actions出力に渡す
           echo "os_list=$os_list" >> $GITHUB_OUTPUT
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
