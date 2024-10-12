@@ -5,10 +5,15 @@ inputs:
   # ペイロードの生成条件
   #  - required: true の場合は環境変数の設定が必須
   #  - required: false の場合は環境変数の設定は不要だが、設定した場合はその値でペイロード生成処理に渡る
+  #  - required: false の場合に現状のdefault値と異なる値に設定した場合は、その値がペイロード生成処理に渡る(*1)
   repository_name:
     description: 'Repository name'
     required: true
     default: '7rikazhexde/python-project-sandbox'
+  event_type:
+    description: 'Event name'
+    required: true
+    default: 'test_pytest-testmon_deploy_multi_os'
   ghpages_branch:
     description: 'Target branch to fetch testmon data from'
     required: false
@@ -24,8 +29,8 @@ inputs:
   custom_param:
     description: 'An optional custom parameter for additional configuration'
     required: false
-    #default: 'default_value'
-    default: 'custom_param_test_val'
+    default: 'default_value'
+    #default: 'custom_param_test_val' # (*1)
 
 runs:
   using: "composite"
@@ -36,12 +41,16 @@ runs:
         python-version: '3.12'
 
     - name: Run Python script
+      # 環境変数の設定条件
+      #  - inputでrequired: trueの変数が対象
+      #  - inputでrequired: falseの変数の場合は省略可能(*2)
+      shell: bash
       run: |
         python3 .github/send_payload.py
-      shell: bash
       env:
         REPOSITORY_NAME: ${{ inputs.repository_name }}
-        # GHPAGES_BRANCH: ${{ inputs.ghpages_branch }} # 省略可能
+        EVENT_TYPE: ${{ inputs.event_type }}
+        GHPAGES_BRANCH: ${{ inputs.ghpages_branch }} # (*2)
         OS_LIST: ${{ inputs.os_list }}
         PYTHON_VERSIONS: ${{ inputs.python_versions }}
-        CUSTOM_PARAM: ${{ inputs.custom_param }} # 省略可能
+        CUSTOM_PARAM: ${{ inputs.custom_param }} # (*2)
