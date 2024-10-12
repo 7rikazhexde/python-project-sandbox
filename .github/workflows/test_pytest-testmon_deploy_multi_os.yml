@@ -138,6 +138,10 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set GHPAGES_BRANCH from client_payload
+        id: set-ghpages-branch
+        run: echo "ghpages_branch=${{ github.event.client_payload.ghpages_branch }}" >> $GITHUB_OUTPUT
+
       - name: Download testmon data
         uses: actions/download-artifact@v4.1.8
         with:
@@ -164,8 +168,10 @@ jobs:
         id: deploy_testmon
         run: |
           echo "Deploying testmon data to GitHub Pages..."
-          git fetch origin ghpages:ghpages || git checkout -b ghpages
-          git checkout ghpages
+          #git fetch origin ghpages:ghpages || git checkout -b ghpages
+          #git checkout ghpages
+          git fetch origin ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}:${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
+          git checkout ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
 
           changes_made=false
           updated_testmon_json="["
@@ -198,7 +204,8 @@ jobs:
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages" || echo "No changes to commit"
-            git push origin ghpages || echo "No changes to push"
+            #git push origin ghpages || echo "No changes to push"
+            git push origin ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} || echo "No changes to push"
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
             echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
           else
@@ -210,10 +217,12 @@ jobs:
       - name: List deployed files
         if: always()
         run: |
-          git checkout ghpages
+          #git checkout ghpages
+          git checkout ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
           echo "Deployed testmon data files:"
           find . -name ".testmondata"
-          echo "Contents of ghpages branch:"
+          #echo "Contents of ghpages branch:"
+          echo "Contents of ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} branch:"
           ls -R
 
   trigger-other-workflows:

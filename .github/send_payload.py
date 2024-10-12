@@ -53,9 +53,10 @@ def build_payload(data_dict: Mapping[str, Union[str, List[str]]]) -> str:
         if isinstance(value, list):
             for item in value:
                 payload_cmd.append(f"-f client_payload[{key}][]={item}")
+        # client_payloadで指定する変数ではない場合は、以下で明示的に対象外にすること。
         elif (
             isinstance(value, str) and key != "repository_name" and key != "event_type"
-        ):  # 指定のghコマンド(dispatches)の情報はコマンド追加対象から除く
+        ):
             payload_cmd.append(f"-f client_payload[{key}]={value}")
 
     return " ".join(payload_cmd)
