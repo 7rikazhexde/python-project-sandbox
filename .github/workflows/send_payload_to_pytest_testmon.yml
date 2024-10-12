@@ -13,12 +13,14 @@ jobs:
         uses: actions/checkout@v4.2.1
 
       - name: Send Payload to Pytest Testmon
-        #uses: ./.github
-        uses: 7rikazhexde/python-project-sandbox/.github@main
+        uses: ./.github
+        #uses: 7rikazhexde/python-project-sandbox/.github@main
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
+          event_type: 'test_pytest-testmon_deploy_multi_os'
           ghpages_branch: 'ghpages'  # 省略可能
           os_list: 'ubuntu-latest macos-13 windows-latest'
           python_versions: '3.11 3.12'
+          custom_param: 'custom_param_test_val'  # 省略可能
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

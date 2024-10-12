@@ -5,6 +5,7 @@ from typing import Dict, List, Mapping, Union
 # サポートされるキー一覧
 SUPPORTED_KEYS = {
     "repository_name",
+    "event_type",
     "ghpages_branch",
     "os_list",
     "python_versions",
@@ -46,15 +47,15 @@ for key in SUPPORTED_KEYS:
 def build_payload(data_dict: Mapping[str, Union[str, List[str]]]) -> str:
     payload_cmd = []
     payload_cmd.append(f"gh api repos/{data_dict['repository_name']}/dispatches")
-    payload_cmd.append("-f event_type=test_pytest-testmon_deploy_multi_os")
+    payload_cmd.append(f"-f event_type={data_dict['event_type']}")
 
     for key, value in data_dict.items():
         if isinstance(value, list):
             for item in value:
                 payload_cmd.append(f"-f client_payload[{key}][]={item}")
         elif (
-            isinstance(value, str) and key != "repository_name"
-        ):  # repository_nameはすでに使っているためスキップ
+            isinstance(value, str) and key != "repository_name" and key != "event_type"
+        ):  # 指定のghコマンド(dispatches)の情報はコマンド追加対象から除く
             payload_cmd.append(f"-f client_payload[{key}]={value}")
 
     return " ".join(payload_cmd)
