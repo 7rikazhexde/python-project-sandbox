@@ -30,9 +30,8 @@ jobs:
   test-and-report:
     strategy:
       matrix:
-        #os: ${{ github.event.client_payload.os }}
-        #python-version: ${{ github.event.client_payload.python_versions }}
-        include: ${{ github.event.client_payload.os_python_pairs }}
+        os: ${{ github.event.client_payload.os }}
+        python-version: ${{ github.event.client_payload.python_versions }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"

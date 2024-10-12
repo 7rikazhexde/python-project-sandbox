@@ -36,7 +36,7 @@ jobs:
       pull-requests: write
     outputs:
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
-      ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}  # 追加
+      ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
@@ -242,25 +242,21 @@ jobs:
         run: |
           #os_list=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].os] | unique')
           #python_versions=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].python_version] | unique')
-          #os_python_pairs=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[] | {os: .os, python_version: .python_version}]')
           #echo "os_list=$os_list" >> $GITHUB_OUTPUT
           #echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
-          #echo "os_python_pairs=$os_python_pairs" >> $GITHUB_OUTPUT
 
           updated_json='${{ needs.deploy-testmon.outputs.updated_testmon_json }}'
-          echo "Updated JSON: $updated_json"  # JSONの確認用デバッグ出力
+          echo "Updated JSON: $updated_json"
+
           os_list=$(echo "$updated_json" | jq -c '[.[].os] | unique')
           python_versions=$(echo "$updated_json" | jq -c '[.[].python_version] | unique')
-          os_python_pairs=$(echo "$updated_json" | jq -c '[.[] | {os: .os, python_version: .python_version}]')
 
           echo "os_list: $os_list"
           echo "python_versions: $python_versions"
-          echo "os_python_pairs: $os_python_pairs"
 
           # GitHub Actions出力に渡す
           echo "os_list=$os_list" >> $GITHUB_OUTPUT
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
-          echo "os_python_pairs=$os_python_pairs" >> $GITHUB_OUTPUT
 
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
@@ -270,7 +266,6 @@ jobs:
             {
               "os": ${{ steps.prepare-payload.outputs.os_list }},
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
-              "os_python_pairs": ${{ steps.prepare-payload.outputs.os_python_pairs }},
               "skip_tests": false
             }
 
@@ -282,7 +277,6 @@ jobs:
             {
               "os": ${{ steps.prepare-payload.outputs.os_list }},
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
-              "os_python_pairs": ${{ steps.prepare-payload.outputs.os_python_pairs }},
               "skip_tests": false
             }
 
