@@ -242,7 +242,8 @@ jobs:
         run: |
           os_list=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].os] | unique')
           python_versions=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].python_version] | unique')
-          os_python_pairs=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[] | {os: .os, python_version: .python_version}]')
+          #os_python_pairs=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[] | {os: .os, python_version: .python_version}]')
+          os_python_pairs=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[]] | .[]')
           echo "os_list=$os_list" >> $GITHUB_OUTPUT
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
           echo "os_python_pairs=$os_python_pairs" >> $GITHUB_OUTPUT
@@ -267,7 +268,7 @@ jobs:
             {
               "os": ${{ steps.prepare-payload.outputs.os_list }},
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
-              "os_python_pairs": ${{ toJson(steps.prepare-payload.outputs.os_python_pairs) }},
+              "os_python_pairs": ${{ steps.prepare-payload.outputs.os_python_pairs }},
               "skip_tests": false
             }
 
