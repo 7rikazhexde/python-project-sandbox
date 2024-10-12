@@ -26,7 +26,7 @@ jobs:
   test-and-deploy-testmon:
     strategy:
       matrix:
-        os: ${{ github.event.client_payload.os }}
+        os: ${{ github.event.client_payload.os_list }}
         python-version: ${{ github.event.client_payload.python_versions }}
     runs-on: ${{ matrix.os }}
     env:
