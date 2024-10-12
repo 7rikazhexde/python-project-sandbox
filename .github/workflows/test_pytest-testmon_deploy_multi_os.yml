@@ -255,7 +255,7 @@ jobs:
             {
               "os": ${{ steps.prepare-payload.outputs.os_list }},
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
-              "os_python_pairs": ${{ toJson(steps.prepare-payload.outputs.os_python_pairs) }},
+              "os_python_pairs": ${{ steps.prepare-payload.outputs.os_python_pairs }},
               "skip_tests": false
             }
 
