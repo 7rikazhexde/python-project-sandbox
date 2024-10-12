@@ -156,7 +156,7 @@ jobs:
 
       - name: Prepare os_list and python_versions
         run: |
-          os_list='${{ join(github.event.client_payload.os, ' ') }}'
+          os_list='${{ join(github.event.client_payload.os_list, ' ') }}'
           python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
 
           echo "OS List: $os_list"
