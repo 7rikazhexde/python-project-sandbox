@@ -32,7 +32,7 @@ jobs:
       matrix:
         #os: ${{ github.event.client_payload.os }}
         #python-version: ${{ github.event.client_payload.python_versions }}
-        include: ${{ fromJson(github.event.client_payload.os_python_pairs) }}
+        include: ${{ github.event.client_payload.os_python_pairs }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
