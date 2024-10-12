@@ -31,6 +31,10 @@ runs:
       with:
         python-version: '3.12'
 
+    - name: Install GitHub CLI
+      run: sudo apt-get install -y gh
+      shell: bash
+
     - name: Run Python script
       run: |
         python3 .github/send_payload.py
@@ -41,4 +45,3 @@ runs:
         OS_LIST: ${{ inputs.os_list }}
         PYTHON_VERSIONS: ${{ inputs.python_versions }}
         CUSTOM_PARAM: ${{ inputs.custom_param }}
-        GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
