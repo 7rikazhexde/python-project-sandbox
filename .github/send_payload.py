@@ -6,13 +6,13 @@ from typing import Dict, List, Mapping, Union
 SUPPORTED_KEYS = {
     "repository_name",
     "ghpages_branch",
-    "os",
+    "os_list",
     "python_versions",
     "custom_param",
 }
 
 # スペース区切りの値を持つキーを定数として管理
-SPLIT_REQUIRED_KEYS = {"os", "python_versions"}
+SPLIT_REQUIRED_KEYS = {"os_list", "python_versions"}
 
 # デフォルト値を定義 (冗長な値はペイロードに含めない)
 DEFAULT_VALUES = {
