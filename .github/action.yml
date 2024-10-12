@@ -2,6 +2,9 @@ name: 'Send Payload to Pytest Testmon'
 description: 'Dynamically build and send dispatch payload to trigger pytest testmon tests across multiple OS and Python versions'
 
 inputs:
+  # ペイロードの生成条件
+  #  - required: true の場合は環境変数の設定が必須
+  #  - required: false の場合は環境変数の設定は不要だが、設定した場合はその値でペイロード生成処理に渡る
   repository_name:
     description: 'Repository name'
     required: true
@@ -9,7 +12,7 @@ inputs:
   ghpages_branch:
     description: 'Target branch to fetch testmon data from'
     required: false
-    default: 'gh_pages'  # 省略可能
+    default: 'gh_pages'
   os_list:
     description: 'Space-separated list of OS to run tests on'
     required: true
@@ -20,8 +23,9 @@ inputs:
     default: '3.11 3.12'
   custom_param:
     description: 'An optional custom parameter for additional configuration'
-    required: false  # 任意のパラメータ
-    default: 'default_value'
+    required: false
+    #default: 'default_value'
+    default: 'custom_param_test_val'
 
 runs:
   using: "composite"
@@ -37,7 +41,7 @@ runs:
       shell: bash
       env:
         REPOSITORY_NAME: ${{ inputs.repository_name }}
-        GHPAGES_BRANCH: ${{ inputs.ghpages_branch }}
+        # GHPAGES_BRANCH: ${{ inputs.ghpages_branch }} # 省略可能
         OS_LIST: ${{ inputs.os_list }}
         PYTHON_VERSIONS: ${{ inputs.python_versions }}
-        CUSTOM_PARAM: ${{ inputs.custom_param }}
+        CUSTOM_PARAM: ${{ inputs.custom_param }} # 省略可能
