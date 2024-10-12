@@ -14,9 +14,9 @@ SUPPORTED_KEYS = {
 # スペース区切りの値を持つキーを定数として管理
 SPLIT_REQUIRED_KEYS = {"os_list", "python_versions"}
 
-# デフォルト値を定義 (冗長な値はペイロードに含めない)
+# デフォルト値を持つ変数を個別に定義
 DEFAULT_VALUES = {
-    "custom_param": "default_value",  # デフォルトで省略したい値
+    "custom_param": "default_value",
     "ghpages_branch": "gh_pages",
 }
 
