@@ -13,11 +13,11 @@ jobs:
         uses: actions/checkout@v4.2.1
 
       - name: Send Payload to Pytest Testmon
-        uses: ./.github  # ローカルアクションを使用する場合
-        #uses: 7rikazhexde/python-project-sandbox/.github@main  # リモートのアクションを使用
+        #uses: ./.github
+        uses: 7rikazhexde/python-project-sandbox/.github@main
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
-          ghpages_branch: 'ghpages'  # 省略可能
+          ghpages_branch: 'ghpages'
           os_list: 'ubuntu-latest macos-13 windows-latest'
           python_versions: '3.11 3.12'
         env:
