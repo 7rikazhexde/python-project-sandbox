@@ -1,4 +1,4 @@
-name: pytest-cov Report and Deploy Multi-OS
+name: pytest-html Report and Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
@@ -8,9 +8,9 @@ name: pytest-cov Report and Deploy Multi-OS
 #    - Python 3.11と3.12を使用
 # 3. 各OS・Pythonバージョンごとに個別の.testmondataファイルを取得
 # 4. testmonの結果に基づいてテストをスキップするかどうかを確認
-# 5. pytest-covを使用してカバレッジレポートを生成
+# 5. pytest-htmlを使用してHTMLレポートを生成
 #    - 各OS環境とPythonバージョンごとに別々のレポートを生成
-# 6. カバレッジ結果のアップロード
+# 6. テスト結果のアップロード
 #    - 常に実行（テストが失敗した場合も含む）
 # 7. 全テスト結果の確認
 #    - いずれかのテストが失敗した場合、エラーを報告
@@ -24,10 +24,10 @@ name: pytest-cov Report and Deploy Multi-OS
 
 on:
   repository_dispatch:
-    types: [run-pytest-cov]
+    types: [run-pytest-html]
 
 jobs:
-  test-and-coverage:
+  test-and-report:
     strategy:
       matrix:
         os: ${{ github.event.client_payload.os }}
@@ -77,65 +77,51 @@ jobs:
           fi
         continue-on-error: true
 
-      #- name: Check if tests should be executed
-      #  id: check_tests
-      #  shell: bash
-      #  run: |
-      #    if [ -f .testmondata ] && [ "${{ github.event.client_payload.skip_tests }}" != "true" ]; then
-      #      echo "Running pytest-testmon to check if tests should be executed..."
-      #      if poetry run pytest --testmon --testmon-noselect -v | grep -q "collected 0 items"; then
-      #        echo "No tests need to be executed."
-      #        echo "skip_tests=true" >> $GITHUB_OUTPUT
-      #      else
-      #        echo "Tests need to be executed."
-      #        echo "skip_tests=false" >> $GITHUB_OUTPUT
-      #      fi
-      #    else
-      #      echo "No .testmondata file found or tests are forced to run."
-      #      echo "skip_tests=false" >> $GITHUB_OUTPUT
-      #    fi
-
       - name: Check if tests should be executed
         id: check_tests
         shell: bash
         run: |
-          exclude_testmon_json='${{ github.event.client_payload.update_exclude_testmon_json }}'
-          echo "exclude_testmon_json=$exclude_testmon_json"
-          if echo "$exclude_testmon_json" | jq -e --arg os "${{ matrix.os }}" --arg pv "${{ matrix.python-version }}" '.[] | select(.os == $os and .python_version == $pv)' > /dev/null; then
-            echo "This combination is in the exclude list. Skipping tests."
-            echo "skip_tests=true" >> $GITHUB_OUTPUT
+          if [ -f .testmondata ] && [ "${{ github.event.client_payload.skip_tests }}" != "true" ]; then
+            echo "Running pytest-testmon to check if tests should be executed..."
+            if poetry run pytest --testmon --testmon-noselect -v | grep -q "collected 0 items"; then
+              echo "No tests need to be executed."
+              echo "skip_tests=true" >> $GITHUB_OUTPUT
+            else
+              echo "Tests need to be executed."
+              echo "skip_tests=false" >> $GITHUB_OUTPUT
+            fi
           else
-            echo "Tests need to be executed."
+            echo "No .testmondata file found or tests are forced to run."
             echo "skip_tests=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Run tests with pytest-cov
+      - name: Run tests with pytest-html
         if: steps.check_tests.outputs.skip_tests != 'true'
-        id: pytest-cov
+        id: pytest-html
         run: |
-          mkdir -p htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
-          poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
+          mkdir -p test_results_${{ matrix.os }}_python_${{ matrix.python-version }}
+          poetry run pytest --html=test_results_${{ matrix.os }}_python_${{ matrix.python-version }}/report_page.html
         shell: bash
 
-      - name: Upload pytest-cov results
+      - name: Upload pytest-html results
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
-          path: htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
+          name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: test_results_${{ matrix.os }}_python_${{ matrix.python-version }}
         if: always()
 
   check_all_tests:
-    needs: test-and-coverage
+    needs: test-and-report
     runs-on: ubuntu-latest
     steps:
       - name: Check test results
-        if: contains(needs.test-and-coverage.result, 'failure')
+        if: contains(needs.test-and-report.result, 'failure')
         run: |
           echo "Some tests failed. Please check the test results and fix any issues before merging."
           exit 1
 
   deploy:
-    needs: [test-and-coverage, check_all_tests]
+    needs: [test-and-report, check_all_tests]
     runs-on: ubuntu-latest
     outputs:
       deploy_status: ${{ steps.check_and_deploy.outputs.deploy_status }}
@@ -145,7 +131,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download pytest-cov artifacts
+      - name: Download pytest-html artifacts
         uses: actions/download-artifact@v4.1.8
 
       - name: Setup Git
@@ -176,25 +162,29 @@ jobs:
           #  for python_version in 3.11 3.12; do
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              folder_name="pytest-cov-report_${os}_python_${python_version}"
-              if [ -d coverage-results-$os-python-$python_version ]; then
-                if [ ! -d $folder_name ] || ! diff -r coverage-results-$os-python-$python_version $folder_name > /dev/null; then
+              folder_name="pytest-html-report_${os}_python_${python_version}"
+              mkdir -p $folder_name
+              if [ -f test-results-$os-python-$python_version/report_page.html ]; then
+                if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os-python-$python_version/report_page.html $folder_name/report_page.html > /dev/null; then
                   echo "Changes detected for $os with Python $python_version, updating..."
-                  rm -rf $folder_name
-                  mv coverage-results-$os-python-$python_version $folder_name
+                  mv test-results-$os-python-$python_version/report_page.html $folder_name/
+                  if [ -d test-results-$os-python-$python_version/assets ]; then
+                    rm -rf $folder_name/assets
+                    cp -r test-results-$os-python-$python_version/assets $folder_name/
+                  fi
                   git add $folder_name
                   changes_made=true
                 else
                   echo "No changes for $os with Python $python_version, skipping..."
                 fi
               else
-                echo "No pytest-cov report found for $os with Python $python_version"
+                echo "No pytest-html report found for $os with Python $python_version"
               fi
             done
           done
 
           if [ "$changes_made" = true ]; then
-            git commit -m "Update pytest-cov reports on GitHub Pages"
+            git commit -m "Update pytest-html reports on GitHub Pages"
             # Try to push changes, if fails, pull and retry
             if ! git push origin ghpages; then
               git pull origin ghpages --rebase
@@ -219,8 +209,8 @@ jobs:
           #  for python_version in 3.11 3.12; do
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              URL_LIST="${URL_LIST}pytest-cov-report_${os}_python_${python_version}:\n\
-            https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}_python_${python_version}/index.html\n\n"
+              URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
+            https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
             done
           done
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
@@ -232,7 +222,7 @@ jobs:
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          message="pytest-cov report deployment completed. Changes were made.
+          message="pytest-html report deployment completed. Changes were made.
 
           Check URLs:
           ${{ steps.generate_url_list.outputs.url_list }}"
@@ -246,7 +236,7 @@ jobs:
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          message="pytest-cov report check completed. No changes were necessary."
+          message="pytest-html report check completed. No changes were necessary."
 
           curl -X POST https://notify-api.line.me/api/notify \
             -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
