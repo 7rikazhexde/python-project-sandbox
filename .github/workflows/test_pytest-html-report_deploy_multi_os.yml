@@ -151,12 +151,12 @@ jobs:
           # テスト対象を確認するためのPythonスクリプトを実行
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              #export CURRENT_OS=$os
-              #export CURRENT_PYTHON_VERSION=$python_version
-              #poetry run python .github/check_exclude_testmon.py
+              export CURRENT_OS=$os
+              export CURRENT_PYTHON_VERSION=$python_version
+              poetry run python .github/check_exclude_testmon.py
 
               # skip_tests が true の場合はそのOSとPythonバージョンをスキップ
-              if [ "${{ steps.check_tests.outputs.skip_tests }}" = "true" ]; then
+              if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
                 echo "Skipping deployment for OS=$os, Python=$python_version as it is excluded."
                 continue
               fi
@@ -213,12 +213,12 @@ jobs:
           # テスト対象のOSとPythonバージョンごとにチェックしてURLリストを生成
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              #export CURRENT_OS=$os
-              #export CURRENT_PYTHON_VERSION=$python_version
-              #poetry run python .github/check_exclude_testmon.py
+              export CURRENT_OS=$os
+              export CURRENT_PYTHON_VERSION=$python_version
+              poetry run python .github/check_exclude_testmon.py
 
               # skip_tests が true ならばURLをスキップ
-              if [ "${{ steps.check_tests.outputs.skip_tests }}" = "true" ]; then
+              if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
                 echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
                 continue
               fi
