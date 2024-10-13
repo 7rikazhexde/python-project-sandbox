@@ -90,7 +90,6 @@ jobs:
         if: steps.check_tests.outputs.skip_tests == 'true'
         run: |
           echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
-          exit 0  # ワークフローを終了
 
       - name: Run tests with pytest-html
         if: steps.check_tests.outputs.skip_tests != 'true'
@@ -148,14 +147,31 @@ jobs:
           changes_made=false
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
+
+          # テスト対象を確認するためのPythonスクリプトを実行
           for os in $os_list; do
             for python_version in $python_versions_list; do
+              export CURRENT_OS=$os
+              export CURRENT_PYTHON_VERSION=$python_version
+              poetry run python .github/check_exclude_testmon.py
+
+              # skip_tests が true の場合はそのOSとPythonバージョンをスキップ
+              if [ "$GITHUB_OUTPUT_SKIP_TESTS" = "true" ]; then
+                echo "Skipping deployment for OS=$os, Python=$python_version as it is excluded."
+                continue
+              fi
+
               folder_name="pytest-html-report_${os}_python_${python_version}"
-              mkdir -p $folder_name
+              mkdir -p $folder_name # フォルダを作成
+
+              # テスト結果のHTMLファイルが存在するか確認
               if [ -f test-results-$os-python-$python_version/report_page.html ]; then
+                # HTMLファイルに差分があるかどうかを確認
                 if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os-python-$python_version/report_page.html $folder_name/report_page.html > /dev/null; then
                   echo "Changes detected for $os with Python $python_version, updating..."
                   mv test-results-$os-python-$python_version/report_page.html $folder_name/
+
+                  # assets ディレクトリも存在する場合はコピー
                   if [ -d test-results-$os-python-$python_version/assets ]; then
                     rm -rf $folder_name/assets
                     cp -r test-results-$os-python-$python_version/assets $folder_name/
@@ -171,8 +187,10 @@ jobs:
             done
           done
 
+          # 変更があった場合のみコミットとプッシュを行う
           if [ "$changes_made" = true ]; then
             git commit -m "Update pytest-html reports on GitHub Pages"
+            # コミットとプッシュが失敗した場合の対処
             if ! git push origin ghpages; then
               git pull origin ghpages --rebase
               git push origin ghpages
@@ -191,12 +209,26 @@ jobs:
           URL_LIST=""
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
+
+          # テスト対象のOSとPythonバージョンごとにチェックしてURLリストを生成
           for os in $os_list; do
             for python_version in $python_versions_list; do
+              export CURRENT_OS=$os
+              export CURRENT_PYTHON_VERSION=$python_version
+              poetry run python .github/check_exclude_testmon.py
+
+              # skip_tests が true ならばURLをスキップ
+              if [ "$GITHUB_OUTPUT_SKIP_TESTS" = "true" ]; then
+                echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
+                continue
+              fi
+
+              # 対象の場合はURLリストに追加
               URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
             https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
             done
           done
+
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
