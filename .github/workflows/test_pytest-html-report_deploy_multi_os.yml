@@ -217,6 +217,8 @@ jobs:
 
       - name: Generate URL list
         id: generate_url_list
+        env:
+          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
           IFS='/' read -ra REPO_INFO <<< "$GITHUB_REPOSITORY"
           REPO_OWNER=${REPO_INFO[0]}
@@ -230,7 +232,7 @@ jobs:
             for python_version in $python_versions_list; do
               export CURRENT_OS=$os
               export CURRENT_PYTHON_VERSION=$python_version
-              poetry run python .github/check_exclude_testmon.py
+              python3 .github/check_exclude_testmon.py
 
               # skip_tests が true ならばURLをスキップ
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
