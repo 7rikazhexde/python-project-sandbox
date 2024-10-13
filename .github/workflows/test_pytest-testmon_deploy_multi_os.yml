@@ -64,6 +64,12 @@ jobs:
           pip install poetry
           echo "Poetry version: $(poetry --version)"
 
+      - name: Cache dependencies
+        uses: actions/cache@v4.1.1
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
       - name: Install dependencies
         run: |
           poetry install
