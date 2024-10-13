@@ -137,7 +137,6 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       updated_testmon_json: ${{ steps.deploy_testmon.outputs.updated_testmon_json }}
-      exclude_testmon_json: ${{ steps.deploy_testmon.outputs.exclude_testmon_json }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
@@ -170,12 +169,13 @@ jobs:
         id: deploy_testmon
         run: |
           echo "Deploying testmon data to GitHub Pages..."
+          #git fetch origin ghpages:ghpages || git checkout -b ghpages
+          #git checkout ghpages
           git fetch origin ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}:${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
           git checkout ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
 
           changes_made=false
           updated_testmon_json="["
-          exclude_testmon_json="["
 
           for os in $os_list; do
             for python_version in $python_versions_list; do
@@ -192,20 +192,16 @@ jobs:
                   updated_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 else
                   echo "No .testmondata file found in $artifact_folder"
-                  exclude_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 fi
               else
                 echo "Artifact folder not found: $artifact_folder"
-                exclude_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
               fi
             done
           done
 
           # JSONの末尾のカンマを削除して配列を閉じる
           updated_testmon_json="${updated_testmon_json%,}]"
-          exclude_testmon_json="${exclude_testmon_json%,}]"
-          echo "Updated testmon JSON: $updated_testmon_json"
-          echo "Exclude testmon JSON: $exclude_testmon_json"
+          echo "$updated_testmon_json" | jq .
 
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
@@ -213,13 +209,12 @@ jobs:
             #git push origin ghpages || echo "No changes to push"
             git push origin ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} || echo "No changes to push"
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
+            echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
           else
             echo "No changes to commit"
             echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
+            echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
           fi
-
-          echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
-          echo "exclude_testmon_json=$exclude_testmon_json" >> $GITHUB_OUTPUT
 
       - name: List deployed files
         if: always()
@@ -245,14 +240,16 @@ jobs:
       - name: Prepare client payload
         id: prepare-payload
         run: |
-          updated_testmon_json='${{ needs.deploy-testmon.outputs.updated_testmon_json }}'
-          echo "Updated JSON: $updated_testmon_json"
+          #os_list=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].os] | unique')
+          #python_versions=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].python_version] | unique')
+          #echo "os_list=$os_list" >> $GITHUB_OUTPUT
+          #echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
 
-          updated_exclude_testmon_json='${{ needs.deploy-testmon.outputs.exclude_testmon_json }}'
-          echo "Updated Exclude JSON: $updated_exclude_testmon_json"
+          updated_json='${{ needs.deploy-testmon.outputs.updated_testmon_json }}'
+          echo "Updated JSON: $updated_json"
 
-          os_list=$(echo "$updated_testmon_json" | jq -c '[.[].os] | unique')
-          python_versions=$(echo "$updated_testmon_json" | jq -c '[.[].python_version] | unique')
+          os_list=$(echo "$updated_json" | jq -c '[.[].os] | unique')
+          python_versions=$(echo "$updated_json" | jq -c '[.[].python_version] | unique')
 
           echo "os_list: $os_list"
           echo "python_versions: $python_versions"
@@ -260,8 +257,6 @@ jobs:
           # GitHub Actions出力に渡す
           echo "os_list=$os_list" >> $GITHUB_OUTPUT
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
-          echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
-          echo "updated_exclude_testmon_json=$updated_exclude_testmon_json" >> $GITHUB_OUTPUT
 
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
@@ -271,8 +266,6 @@ jobs:
             {
               "os": ${{ steps.prepare-payload.outputs.os_list }},
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
-              "updated_testmon_json": ${{ steps.prepare-payload.outputs.updated_testmon_json }},
-              "update_exclude_testmon_json": ${{ steps.prepare-payload.outputs.updated_exclude_testmon_json }},
               "skip_tests": false
             }
 
@@ -284,8 +277,6 @@ jobs:
             {
               "os": ${{ steps.prepare-payload.outputs.os_list }},
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
-              "updated_testmon_json": ${{ steps.prepare-payload.outputs.updated_testmon_json }},
-              "update_exclude_testmon_json": ${{ steps.prepare-payload.outputs.updated_exclude_testmon_json }},
               "skip_tests": false
             }
 
