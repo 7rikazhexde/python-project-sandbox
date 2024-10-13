@@ -57,7 +57,15 @@ jobs:
           timezoneWindows: "Tokyo Standard Time"
 
       - name: Install poetry
-        run: pip install poetry
+        run: |
+          pip install poetry
+          echo "Poetry version: $(poetry --version)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4.1.1
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
         run: poetry install
@@ -129,6 +137,11 @@ jobs:
         with:
           fetch-depth: 0
 
+      - name: Set up Python
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: Download pytest-html artifacts
         uses: actions/download-artifact@v4.1.8
 
@@ -153,7 +166,7 @@ jobs:
             for python_version in $python_versions_list; do
               export CURRENT_OS=$os
               export CURRENT_PYTHON_VERSION=$python_version
-              poetry run python .github/check_exclude_testmon.py
+              python3 .github/check_exclude_testmon.py
 
               # skip_tests が true の場合はそのOSとPythonバージョンをスキップ
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
