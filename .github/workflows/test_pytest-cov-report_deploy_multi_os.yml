@@ -86,12 +86,10 @@ jobs:
           CURRENT_OS: '${{ matrix.os }}'
           CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
 
-      # skip_tests が 'true' ならば後続のステップを中止する
       - name: Stop workflow if tests are skipped
         if: steps.check_tests.outputs.skip_tests == 'true'
         run: |
           echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
-          exit 0  # ワークフローを終了
 
       - name: Run tests with pytest-cov
         if: steps.check_tests.outputs.skip_tests != 'true'
@@ -108,7 +106,6 @@ jobs:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
 
-  # スキップされなかった場合のみ、後続のジョブが実行されるように条件を追加
   check_all_tests:
     if: needs.test-and-coverage.outputs.skip_tests != 'true'
     needs: test-and-coverage
@@ -150,8 +147,19 @@ jobs:
           changes_made=false
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
+
+          # テスト対象のみを含める
           for os in $os_list; do
             for python_version in $python_versions_list; do
+              export CURRENT_OS=$os
+              export CURRENT_PYTHON_VERSION=$python_version
+              poetry run python .github/check_exclude_testmon.py
+
+              if [ "$GITHUB_OUTPUT_SKIP_TESTS" = "true" ]; then
+                echo "Skipping deployment for OS=$os, Python=$python_version as it is excluded."
+                continue
+              fi
+
               folder_name="pytest-cov-report_${os}_python_${python_version}"
               if [ -d coverage-results-$os-python-$python_version ]; then
                 if [ ! -d $folder_name ] || ! diff -r coverage-results-$os-python-$python_version $folder_name > /dev/null; then
@@ -171,7 +179,6 @@ jobs:
 
           if [ "$changes_made" = true ]; then
             git commit -m "Update pytest-cov reports on GitHub Pages"
-            # Try to push changes, if fails, pull and retry
             if ! git push origin ghpages; then
               git pull origin ghpages --rebase
               git push origin ghpages
@@ -190,12 +197,24 @@ jobs:
           URL_LIST=""
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
+
+          # テスト対象のみにURLを生成
           for os in $os_list; do
             for python_version in $python_versions_list; do
+              export CURRENT_OS=$os
+              export CURRENT_PYTHON_VERSION=$python_version
+              poetry run python .github/check_exclude_testmon.py
+
+              if [ "$GITHUB_OUTPUT_SKIP_TESTS" = "true" ]; then
+                echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
+                continue
+              fi
+
               URL_LIST="${URL_LIST}pytest-cov-report_${os}_python_${python_version}:\n\
-            https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}_python_${python_version}/index.html\n\n"
+              https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}_python_${python_version}/index.html\n\n"
             done
           done
+
           echo "url_list<<EOF" >> $GITHUB_OUTPUT
           echo -e "$URL_LIST" >> $GITHUB_OUTPUT
           echo "EOF" >> $GITHUB_OUTPUT
