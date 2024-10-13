@@ -201,6 +201,7 @@ jobs:
           else
             echo "No changes to commit"
             echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
+          fi
 
       - name: Generate URL list
         id: generate_url_list
