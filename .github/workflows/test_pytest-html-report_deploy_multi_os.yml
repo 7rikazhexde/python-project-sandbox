@@ -151,6 +151,8 @@ jobs:
 
       - name: Check and Deploy to GitHub Pages
         id: check_and_deploy
+        env:
+          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
           git fetch origin ghpages:ghpages || git checkout -b ghpages
           git checkout ghpages
