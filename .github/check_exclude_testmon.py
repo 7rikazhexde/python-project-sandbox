@@ -61,5 +61,5 @@ def set_github_output(name: str, value: str) -> None:
         print(f"{name}={value}", file=fh)
 
 
-if __name__ == "__main__":
+if __name__ == "__main__":  # pragma: no cover
     main()
