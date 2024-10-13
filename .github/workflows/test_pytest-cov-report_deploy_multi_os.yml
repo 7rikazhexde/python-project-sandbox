@@ -97,17 +97,12 @@ jobs:
 
       - name: Check if tests should be executed
         id: check_tests
-        shell: bash
         run: |
-          exclude_testmon_json='${{ github.event.client_payload.update_exclude_testmon_json }}'
-          echo "exclude_testmon_json=$exclude_testmon_json"
-          if echo "$exclude_testmon_json" | jq -e --arg os "${{ matrix.os }}" --arg pv "${{ matrix.python-version }}" '.[] | select(.os == $os and .python_version == $pv)' > /dev/null; then
-            echo "This combination is in the exclude list. Skipping tests."
-            echo "skip_tests=true" >> $GITHUB_OUTPUT
-          else
-            echo "Tests need to be executed."
-            echo "skip_tests=false" >> $GITHUB_OUTPUT
-          fi
+         poetry run python .github/check_exclude_testmon.py
+        env:
+          EXCLUDE_TESTMON_JSON: '${{ toJson(github.event.client_payload.update_exclude_testmon_json) }}'
+          CURRENT_OS: '${{ matrix.os }}'
+          CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
 
       - name: Run tests with pytest-cov
         if: steps.check_tests.outputs.skip_tests != 'true'
