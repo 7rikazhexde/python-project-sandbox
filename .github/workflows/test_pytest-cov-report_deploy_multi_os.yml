@@ -77,24 +77,6 @@ jobs:
           fi
         continue-on-error: true
 
-      #- name: Check if tests should be executed
-      #  id: check_tests
-      #  shell: bash
-      #  run: |
-      #    if [ -f .testmondata ] && [ "${{ github.event.client_payload.skip_tests }}" != "true" ]; then
-      #      echo "Running pytest-testmon to check if tests should be executed..."
-      #      if poetry run pytest --testmon --testmon-noselect -v | grep -q "collected 0 items"; then
-      #        echo "No tests need to be executed."
-      #        echo "skip_tests=true" >> $GITHUB_OUTPUT
-      #      else
-      #        echo "Tests need to be executed."
-      #        echo "skip_tests=false" >> $GITHUB_OUTPUT
-      #      fi
-      #    else
-      #      echo "No .testmondata file found or tests are forced to run."
-      #      echo "skip_tests=false" >> $GITHUB_OUTPUT
-      #    fi
-
       - name: Check if tests should be executed
         id: check_tests
         run: |
@@ -103,6 +85,13 @@ jobs:
           UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
           CURRENT_OS: '${{ matrix.os }}'
           CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
+
+      # skip_tests が 'true' ならば後続のステップを中止する
+      - name: Stop workflow if tests are skipped
+        if: steps.check_tests.outputs.skip_tests == 'true'
+        run: |
+          echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
+          exit 0  # ワークフローを終了
 
       - name: Run tests with pytest-cov
         if: steps.check_tests.outputs.skip_tests != 'true'
@@ -113,13 +102,15 @@ jobs:
         shell: bash
 
       - name: Upload pytest-cov results
+        if: steps.check_tests.outputs.skip_tests != 'true'
         uses: actions/upload-artifact@v4.4.3
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
-        if: always()
 
+  # スキップされなかった場合のみ、後続のジョブが実行されるように条件を追加
   check_all_tests:
+    if: needs.test-and-coverage.outputs.skip_tests != 'true'
     needs: test-and-coverage
     runs-on: ubuntu-latest
     steps:
@@ -130,6 +121,7 @@ jobs:
           exit 1
 
   deploy:
+    if: needs.test-and-coverage.outputs.skip_tests != 'true' && needs.check_all_tests.result == 'success'
     needs: [test-and-coverage, check_all_tests]
     runs-on: ubuntu-latest
     outputs:
@@ -148,15 +140,6 @@ jobs:
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-      #- name: Prepare os_list and python_versions
-      #  run: |
-      #    os_list='${{ join(github.event.client_payload.os, ' ') }}'
-      #    python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
-      #    echo "OS List: $os_list"
-      #    echo "Python Versions List: $python_versions_list"
-      #    echo "os_list=$os_list" >> $GITHUB_ENV
-      #    echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
-
       - name: Check and Deploy to GitHub Pages
         id: check_and_deploy
         run: |
@@ -167,8 +150,6 @@ jobs:
           changes_made=false
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
-          #for os in ubuntu-latest macos-13 windows-latest; do
-          #  for python_version in 3.11 3.12; do
           for os in $os_list; do
             for python_version in $python_versions_list; do
               folder_name="pytest-cov-report_${os}_python_${python_version}"
@@ -199,7 +180,6 @@ jobs:
           else
             echo "No changes to commit"
             echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
-          fi
 
       - name: Generate URL list
         id: generate_url_list
@@ -210,8 +190,6 @@ jobs:
           URL_LIST=""
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
-          #for os in ubuntu-latest macos-13 windows-latest; do
-          #  for python_version in 3.11 3.12; do
           for os in $os_list; do
             for python_version in $python_versions_list; do
               URL_LIST="${URL_LIST}pytest-cov-report_${os}_python_${python_version}:\n\
@@ -244,5 +222,4 @@ jobs:
           message="pytest-cov report check completed. No changes were necessary."
 
           curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
-            -F "message=${message}"
+            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN"
