@@ -151,11 +151,11 @@ jobs:
           # テスト対象のみを含める
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              export CURRENT_OS=$os
-              export CURRENT_PYTHON_VERSION=$python_version
-              poetry run python .github/check_exclude_testmon.py
+              #export CURRENT_OS=$os
+              #export CURRENT_PYTHON_VERSION=$python_version
+              #poetry run python .github/check_exclude_testmon.py
 
-              if [ "$GITHUB_OUTPUT_SKIP_TESTS" = "true" ]; then
+              if [ "${{ steps.check_tests.outputs.skip_tests }}" = "true" ]; then
                 echo "Skipping deployment for OS=$os, Python=$python_version as it is excluded."
                 continue
               fi
@@ -201,11 +201,11 @@ jobs:
           # テスト対象のみにURLを生成
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              export CURRENT_OS=$os
-              export CURRENT_PYTHON_VERSION=$python_version
-              poetry run python .github/check_exclude_testmon.py
+              #export CURRENT_OS=$os
+              #export CURRENT_PYTHON_VERSION=$python_version
+              #poetry run python .github/check_exclude_testmon.py
 
-              if [ "$GITHUB_OUTPUT_SKIP_TESTS" = "true" ]; then
+              if [ "${{ steps.check_tests.outputs.skip_tests }}" = "true" ]; then
                 echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
                 continue
               fi
