@@ -43,11 +43,13 @@ def main() -> None:
             f"This combination is not in the test target list: OS={current_os}, Python={current_python_version}. Skipping tests."
         )
         set_github_output("skip_tests", "true")
+        set_github_env("TEST_SHOULD_BE_SKIPPED", "true")
     else:
         print(
             f"This combination is in the test target list: OS={current_os}, Python={current_python_version}. Running tests."
         )
         set_github_output("skip_tests", "false")
+        set_github_env("TEST_SHOULD_BE_SKIPPED", "false")
 
 
 def set_github_output(name: str, value: str) -> None:
@@ -58,6 +60,17 @@ def set_github_output(name: str, value: str) -> None:
         sys.exit(1)
 
     with open(github_output, "a") as fh:
+        print(f"{name}={value}", file=fh)
+
+
+def set_github_env(name: str, value: str) -> None:
+    """GitHub Actionsの環境ファイルを使って環境変数を設定"""
+    github_env = os.getenv("GITHUB_ENV")
+    if github_env is None:
+        print("GITHUB_ENV is not set. Unable to set environment variable.")
+        sys.exit(1)
+
+    with open(github_env, "a") as fh:
         print(f"{name}={value}", file=fh)
 
 
