@@ -100,7 +100,7 @@ jobs:
         run: |
          poetry run python .github/check_exclude_testmon.py
         env:
-          EXCLUDE_TESTMON_JSON: '${{ toJson(github.event.client_payload.update_exclude_testmon_json) }}'
+          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
           CURRENT_OS: '${{ matrix.os }}'
           CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
 

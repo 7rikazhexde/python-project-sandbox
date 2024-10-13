@@ -77,23 +77,32 @@ jobs:
           fi
         continue-on-error: true
 
+      #- name: Check if tests should be executed
+      #  id: check_tests
+      #  shell: bash
+      #  run: |
+      #    if [ -f .testmondata ] && [ "${{ github.event.client_payload.skip_tests }}" != "true" ]; then
+      #      echo "Running pytest-testmon to check if tests should be executed..."
+      #      if poetry run pytest --testmon --testmon-noselect -v | grep -q "collected 0 items"; then
+      #        echo "No tests need to be executed."
+      #        echo "skip_tests=true" >> $GITHUB_OUTPUT
+      #      else
+      #        echo "Tests need to be executed."
+      #        echo "skip_tests=false" >> $GITHUB_OUTPUT
+      #      fi
+      #    else
+      #      echo "No .testmondata file found or tests are forced to run."
+      #      echo "skip_tests=false" >> $GITHUB_OUTPUT
+      #    fi
+
       - name: Check if tests should be executed
         id: check_tests
-        shell: bash
         run: |
-          if [ -f .testmondata ] && [ "${{ github.event.client_payload.skip_tests }}" != "true" ]; then
-            echo "Running pytest-testmon to check if tests should be executed..."
-            if poetry run pytest --testmon --testmon-noselect -v | grep -q "collected 0 items"; then
-              echo "No tests need to be executed."
-              echo "skip_tests=true" >> $GITHUB_OUTPUT
-            else
-              echo "Tests need to be executed."
-              echo "skip_tests=false" >> $GITHUB_OUTPUT
-            fi
-          else
-            echo "No .testmondata file found or tests are forced to run."
-            echo "skip_tests=false" >> $GITHUB_OUTPUT
-          fi
+         poetry run python .github/check_exclude_testmon.py
+        env:
+          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
+          CURRENT_OS: '${{ matrix.os }}'
+          CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
 
       - name: Run tests with pytest-html
         if: steps.check_tests.outputs.skip_tests != 'true'

@@ -1,47 +1,64 @@
 import json
 import os
+import sys
 
 
 def main() -> None:
     # GitHub Actionsの環境変数からデータを取得
-    exclude_testmon_json_str = os.getenv("EXCLUDE_TESTMON_JSON")
+    updated_testmon_json_str = os.getenv("UPDATED_TESTMON_JSON")
 
-    # Noneのチェック。Noneなら空のリストとして扱う。
-    if exclude_testmon_json_str is None:
-        exclude_testmon_json_str = "[]"
+    # Noneのチェック。Noneならワークフローを中止する。
+    if not updated_testmon_json_str:
+        print("updated_testmon_json is empty. Stopping workflow.")
+        sys.exit(1)
 
     current_os = os.getenv("CURRENT_OS")
     current_python_version = os.getenv("CURRENT_PYTHON_VERSION")
 
     # JSONのパース
     try:
-        exclude_testmon_json = json.loads(exclude_testmon_json_str)
+        updated_testmon_json = json.loads(updated_testmon_json_str)
     except json.JSONDecodeError:
-        print("Invalid JSON format. Skipping tests.")
-        print("::set-output name=skip_tests::false")
-        return
+        print("Invalid JSON format. Stopping workflow.")
+        sys.exit(1)
 
-    # テストをスキップするかどうか判定
-    skip_tests = False
-    for entry in exclude_testmon_json:
+    # updated_testmon_jsonが空の場合、ワークフローを中止
+    if not updated_testmon_json:
+        print("No test targets found in updated_testmon_json. Stopping workflow.")
+        sys.exit(1)
+
+    # テストを実行するかどうか判定
+    skip_tests = True
+    for entry in updated_testmon_json:
         if (
             entry["os"] == current_os
             and entry["python_version"] == current_python_version
         ):
-            skip_tests = True
+            skip_tests = False
             break
 
     # GitHub Actionsの出力に反映
     if skip_tests:
         print(
-            f"This combination is in the exclude list: OS={current_os}, Python={current_python_version}. Skipping tests."
+            f"This combination is not in the test target list: OS={current_os}, Python={current_python_version}. Skipping tests."
         )
-        print("::set-output name=skip_tests::true")
+        set_github_output("skip_tests", "true")
     else:
         print(
-            f"This combination is not in the exclude list: OS={current_os}, Python={current_python_version}. Running tests."
+            f"This combination is in the test target list: OS={current_os}, Python={current_python_version}. Running tests."
         )
-        print("::set-output name=skip_tests::false")
+        set_github_output("skip_tests", "false")
+
+
+def set_github_output(name: str, value: str) -> None:
+    """GitHub Actionsの環境ファイルを使って出力を設定"""
+    github_output = os.getenv("GITHUB_OUTPUT")
+    if github_output is None:
+        print("GITHUB_OUTPUT is not set. Unable to set output.")
+        sys.exit(1)
+
+    with open(github_output, "a") as fh:
+        print(f"{name}={value}", file=fh)
 
 
 if __name__ == "__main__":
