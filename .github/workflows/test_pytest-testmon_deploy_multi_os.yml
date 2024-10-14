@@ -260,14 +260,20 @@ jobs:
           os_list=$(echo "$updated_testmon_json" | jq -c '[.[].os] | unique')
           python_versions=$(echo "$updated_testmon_json" | jq -c '[.[].python_version] | unique')
 
+          ghpage_branch=$(echo '"ghpage_branch": ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }},' |
+          jq -R 'split(":") | {(.[0] | strip): [.[1] | strip | rtrimstr(",")]}' |
+          jq -c '."ghpage_branch"')
+
           echo "os_list: $os_list"
           echo "python_versions: $python_versions"
+          echo "ghpage_branch: $ghpage_branch"
 
           # GitHub Actions出力に渡す
           echo "os_list=$os_list" >> $GITHUB_OUTPUT
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
           echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
           echo "updated_exclude_testmon_json=$updated_exclude_testmon_json" >> $GITHUB_OUTPUT
+          echo "ghpage_branch=$ghpage_branch" >> $GITHUB_OUTPUT
 
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
@@ -279,7 +285,7 @@ jobs:
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
               "updated_testmon_json": ${{ steps.prepare-payload.outputs.updated_testmon_json }},
               "update_exclude_testmon_json": ${{ steps.prepare-payload.outputs.updated_exclude_testmon_json }},
-              "ghpage_branch": ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }},
+              "ghpage_branch": ${{ steps.prepare-payload.outputs.ghpage_branch }},
               "skip_tests": false
             }
 
@@ -293,7 +299,7 @@ jobs:
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
               "updated_testmon_json": ${{ steps.prepare-payload.outputs.updated_testmon_json }},
               "update_exclude_testmon_json": ${{ steps.prepare-payload.outputs.updated_exclude_testmon_json }},
-              "ghpage_branch": ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }},
+              "ghpage_branch": ${{ steps.prepare-payload.outputs.ghpage_branch }},
               "skip_tests": false
             }
 
