@@ -289,4 +289,3 @@ jobs:
           curl -X POST https://notify-api.line.me/api/notify \
             -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
             -F "message=$message"
-            
