@@ -260,9 +260,7 @@ jobs:
           os_list=$(echo "$updated_testmon_json" | jq -c '[.[].os] | unique')
           python_versions=$(echo "$updated_testmon_json" | jq -c '[.[].python_version] | unique')
 
-          ghpage_branch=$(echo '"ghpage_branch": ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }},' |
-          jq -R 'split(":") | {(.[0] | strip): [.[1] | strip | rtrimstr(",")]}' |
-          jq -c '."ghpage_branch"')
+          ghpage_branch=$(echo '${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}' | jq -R -c '. | [.]')
 
           echo "os_list: $os_list"
           echo "python_versions: $python_versions"
