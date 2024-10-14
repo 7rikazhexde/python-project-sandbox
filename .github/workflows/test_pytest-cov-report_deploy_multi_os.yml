@@ -233,7 +233,7 @@ jobs:
       - name: Generate URL list
         id: generate_url_list
         env:
-          UPDATED_TESTMON_JSON: "${{ toJson(github.event.client_payload.updated_testmon_json) }}"
+          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
           IFS='/' read -ra REPO_INFO <<< "$GITHUB_REPOSITORY"
           REPO_OWNER="${REPO_INFO[0]}"
