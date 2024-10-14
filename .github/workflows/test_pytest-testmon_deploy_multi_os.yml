@@ -235,9 +235,6 @@ jobs:
             } >> "$GITHUB_OUTPUT"
           fi
 
-          echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
-          echo "exclude_testmon_json=$exclude_testmon_json" >> $GITHUB_OUTPUT
-
       - name: List deployed files
         if: always()
         run: |
