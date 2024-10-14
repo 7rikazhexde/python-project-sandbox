@@ -46,12 +46,12 @@ jobs:
           git config --local user.name "GitHub Action"
       - name: Get current version
         id: current_version
-        run: echo "version=$(poetry version -s)" >> $GITHUB_OUTPUT
+        run: echo "version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
       - name: Update version
         id: update_version
         run: |
           poetry version ${{ github.event.inputs.update_type }}
-          echo "new_version=$(poetry version -s)" >> $GITHUB_OUTPUT
+          echo "new_version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
       - name: Commit and push if changed
         run: |
           git add pyproject.toml
@@ -65,9 +65,11 @@ jobs:
         id: changelog
         run: |
           changelog=$(git log --pretty=format:"- %s" v${{ steps.current_version.outputs.version }}..v${{ steps.update_version.outputs.new_version }})
-          echo "changelog<<EOF" >> $GITHUB_OUTPUT
-          echo "$changelog" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "changelog<<EOF"
+            echo "$changelog"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
       - name: Create Release
         uses: softprops/action-gh-release@v2.0.8
         with:

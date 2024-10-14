@@ -26,7 +26,7 @@ jobs:
   test-and-deploy-testmon:
     strategy:
       matrix:
-        os: ${{ github.event.client_payload.os }}
+        os: ${{ github.event.client_payload.os_list }}
         python-version: ${{ github.event.client_payload.python_versions }}
     runs-on: ${{ matrix.os }}
     env:
@@ -36,11 +36,16 @@ jobs:
       pull-requests: write
     outputs:
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
+      ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
         with:
           fetch-depth: 0
+
+      - name: Set GHPAGES_BRANCH from client_payload
+        id: set-ghpages-branch
+        run: echo "ghpages_branch=${{ github.event.client_payload.ghpages_branch }}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v5.2.0
@@ -59,6 +64,12 @@ jobs:
           pip install poetry
           echo "Poetry version: $(poetry --version)"
 
+      - name: Cache dependencies
+        uses: actions/cache@v4.1.1
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
       - name: Install dependencies
         run: |
           poetry install
@@ -69,9 +80,9 @@ jobs:
         shell: bash
         run: |
           echo "Fetching previous testmon data..."
-          git fetch origin ghpages:ghpages || true
+          git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
           folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
-          git checkout ghpages -- $folder_name/.testmondata || true
+          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
           if [ -f $folder_name/.testmondata ]; then
             echo "Previous testmon data found. Moving to current directory."
             mv $folder_name/.testmondata .testmondata
@@ -89,16 +100,18 @@ jobs:
           output=$(poetry run pytest --testmon -v)
           echo "$output"
 
-          echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
-          echo "$output" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "testmon_output<<EOF"
+            echo "$output"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
           if echo "$output" | grep -q "collected 0 items"; then
-           echo "No tests executed. Skipping deployment and further workflows."
-           echo "tests_executed=false" >> $GITHUB_OUTPUT
+            echo "No tests executed. Skipping deployment and further workflows."
+            echo "tests_executed=false" >> "$GITHUB_OUTPUT"
           else
-           echo "Tests executed. Proceeding with deployment and further workflows."
-           echo "tests_executed=true" >> $GITHUB_OUTPUT
+            echo "Tests executed. Proceeding with deployment and further workflows."
+            echo "tests_executed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create testmon directory and move .testmondata
@@ -132,6 +145,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       updated_testmon_json: ${{ steps.deploy_testmon.outputs.updated_testmon_json }}
+      exclude_testmon_json: ${{ steps.deploy_testmon.outputs.exclude_testmon_json }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
@@ -151,24 +165,28 @@ jobs:
 
       - name: Prepare os_list and python_versions
         run: |
-          os_list='${{ join(github.event.client_payload.os, ' ') }}'
-          python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
+          os_list="${{ join(github.event.client_payload.os_list, ' ') }}"
+          python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
           echo "OS List: $os_list"
           echo "Python Versions List: $python_versions_list"
 
-          echo "os_list=$os_list" >> $GITHUB_ENV
-          echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
+          {
+            echo "os_list=$os_list"
+            echo "python_versions_list=$python_versions_list"
+          } >> "$GITHUB_ENV"
 
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         run: |
           echo "Deploying testmon data to GitHub Pages..."
-          git fetch origin ghpages:ghpages || git checkout -b ghpages
-          git checkout ghpages
+          git fetch origin "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}:${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}" || git checkout -b "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}"
+          git checkout "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}"
 
           changes_made=false
           updated_testmon_json="["
+          exclude_testmon_json="["
+
           for os in $os_list; do
             for python_version in $python_versions_list; do
               folder_name="testmon-data_${os}_python_${python_version}"
@@ -184,36 +202,48 @@ jobs:
                   updated_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 else
                   echo "No .testmondata file found in $artifact_folder"
+                  exclude_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 fi
               else
                 echo "Artifact folder not found: $artifact_folder"
+                exclude_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
               fi
             done
           done
 
           # JSONの末尾のカンマを削除して配列を閉じる
           updated_testmon_json="${updated_testmon_json%,}]"
-          echo "$updated_testmon_json" | jq .
+          exclude_testmon_json="${exclude_testmon_json%,}]"
+          echo "Updated testmon JSON: $updated_testmon_json"
+          echo "Exclude testmon JSON: $exclude_testmon_json"
 
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages" || echo "No changes to commit"
-            git push origin ghpages || echo "No changes to push"
-            echo "deploy_status=updated" >> $GITHUB_OUTPUT
-            echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
+            git push origin "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}" || echo "No changes to push"
+            {
+              echo "deploy_status=updated"
+              echo "updated_testmon_json=$updated_testmon_json"
+              echo "exclude_testmon_json=$exclude_testmon_json"
+            } >> "$GITHUB_OUTPUT"
           else
             echo "No changes to commit"
-            echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
-            echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
+            {
+              echo "deploy_status=unchanged"
+              echo "updated_testmon_json=$updated_testmon_json"
+              echo "exclude_testmon_json=$exclude_testmon_json"
+            } >> "$GITHUB_OUTPUT"
           fi
 
       - name: List deployed files
         if: always()
         run: |
-          git checkout ghpages
+          #git checkout ghpages
+          git checkout ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
           echo "Deployed testmon data files:"
           find . -name ".testmondata"
-          echo "Contents of ghpages branch:"
+          #echo "Contents of ghpages branch:"
+          echo "Contents of ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} branch:"
           ls -R
 
   trigger-other-workflows:
@@ -229,10 +259,29 @@ jobs:
       - name: Prepare client payload
         id: prepare-payload
         run: |
-          os_list=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].os] | unique')
-          python_versions=$(echo '${{ needs.deploy-testmon.outputs.updated_testmon_json }}' | jq -c '[.[].python_version] | unique')
-          echo "os_list=$os_list" >> $GITHUB_OUTPUT
-          echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
+          updated_testmon_json="${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
+          echo "Updated JSON: $updated_testmon_json"
+
+          updated_exclude_testmon_json="${{ needs.deploy-testmon.outputs.exclude_testmon_json }}"
+          echo "Updated Exclude JSON: $updated_exclude_testmon_json"
+
+          os_list=$(echo "$updated_testmon_json" | jq -c '[.[].os] | unique')
+          python_versions=$(echo "$updated_testmon_json" | jq -c '[.[].python_version] | unique')
+
+          ghpage_branch=$(echo "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}" | jq -R -c '. | [.]')
+
+          echo "os_list: $os_list"
+          echo "python_versions: $python_versions"
+          echo "ghpage_branch: $ghpage_branch"
+
+          # GitHub Actions出力に渡す
+          {
+            echo "os_list=$os_list"
+            echo "python_versions=$python_versions"
+            echo "updated_testmon_json=$updated_testmon_json"
+            echo "updated_exclude_testmon_json=$updated_exclude_testmon_json"
+            echo "ghpage_branch=$ghpage_branch"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0
@@ -242,6 +291,9 @@ jobs:
             {
               "os": ${{ steps.prepare-payload.outputs.os_list }},
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
+              "updated_testmon_json": ${{ steps.prepare-payload.outputs.updated_testmon_json }},
+              "update_exclude_testmon_json": ${{ steps.prepare-payload.outputs.updated_exclude_testmon_json }},
+              "ghpage_branch": ${{ steps.prepare-payload.outputs.ghpage_branch }},
               "skip_tests": false
             }
 
@@ -253,6 +305,9 @@ jobs:
             {
               "os": ${{ steps.prepare-payload.outputs.os_list }},
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
+              "updated_testmon_json": ${{ steps.prepare-payload.outputs.updated_testmon_json }},
+              "update_exclude_testmon_json": ${{ steps.prepare-payload.outputs.updated_exclude_testmon_json }},
+              "ghpage_branch": ${{ steps.prepare-payload.outputs.ghpage_branch }},
               "skip_tests": false
             }
 
