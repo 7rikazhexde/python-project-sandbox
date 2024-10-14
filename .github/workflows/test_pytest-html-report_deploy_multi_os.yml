@@ -186,18 +186,14 @@ jobs:
           git pull origin "${{ needs.test-and-report.outputs.ghpages_branch }}" --rebase
 
           changes_made=false
-          os_list=${{ join(github.event.client_payload.os, ' ') }}
-          python_versions_list=${{ join(github.event.client_payload.python_versions, ' ') }}
-
-          # IFSを使用して、os_listとpython_versions_listを正しく分割
-          IFS=' ' read -r -a os_array <<< "$os_list"
-          IFS=' ' read -r -a python_versions_array <<< "$python_versions_list"
+          os_list="${{ join(github.event.client_payload.os, ' ') }}"
+          python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
           # テスト対象を確認するためのPythonスクリプトを実行
-          for os in "${os_array[@]}"; do
-            for python_version in "${python_versions_array[@]}"; do
-              export CURRENT_OS="$os"
-              export CURRENT_PYTHON_VERSION="$python_version"
+          for os in $os_list; do
+            for python_version in $python_versions_list; do
+              export CURRENT_OS=$os
+              export CURRENT_PYTHON_VERSION=$python_version
               python3 .github/check_exclude_testmon.py
 
               # skip_tests が true の場合はそのOSとPythonバージョンをスキップ
@@ -207,21 +203,21 @@ jobs:
               fi
 
               folder_name="pytest-html-report_${os}_python_${python_version}"
-              mkdir -p "$folder_name" # フォルダを作成
+              mkdir -p $folder_name # フォルダを作成
 
               # テスト結果のHTMLファイルが存在するか確認
-              if [ -f "test-results-$os-python-$python_version/report_page.html" ]; then
+              if [ -f test-results-$os-python-$python_version/report_page.html ]; then
                 # HTMLファイルに差分があるかどうかを確認
-                if [ ! -f "$folder_name/report_page.html" ] || ! diff "test-results-$os-python-$python_version/report_page.html" "$folder_name/report_page.html" > /dev/null; then
+                if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os-python-$python_version/report_page.html $folder_name/report_page.html > /dev/null; then
                   echo "Changes detected for $os with Python $python_version, updating..."
-                  mv "test-results-$os-python-$python_version/report_page.html" "$folder_name/"
+                  mv test-results-$os-python-$python_version/report_page.html $folder_name/
 
                   # assets ディレクトリも存在する場合はコピー
-                  if [ -d "test-results-$os-python-$python_version/assets" ]; then
-                    rm -rf "$folder_name/assets"
-                    cp -r "test-results-$os-python-$python_version/assets" "$folder_name/"
+                  if [ -d test-results-$os-python-$python_version/assets ]; then
+                    rm -rf $folder_name/assets
+                    cp -r test-results-$os-python-$python_version/assets $folder_name/
                   fi
-                  git add "$folder_name"
+                  git add $folder_name
                   changes_made=true
                 else
                   echo "No changes for $os with Python $python_version, skipping..."
@@ -277,7 +273,7 @@ jobs:
 
               # 対象の場合はURLリストに追加
               URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
-              https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
+            https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
             done
           done
 
