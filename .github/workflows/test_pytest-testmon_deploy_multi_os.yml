@@ -265,10 +265,10 @@ jobs:
           updated_exclude_testmon_json="${{ needs.deploy-testmon.outputs.exclude_testmon_json }}"
           echo "Updated Exclude JSON: $updated_exclude_testmon_json"
 
-          updated_testmon_json=$(echo "$updated_testmon_json" | sed "s/'/\"/g")
-          echo "Updated JSON Sed: $updated_testmon_json"
+          updated_testmon_json=$(echo "$updated_testmon_json" | sed 's/\([a-zA-Z_]\+\):/\\"\1\\":/g' | sed 's/\([a-zA-Z0-9_.\-]\+\)/\"\1\"/g')
+          updated_exclude_testmon_json=$(echo "$updated_exclude_testmon_json" | sed 's/\([a-zA-Z_]\+\):/\\"\1\\":/g' | sed 's/\([a-zA-Z0-9_.\-]\+\)/\"\1\"/g')
 
-          updated_exclude_testmon_json=$(echo "$updated_exclude_testmon_json" | sed "s/'/\"/g")
+          echo "Updated JSON Sed: $updated_testmon_json"
           echo "Updated Exclude JSON Sed: $updated_exclude_testmon_json"
 
           os_list=$(echo "$updated_testmon_json" | jq -c '[.[].os] | unique')
