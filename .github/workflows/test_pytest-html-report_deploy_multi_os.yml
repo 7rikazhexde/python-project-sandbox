@@ -61,12 +61,14 @@ jobs:
         id: set-ghpages-branch
         shell: bash
         run: |
-          echo "Raw ghpage_branch value: ${{ (github.event.client_payload.ghpage_branch) }}"
+          echo "Raw ghpage_branch value: ${{ github.event.client_payload.ghpage_branch }}"
 
-          ghpages_branch=$(echo '${{ (github.event.client_payload.ghpage_branch) }}' | sed -e 's/^\[//; s/\]$//; s/"//g')
+          # 配列の最初の要素を取得
+          ghpages_branch=${{ github.event.client_payload.ghpage_branch[0] }}
 
           echo "Extracted ghpages_branch: $ghpages_branch"
 
+          # GITHUB_OUTPUTに出力
           echo "ghpages_branch=$ghpages_branch" >> $GITHUB_OUTPUT
 
       - name: Set up Python
