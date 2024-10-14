@@ -279,6 +279,7 @@ jobs:
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
               "updated_testmon_json": ${{ steps.prepare-payload.outputs.updated_testmon_json }},
               "update_exclude_testmon_json": ${{ steps.prepare-payload.outputs.updated_exclude_testmon_json }},
+              "ghpage_branch": ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }},
               "skip_tests": false
             }
 
@@ -292,6 +293,7 @@ jobs:
               "python_versions": ${{ steps.prepare-payload.outputs.python_versions }},
               "updated_testmon_json": ${{ steps.prepare-payload.outputs.updated_testmon_json }},
               "update_exclude_testmon_json": ${{ steps.prepare-payload.outputs.updated_exclude_testmon_json }},
+              "ghpage_branch": ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }},
               "skip_tests": false
             }
 
