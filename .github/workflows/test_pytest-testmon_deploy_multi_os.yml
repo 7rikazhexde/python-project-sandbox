@@ -251,6 +251,16 @@ jobs:
     if: needs.test-and-deploy-testmon.result == 'success' && needs.deploy-testmon.outputs.updated_testmon_json != '[]'
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: '3.12'
+
       - name: Output os and python versions
         run: |
           echo "OS: ${{ needs.deploy-testmon.outputs.updated_testmon_json }}"
@@ -265,15 +275,13 @@ jobs:
           updated_exclude_testmon_json="${{ needs.deploy-testmon.outputs.exclude_testmon_json }}"
           echo "Updated Exclude JSON: $updated_exclude_testmon_json"
 
-          updated_testmon_json=$(echo "$updated_testmon_json" | sed 's/\([a-zA-Z_]\+\):/\\"\1\\":/g' | sed 's/\([a-zA-Z0-9_.\-]\+\)/\"\1\"/g')
-          updated_exclude_testmon_json=$(echo "$updated_exclude_testmon_json" | sed 's/\([a-zA-Z_]\+\):/\\"\1\\":/g' | sed 's/\([a-zA-Z0-9_.\-]\+\)/\"\1\"/g')
+          echo "$updated_testmon_json" > updated_testmon_json.txt
+          echo "$updated_exclude_testmon_json" > updated_exclude_testmon_json.txt
 
-          echo "Updated JSON Sed: $updated_testmon_json"
-          echo "Updated Exclude JSON Sed: $updated_exclude_testmon_json"
+          python3 .github/process_json.py
 
-          os_list=$(echo "$updated_testmon_json" | jq -c '[.[].os] | unique')
-          python_versions=$(echo "$updated_testmon_json" | jq -c '[.[].python_version] | unique')
-
+          os_list=$(cat os_list.txt)
+          python_versions=$(cat python_versions.txt)
           ghpage_branch=$(echo "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}" | jq -R -c '. | [.]')
 
           echo "os_list: $os_list"
