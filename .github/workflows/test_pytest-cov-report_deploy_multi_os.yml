@@ -233,11 +233,11 @@ jobs:
       - name: Generate URL list
         id: generate_url_list
         env:
-          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
+          UPDATED_TESTMON_JSON: "${{ toJson(github.event.client_payload.updated_testmon_json) }}"
         run: |
           IFS='/' read -ra REPO_INFO <<< "$GITHUB_REPOSITORY"
-          REPO_OWNER=${REPO_INFO[0]}
-          REPO_NAME=${REPO_INFO[1]}
+          REPO_OWNER="${REPO_INFO[0]}"
+          REPO_NAME="${REPO_INFO[1]}"
           URL_LIST=""
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
@@ -245,8 +245,8 @@ jobs:
           # テスト対象のみにURLを生成
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              export CURRENT_OS=$os
-              export CURRENT_PYTHON_VERSION=$python_version
+              export CURRENT_OS="$os"
+              export CURRENT_PYTHON_VERSION="$python_version"
               python3 .github/check_exclude_testmon.py
 
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
@@ -259,9 +259,11 @@ jobs:
             done
           done
 
-          echo "url_list<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$URL_LIST" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "url_list<<EOF"
+            echo -e "$URL_LIST"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Send LINE Notify (Updated)
         if: steps.check_and_deploy.outputs.deploy_status == 'updated'
@@ -285,4 +287,6 @@ jobs:
           message="pytest-cov report check completed. No changes were necessary."
 
           curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN"
+            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
+            -F "message=$message"
+            
