@@ -4,9 +4,7 @@ name: pytest-html Report and Deploy Multi-OS
 # 1. トリガー条件:
 #    - pytest-testmon ワークフローの完了後に repository_dispatch イベントで起動
 # 2. 複数の環境（OS、Pythonバージョン）でのセットアップ
-#    - .github/workflows/send_payload_to_pytest_testmon.ymlで設定
-#      - macOS-13, Ubuntu, Windowsの最新バージョンで実行
-#      - Python 3.11 と 3.12 を使用
+#    - .github/workflows/send_payload_to_pytest_testmon.ymlで指定されたOS、Pythonバージョンで実行
 # 3. testmon データの取得とテストの実行確認
 #    - testmon の結果に基づき、実行対象外の場合はテストをスキップ
 #    - スキップ対象の判定は .github/check_exclude_testmon.py(mainブランチ内) で行う
@@ -47,7 +45,8 @@ jobs:
     env:
       TZ: "Asia/Tokyo"
     outputs:
-      ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
+      ghpages_branch: "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}"
+      skip_tests: ${{ steps.check_tests.outputs.skip_tests }}
     permissions:
       contents: write
       pull-requests: write
@@ -101,9 +100,9 @@ jobs:
         shell: bash
         run: |
           echo "Fetching testmon data..."
-          git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
+          git fetch origin "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}":"${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" || true
           folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
-          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
+          git checkout "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" -- $folder_name/.testmondata || true
           if [ -f $folder_name/.testmondata ]; then
             echo "Testmon data found. Moving to current directory."
             mv $folder_name/.testmondata .testmondata
