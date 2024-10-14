@@ -46,7 +46,6 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
-      ghpages_branch: ${{ (github.event.client_payload.ghpage_branch)[0] }}
     outputs:
       ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
     permissions:
@@ -61,7 +60,16 @@ jobs:
       - name: Set GHPAGES_BRANCH from client_payload
         id: set-ghpages-branch
         run: |
-          ghpages_branch="${{ (github.event.client_payload.ghpage_branch)[0] }}"
+          # ghpage_branchの値をエコーして確認
+          echo "Raw ghpage_branch value: ${{ github.event.client_payload.ghpage_branch }}"
+
+          # 文字列から最初の要素を抽出
+          ghpages_branch=$(echo '${{ github.event.client_payload.ghpage_branch }}' | sed 's/^\[//;s/\]$//;s/,.*$//')
+
+          # 抽出された値を確認
+          echo "Extracted ghpages_branch: $ghpages_branch"
+
+          # 出力を設定
           echo "ghpages_branch=$ghpages_branch" >> $GITHUB_OUTPUT
 
       - name: Set up Python
