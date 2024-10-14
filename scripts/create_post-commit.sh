@@ -27,7 +27,8 @@ EOF
 }
 
 if [ -f "$SCRIPT_DIR/.git/hooks/post-commit" ]; then
-    read -p "$SCRIPT_DIR/../.git/hooks/post-commit already exists. Do you want to create $SCRIPT_DIR/.git/hooks/post-commit.second instead? (y/N): " choice
+    # For shellcheck SC2162
+    read -r -p "$SCRIPT_DIR/../.git/hooks/post-commit already exists. Do you want to create $SCRIPT_DIR/.git/hooks/post-commit.second instead? (y/N): " choice
     if [[ $choice == "y" || $choice == "Y" ]]; then
         create_post_commit "$SCRIPT_DIR/../.git/hooks/post-commit.second"
         exit 0
