@@ -46,6 +46,9 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
+      ghpages_branch : ${{ github.event.client_payload.ghpages_branch }}
+    outputs:
+      ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
     permissions:
       contents: write
       pull-requests: write
@@ -54,6 +57,10 @@ jobs:
         uses: actions/checkout@v4.2.1
         with:
           fetch-depth: 0
+
+      - name: Set GHPAGES_BRANCH from client_payload
+        id: set-ghpages-branch
+        run: echo "ghpages_branch=${{ github.event.client_payload.ghpages_branch }}" >> $GITHUB_OUTPUT
 
       - name: Set up Python
         uses: actions/setup-python@v5.2.0
@@ -85,9 +92,9 @@ jobs:
         shell: bash
         run: |
           echo "Fetching testmon data..."
-          git fetch origin ghpages:ghpages || true
+          git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
           folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
-          git checkout ghpages -- $folder_name/.testmondata || true
+          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
           if [ -f $folder_name/.testmondata ]; then
             echo "Testmon data found. Moving to current directory."
             mv $folder_name/.testmondata .testmondata
@@ -166,9 +173,9 @@ jobs:
         env:
           UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
-          git fetch origin ghpages:ghpages || git checkout -b ghpages
-          git checkout ghpages
-          git pull origin ghpages --rebase
+          git fetch origin ${{ needs.test-and-report.outputs.ghpages_branch }}:${{ needs.test-and-report.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-report.outputs.ghpages_branch }}
+          git checkout ${{ needs.test-and-report.outputs.ghpages_branch }}
+          git pull origin ${{ needs.test-and-report.outputs.ghpages_branch }} --rebase
 
           changes_made=false
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
@@ -217,9 +224,9 @@ jobs:
           if [ "$changes_made" = true ]; then
             git commit -m "Update pytest-html reports on GitHub Pages"
             # コミットとプッシュが失敗した場合の対処
-            if ! git push origin ghpages; then
-              git pull origin ghpages --rebase
-              git push origin ghpages
+            if ! git push origin ${{ needs.test-and-report.outputs.ghpages_branch }}; then
+              git pull origin ${{ needs.test-and-report.outputs.ghpages_branch }} --rebase
+              git push origin ${{ needs.test-and-report.outputs.ghpages_branch }}
             fi
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
           else
