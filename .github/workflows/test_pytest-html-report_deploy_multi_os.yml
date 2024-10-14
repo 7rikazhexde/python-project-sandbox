@@ -48,6 +48,7 @@ jobs:
       TZ: "Asia/Tokyo"
     outputs:
       ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
+      skip_tests: ${{ steps.check_tests.outputs.skip_tests }}
     permissions:
       contents: write
       pull-requests: write
