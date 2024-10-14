@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-project-sandbox"
-version = "1.0.30"
+version = "1.1.0"
 description = "An experimental project to test out various tools."
 authors = ["7rikaz"]
 license = "MIT"
@@ -38,6 +38,7 @@ pytest-mock = "^3.14.0"
 pytest-asyncio = "^0.24.0"
 ruff = "^0.6.8"
 pytest-testmon = "^2.1.1"
+shellcheck-py = "^0.10.0.1"
 
 [build-system]
 requires = ["poetry-core"]
