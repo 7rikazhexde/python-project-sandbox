@@ -17,7 +17,7 @@ jobs:
 
       - name: Send Payload to Pytest Testmon
         #uses: ./.github
-        uses: 7rikazhexde/repo-dispatch-event-sender@v0.1.1
+        uses: 7rikazhexde/repo-dispatch-event-sender@main
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
           event_type: 'test_pytest-testmon_deploy_multi_os'
