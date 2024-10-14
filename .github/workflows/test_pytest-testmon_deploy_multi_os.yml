@@ -265,11 +265,11 @@ jobs:
           updated_exclude_testmon_json="${{ needs.deploy-testmon.outputs.exclude_testmon_json }}"
           echo "Updated Exclude JSON: $updated_exclude_testmon_json"
 
-          updated_testmon_json=$(echo "$updated_testmon_json" | sed 's/os:/\"os\":/g' | sed 's/python_version:/\"python_version\":/g' | sed 's/\([^,{:]\+\)/\"\1\"/g')
-          echo "Updated JSON: $updated_testmon_json"
+          updated_testmon_json=$(echo "$updated_testmon_json" | sed "s/'/\"/g")
+          echo "Updated JSON Sed: $updated_testmon_json"
 
-          updated_exclude_testmon_json=$(echo "$updated_exclude_testmon_json" | sed 's/os:/\"os\":/g' | sed 's/python_version:/\"python_version\":/g' | sed 's/\([^,{:]\+\)/\"\1\"/g')
-          echo "Updated Exclude JSON: $updated_exclude_testmon_json"
+          updated_exclude_testmon_json=$(echo "$updated_exclude_testmon_json" | sed "s/'/\"/g")
+          echo "Updated Exclude JSON Sed: $updated_exclude_testmon_json"
 
           os_list=$(echo "$updated_testmon_json" | jq -c '[.[].os] | unique')
           python_versions=$(echo "$updated_testmon_json" | jq -c '[.[].python_version] | unique')
