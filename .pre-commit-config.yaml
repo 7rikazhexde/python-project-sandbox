@@ -19,6 +19,17 @@ repos:
       # yaml syntax check
       - id: check-yaml
 
+  # https://github.com/shellcheck-py/shellcheck-py?tab=readme-ov-file#usage
+  - repo: https://github.com/shellcheck-py/shellcheck-py
+    rev: v0.10.0.1
+    hooks:
+      - id: shellcheck
+
+  #- repo: https://github.com/rhysd/actionlint
+  #  rev: v1.7.3
+  #  hooks:
+  #    - id: actionlint
+
   # https://python-poetry.org/docs/pre-commit-hooks/#usage
   - repo: https://github.com/python-poetry/poetry
     # Cannot be executed with local designation (as of 24.8.3)

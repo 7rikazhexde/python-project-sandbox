@@ -30,9 +30,9 @@ jobs:
         id: check_file
         run: |
           if [ -f "project_a/staking/ton_whales_staking_dashboard.py" ]; then
-            echo "file_exists=true" >> $GITHUB_OUTPUT
+            echo "file_exists=true" >> "$GITHUB_OUTPUT"
           else
-            echo "file_exists=false" >> $GITHUB_OUTPUT
+            echo "file_exists=false" >> "$GITHUB_OUTPUT"
           fi
 
   test:
@@ -141,52 +141,53 @@ jobs:
             git rm -rf .
           fi
 
-          # README.mdのヘッダーとバッジを追加
-          echo "# Coverage Reports" > README.md
-          echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_multi_os.yml)" >> README.md
-          echo "" >> README.md
+          # README.mdの内容を一度に生成
+          {
+            echo "# Coverage Reports"
+            echo "[![](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/$GITHUB_REPOSITORY/actions/workflows/test_multi_os.yml)"
+            echo ""
 
-          # 最新のコミット情報をREADMEに追加
-          commit_hash8=${GITHUB_SHA::8}
-          commit_link="[$commit_hash8](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash8)"
-          echo -e "> [!Note]" >> README.md
-          echo -e "> " >> README.md
-          echo -e "> Commit: $commit_link" >> README.md
-          echo -e "" >> README.md
+            # 最新のコミット情報をREADMEに追加
+            commit_hash8=${GITHUB_SHA::8}
+            commit_link="[$commit_hash8](https://github.com/$GITHUB_REPOSITORY/tree/$commit_hash8)"
+            echo -e "> [!Note]"
+            echo -e "> "
+            echo -e "> Commit: $commit_link"
+            echo -e ""
 
-          # テスト対象外のファイルに関する注記を追加（ファイルの存在確認結果に基づく）
-          commit_hash=${GITHUB_SHA}
-          file_path_1="project_a/staking/ton_whales_staking_dashboard.py"
-          file_path_2="staking/ton_whales_staking_dashboard.py"
-          # 後述するカバレッジレポートのリンク修正のためプログラムのソースコードディレクトリを除いたリンクにする
-          file_link="https://github.com/$GITHUB_REPOSITORY/blob/$commit_hash/$file_path_2"
+            # テスト対象外のファイルに関する注記を追加（ファイルの存在確認結果に基づく）
+            commit_hash=${GITHUB_SHA}
+            file_path_1="project_a/staking/ton_whales_staking_dashboard.py"
+            file_path_2="staking/ton_whales_staking_dashboard.py"
+            file_link="https://github.com/$GITHUB_REPOSITORY/blob/$commit_hash/$file_path_2"
 
-          if [[ "${{ needs.check_file.outputs.file_exists }}" == "true" ]]; then
-            echo -e "> [!Important]" >> README.md
-            echo -e "> The following file is intentionally excluded from test coverage:" >> README.md
-            echo -e "> - [$file_path_1]($file_link)" >> README.md
-            echo -e "> " >> README.md
-            echo -e "> This file contains complex external dependencies and is verified through manual and integration testing." >> README.md
-            echo -e "> " >> README.md
-          else
-            echo "Note: File $file_path_1 not found. Skipping addition to README.md." >&2
-          fi
+            if [[ "${{ needs.check_file.outputs.file_exists }}" == "true" ]]; then
+              echo -e "> [!Important]"
+              echo -e "> The following file is intentionally excluded from test coverage:"
+              echo -e "> - [$file_path_1]($file_link)"
+              echo -e "> "
+              echo -e "> This file contains complex external dependencies and is verified through manual and integration testing."
+              echo -e "> "
+            else
+              echo "Note: File $file_path_1 not found. Skipping addition to README.md." >&2
+            fi
 
-          # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
-          for os in macos-13 ubuntu-latest windows-latest; do
-            for version in 3.11 3.12; do
-              echo "## Coverage Report (os: $os / python-version: $version)" >> README.md
-              if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
-                sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-$os-$version/summary-report.md" |
-                sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
-                sed '/^$/N;/^\n$/D' |
-                sed -e 's/^"//' -e 's/"$//' >> README.md
-              else
-                echo "No summary report found for $os - $version" >> README.md
-              fi
-              echo "" >> README.md
+            # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
+            for os in macos-13 ubuntu-latest windows-latest; do
+              for version in 3.11 3.12; do
+                echo "## Coverage Report (os: $os / python-version: $version)"
+                if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
+                  sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-$os-$version/summary-report.md" |
+                  sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
+                  sed '/^$/N;/^\n$/D' |
+                  sed -e 's/^"//' -e 's/"$//'
+                else
+                  echo "No summary report found for $os - $version"
+                fi
+                echo ""
+              done
             done
-          done
+          } > README.md
 
           # カバレッジレポート内のリンクを有効にするためにファイルパスを修正する
           sed -i '

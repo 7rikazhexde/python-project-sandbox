@@ -76,7 +76,7 @@ jobs:
           poetry run task test_ci_xml
           coverage_percentage=$(poetry run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
           echo "Current coverage: $coverage_percentage%"
-          echo "COVERAGE=$coverage_percentage" >> $GITHUB_ENV
+          echo "COVERAGE=$coverage_percentage" >> "$GITHUB_ENV"
       - name: Check coverage
         shell: bash
         #if: ${{ env.COVERAGE < 90 }}
@@ -116,7 +116,7 @@ jobs:
         id: check_status
         shell: bash
         run: |
-          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> $GITHUB_STEP_SUMMARY
+          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> "$GITHUB_STEP_SUMMARY"
 
   check_all_tests:
     needs: test
