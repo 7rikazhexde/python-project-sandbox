@@ -182,9 +182,9 @@ jobs:
         env:
           UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
-          git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || git checkout -b ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
-          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
-          git pull origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} --rebase
+          git fetch origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}:${{ needs.test-and-coverage.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-coverage.outputs.ghpages_branch }}
+          git checkout ${{ needs.test-and-coverage.outputs.ghpages_branch }}
+          git pull origin ${{ needs.test-and-coverage.outputs.ghpages_branch }} --rebase
 
           changes_made=false
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
@@ -221,9 +221,9 @@ jobs:
 
           if [ "$changes_made" = true ]; then
             git commit -m "Update pytest-cov reports on GitHub Pages"
-            if ! git push origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}; then
-              git pull origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} --rebase
-              git push origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
+            if ! git push origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}; then
+              git pull origin ${{ needs.test-and-coverage.outputs.ghpages_branch }} --rebase
+              git push origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}
             fi
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
           else
