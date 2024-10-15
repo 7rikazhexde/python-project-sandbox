@@ -12,9 +12,12 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v4.2.1
 
+      - name: Debug - List all files in the workspace
+        run: ls -R
+
       - name: Send Payload to Pytest Testmon
-        uses: ./.github
-        #uses: 7rikazhexde/python-project-sandbox/.github@main
+        #uses: ./.github
+        uses: 7rikazhexde/repo-dispatch-event-sender@main
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
           event_type: 'test_pytest-testmon_deploy_multi_os'
