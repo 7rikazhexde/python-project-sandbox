@@ -2,10 +2,7 @@ name: Test Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - mainブランチへのプッシュ（プルリクエストのマージのみ）
-#    - Dependabotによる実行でないこと
-#    - コミットメッセージが"Bump version"で始まっていないこと
-#    - ブランチ名に"version-update"が含まれていないこと
+#    - リポジトリディスパッチイベント（test_pytest-testmon_deploy_multi_os）により起動
 # 2. ファイルの存在確認（Ubuntu環境）
 # 3. 複数の環境（OS、Pythonバージョン）でのテスト実行
 # 4. テスト結果に基づくREADMEの更新（mainブランチへのプッシュ時のみ）
@@ -14,13 +11,13 @@ name: Test Multi-OS
 # 5. 全テスト結果の確認
 
 on:
-  push:
-    branches:
-      - 'main'
+  repository_dispatch:
+    types:
+      - test_multi_os
 
 jobs:
   check_file:
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
+    #if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     runs-on: ubuntu-latest
     outputs:
       file_exists: ${{ steps.check_file.outputs.file_exists }}
@@ -37,11 +34,11 @@ jobs:
 
   test:
     needs: check_file
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
+    #if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     strategy:
       matrix:
-        os: [macos-13, ubuntu-latest, windows-latest]
-        python-version: ['3.11', '3.12']
+        os: ${{ github.event.client_payload.os_list }}
+        python-version: ${{ github.event.client_payload.python_versions }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: 'Asia/Tokyo'
@@ -121,7 +118,7 @@ jobs:
   update_readme:
     needs: [check_file, test]
     runs-on: ubuntu-latest
-    if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && always()
+    #if: github.event_name == 'push' && github.ref == 'refs/heads/main' && github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version') && always()
     permissions:
       contents: write
       pull-requests: write
@@ -206,7 +203,7 @@ jobs:
   check_all_tests:
     needs: test
     runs-on: ubuntu-latest
-    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
+    #if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     steps:
       - name: Check test results
         if: contains(needs.test.result, 'failure')

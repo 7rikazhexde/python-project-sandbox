@@ -7,23 +7,31 @@ on:
 
 jobs:
   test-and-send-dispatch:
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.head_commit.message, 'Bump version')
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
         uses: actions/checkout@v4.2.1
 
-      - name: Debug - List all files in the workspace
-        run: ls -R
-
       - name: Send Payload to Pytest Testmon
-        #uses: ./.github
         uses: 7rikazhexde/repo-dispatch-event-sender@main
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
           event_type: 'test_pytest-testmon_deploy_multi_os'
           ghpages_branch: 'ghpages'  # 省略可能
           os_list: 'ubuntu-latest macos-13 windows-latest'
-          #os_list: 'ubuntu-latest macos-13'
+          python_versions: '3.11 3.12'
+          custom_param: 'custom_param_test_val'  # 省略可能
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Send Payload to Test Multi OS
+        uses: 7rikazhexde/repo-dispatch-event-sender@main
+        with:
+          repository_name: '7rikazhexde/python-project-sandbox'
+          event_type: 'test_multi_os'
+          ghpages_branch: 'ghpages'  # 省略可能
+          os_list: 'ubuntu-latest macos-13 windows-latest'
           python_versions: '3.11 3.12'
           custom_param: 'custom_param_test_val'  # 省略可能
         env:
