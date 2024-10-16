@@ -188,6 +188,7 @@ jobs:
 
           # カバレッジレポート内のリンクを有効にするためにファイルパスを修正する
           sed -i '
+            s|/blob/undefined/\([^"]*\)|/blob/'"$commit_hash"'/\1|g;
             s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
             s|/blob/\([a-f0-9]*\)/project_a/README\.md|/blob/\1/README.md|g
           ' README.md
