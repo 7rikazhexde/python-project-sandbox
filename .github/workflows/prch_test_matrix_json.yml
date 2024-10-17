@@ -8,7 +8,8 @@ jobs:
   generate_matrix:
     runs-on: ubuntu-latest
     outputs:
-      matrix: ${{ steps.set-matrix.outputs.matrix }}
+      os: ${{ steps.set-matrix.outputs.os }}
+      python_versions: ${{ steps.set-matrix.outputs.python_versions }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
@@ -17,14 +18,18 @@ jobs:
       - name: Read matrix from JSON file
         id: set-matrix
         run: |
-          matrix=$(cat .github/workflows/matrix.json)
-          echo "::set-output name=matrix::$matrix"
+          os=$(jq -r '.os' .github/workflows/matrix.json)
+          python_versions=$(jq -r '.python_versions' .github/workflows/matrix.json)
+          echo "os=$os" >> $GITHUB_OUTPUT
+          echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
 
   run_tests:
     needs: generate_matrix
-    runs-on: ${{ matrix.os }}
     strategy:
-      matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+        matrix:
+          os: ${{ needs.generate_matrix.outputs.os }}
+          python-version: ${{ needs.generate_matrix.outputs.python_versions }}
+    runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
