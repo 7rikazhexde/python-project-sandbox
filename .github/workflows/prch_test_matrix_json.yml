@@ -18,8 +18,8 @@ jobs:
       - name: Read matrix from JSON file
         id: set-matrix
         run: |
-          os=$(jq -r '.os' .github/workflows/matrix.json)
-          python_versions=$(jq -r '.python_versions' .github/workflows/matrix.json)
+          os=$(jq -c '.os' .github/workflows/matrix.json)
+          python_versions=$(jq -c '.python_versions' .github/workflows/matrix.json)
           echo "os=$os" >> $GITHUB_OUTPUT
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
 
