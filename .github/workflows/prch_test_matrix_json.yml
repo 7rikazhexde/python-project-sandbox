@@ -1,0 +1,64 @@
+name: Test on PR by matrix json
+
+on:
+  pull_request:
+    branches: "main"
+
+jobs:
+  generate_matrix:
+    runs-on: ubuntu-latest
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - name: Read matrix from JSON file
+        id: set-matrix
+        run: |
+          matrix=$(cat .github/workflows/matrix.json)
+          echo "::set-output name=matrix::$matrix"
+
+  run_tests:
+    needs: generate_matrix
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix: ${{ fromJson(needs.generate_matrix.outputs.matrix) }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+
+      - name: Install poetry
+        run: |
+          pip install poetry
+          echo "Poetry version: $(poetry --version)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4.1.1
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
+          echo "Installed dependencies:"
+          poetry show --tree
+
+      - name: Run tests with testmon
+        id: pytest-testmon
+        shell: bash
+        run: |
+          output=$(poetry run pytest)
+          echo "$output"
