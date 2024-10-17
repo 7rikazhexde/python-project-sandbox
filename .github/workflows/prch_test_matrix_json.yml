@@ -24,10 +24,6 @@ jobs:
           echo "os=$os" >> $GITHUB_OUTPUT
           echo "python_versions: $python_versions"
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
-      - name: Show matrix
-        run: |
-          echo "os: ${{ fromJson(steps.set-matrix.outputs.os) }}"
-          echo "python_versions: ${{ fromJson(steps.set-matrix.outputs.python_versions) }}"
 
   run_tests:
     needs: generate_matrix
