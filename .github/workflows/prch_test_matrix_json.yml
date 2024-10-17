@@ -1,4 +1,4 @@
-name: Test on PR by matrix json
+name: Test on PR by matrix.json (Except Dependabot)
 
 on:
   pull_request:
@@ -6,6 +6,7 @@ on:
 
 jobs:
   generate_matrix:
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
     runs-on: ubuntu-latest
     outputs:
       os: ${{ steps.set-matrix.outputs.os }}
@@ -18,11 +19,16 @@ jobs:
       - name: Read matrix from JSON file
         id: set-matrix
         run: |
+          # Use jq to extract the 'os' array and 'python_versions' from the JSON file in a compact format
           os=$(jq -c '.os' .github/workflows/matrix.json)
           python_versions=$(jq -c '.python_versions' .github/workflows/matrix.json)
+
+          # Print the 'os' and 'python_version' array to the logs for visibility
           echo "os: $os"
-          echo "os=$os" >> $GITHUB_OUTPUT
           echo "python_versions: $python_versions"
+
+          # Set the 'python_versions' output variable for later jobs
+          echo "os=$os" >> $GITHUB_OUTPUT
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
 
   run_tests:
@@ -67,8 +73,8 @@ jobs:
           echo "Installed dependencies:"
           poetry show --tree
 
-      - name: Run tests with testmon
-        id: pytest-testmon
+      - name: Run pytest
+        id: pytest
         shell: bash
         run: |
           output=$(poetry run pytest)
