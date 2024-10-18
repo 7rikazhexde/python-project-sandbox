@@ -13,6 +13,7 @@ def get_value_by_path(data: Any, path: List[Union[str, int]]) -> Any:
     """
     current_data = data
     for key in path:
+        print(f"Current data: {current_data}, Key: {key}")  # デバッグ出力
         if isinstance(current_data, list) and isinstance(key, int):
             try:
                 current_data = current_data[key]
@@ -40,6 +41,7 @@ def parse_path(path: str) -> List[Union[str, int]]:
     パス文字列をリストに変換する。
     例: "['COMPLEX_LIST'][0]['name']" -> ['COMPLEX_LIST', 0, 'name']
     """
+    print(f"Parsing path: {path}")  # デバッグ出力
     path = path.strip("[]")
     elements = path.split("][")
     result: List[Union[str, int]] = []
@@ -49,6 +51,7 @@ def parse_path(path: str) -> List[Union[str, int]]:
             result.append(int(element))
         else:
             result.append(element)
+    print(f"Parsed path result: {result}")  # デバッグ出力
     return result
 
 
@@ -61,6 +64,7 @@ def set_github_env(name: str, value: str) -> None:
 
     with open(github_env, "a") as fh:
         print(f"{name}={value}", file=fh)
+        print(f"Setting environment variable: {name}={value}")  # デバッグ出力
 
 
 def main() -> None:
@@ -73,9 +77,12 @@ def main() -> None:
     # JSONのパース
     try:
         data = json.loads(json_str)
-    except json.JSONDecodeError:
-        print("Invalid JSON format. Stopping workflow.")
+    except json.JSONDecodeError as e:
+        print(f"Invalid JSON format: {e}. Stopping workflow.")
         sys.exit(1)
+
+    # デバッグ用出力
+    print(f"Loaded JSON data: {data}")
 
     # コマンドライン引数からパスを取得し、それぞれの値を取得して環境変数に設定
     for json_path in sys.argv[1:]:
@@ -86,9 +93,6 @@ def main() -> None:
         # 環境変数名を生成（パスを結合して、大文字に変換）
         env_var_name = f"VALUE_{'_'.join(map(str, path_list)).upper()}"
         set_github_env(env_var_name, str(value))
-
-        # 確認用出力
-        print(f"Setting environment variable: {env_var_name}={value}")
 
 
 if __name__ == "__main__":
