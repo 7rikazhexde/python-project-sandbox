@@ -97,8 +97,8 @@ jobs:
           custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"')
 
           # リストを配列に変換
-          # custom_param_array=($custom_param_list)
-          mapfile -t custom_param_array <<< "$custom_param_list"
+          custom_param_array=($custom_param_list)
+          # mapfile -t custom_param_array <<< "$custom_param_list"
 
           echo "GH Pages branch: $ghpages_branch"
           echo "Custom Param: $custom_param"
