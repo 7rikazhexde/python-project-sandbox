@@ -11,6 +11,7 @@ jobs:
     outputs:
       os: ${{ steps.set-matrix.outputs.os }}
       python_versions: ${{ steps.set-matrix.outputs.python_versions }}
+      ghpages_branch: ${{ steps.set-matrix.outputs.ghpages_branch}}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
@@ -22,14 +23,17 @@ jobs:
           # Use jq to extract the 'os' array and 'python_versions' from the JSON file in a compact format
           os=$(jq -c '.os' .github/workflows/matrix.json)
           python_versions=$(jq -c '.python_versions' .github/workflows/matrix.json)
+          ghpages_branch=$(jq -c '.ghpages_branch' .github/workflows/matrix.json)
 
           # Print the 'os' and 'python_version' array to the logs for visibility
           echo "os: $os"
           echo "python_versions: $python_versions"
+          echo "ghpages_branch: $ghpages_branch"
 
           # Set the 'python_versions' output variable for later jobs
           echo "os=$os" >> $GITHUB_OUTPUT
           echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
+          echo "ghpages_branch=$ghpages_branch" >> $GITHUB_OUTPUT
 
   run_tests:
     needs: generate_matrix
@@ -77,5 +81,7 @@ jobs:
         id: pytest
         shell: bash
         run: |
+          ghpage_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
+          echo "$ghpage_branch"
           output=$(poetry run pytest)
           echo "$output"
