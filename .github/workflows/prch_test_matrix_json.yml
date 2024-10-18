@@ -90,10 +90,16 @@ jobs:
           echo "Raw custom_param_list: $custom_param_list"
 
           # Bashでリストの括弧やダブルクォートを削除し、各要素の末尾のカンマを削除
-          custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"' | sed 's/,[ ]*,/,/g' | sed 's/,[ ]*$//')
+          #custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"' | sed 's/,[ ]*,/,/g' | sed 's/,[ ]*$//')
 
           # リストを配列に変換
-          custom_param_array=($custom_param_list)
+          #custom_param_array=($custom_param_list)
+
+          # Bashでリストの括弧やダブルクォートを削除し、各要素の末尾のカンマを削除
+          custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"' | sed 's/, */, /g' | sed 's/, *$//')
+
+          # リストを配列に変換
+          IFS=', ' read -r -a custom_param_array <<< "$custom_param_list"
 
           echo "GH Pages branch: $ghpages_branch"
           echo "Custom Param: $custom_param"
