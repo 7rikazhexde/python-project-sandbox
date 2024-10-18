@@ -1,23 +1,23 @@
 import json
 import os
 import sys
-from typing import Any
+from typing import Any, List, Union
 
 
-def get_value_by_path(data: Any, path: str) -> Any:
+def get_value_by_path(data: Any, path: List[Union[str, int]]) -> Any:
     """
     指定されたパスに従ってJSONデータから値を取得する。
     :param data: JSON形式のデータ
-    :param path: キーやインデックスを表すパス（例: "['COMPLEX_LIST'][0]['name']"）
+    :param path: パスのリスト（例: ['COMPLEX_LIST', 0, 'name']）
     :return: 指定されたパスの値
     """
-    try:
-        # パスに従って値を取得
-        value = eval(f"data{path}")
-        return value
-    except (KeyError, IndexError, TypeError) as e:
-        print(f"Error extracting value at {path}: {e}")
-        sys.exit(1)
+    for key in path:
+        try:
+            data = data[key]
+        except (KeyError, IndexError, TypeError) as e:
+            print(f"Error extracting value at {'.'.join(map(str, path))}: {e}")
+            sys.exit(1)
+    return data
 
 
 def set_github_env(name: str, value: str) -> None:
@@ -29,6 +29,28 @@ def set_github_env(name: str, value: str) -> None:
 
     with open(github_env, "a") as fh:
         print(f"{name}={value}", file=fh)
+
+
+def parse_path(path: str) -> List[Union[str, int]]:
+    """
+    パス文字列をリストに変換する。
+    例: "['COMPLEX_LIST'][0]['name']" -> ['COMPLEX_LIST', 0, 'name']
+    """
+    path = (
+        path.replace("][", ".")
+        .replace("[", ".")
+        .replace("]", "")
+        .replace("'", "")
+        .replace('"', "")
+    )
+    elements = path.split(".")
+    result: List[Union[str, int]] = []
+    for element in elements:
+        if element.isdigit():
+            result.append(int(element))  # インデックスとして整数に変換
+        else:
+            result.append(element)
+    return result
 
 
 def main() -> None:
@@ -47,8 +69,9 @@ def main() -> None:
 
     # コマンドライン引数からパスを取得し、それぞれの値を取得して環境変数に設定
     for json_path in sys.argv[1:]:
-        value = get_value_by_path(data, json_path)
-        env_var_name = f"VALUE_{json_path.replace('[', '_').replace(']', '').replace('\'', '').replace('\"', '').replace('.', '_')}"
+        path_list = parse_path(json_path)
+        value = get_value_by_path(data, path_list)
+        env_var_name = f"VALUE_{'_'.join(map(str, path_list)).upper()}"
         set_github_env(env_var_name, str(value))
 
 
