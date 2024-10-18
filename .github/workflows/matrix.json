@@ -7,5 +7,17 @@
     "python_versions": [
         "3.11",
         "3.12"
-    ]
+    ],
+    "ghpages_branch": "ghgapes",
+    "custom": {
+        "custom_param": "custom_value",
+        "custom_param_list": [
+            "list_var1",
+            "list_var2"
+        ],
+        "custom_nested": {
+            "nested_key1": "nested_value1",
+            "nested_key2": "nested_value2"
+        }
+    }
 }
