@@ -8,5 +8,12 @@
         "3.11",
         "3.12"
     ],
-    "ghpages_branch": "ghgapes"
+    "ghpages_branch": "ghgapes",
+    "custom": {
+        "custom_param": "cunstom_param",
+        "custom_param_list":[
+            "list_var1",
+            "list_var2"
+        ]
+    }
 }
