@@ -10,8 +10,8 @@
     ],
     "ghpages_branch": "ghgapes",
     "custom": {
-        "custom_param": "cunstom_param",
-        "custom_param_list":[
+        "custom_param": "custom_value",
+        "custom_param_list": [
             "list_var1",
             "list_var2"
         ]
