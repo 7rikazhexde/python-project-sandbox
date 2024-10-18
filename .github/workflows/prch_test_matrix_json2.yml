@@ -12,8 +12,8 @@ jobs:
       os: ${{ steps.set-matrix.outputs.os }}
       python_versions: ${{ steps.set-matrix.outputs.python_versions }}
       ghpages_branch: ${{ steps.set-matrix.outputs.ghpages_branch }}
-      custom_param: ${{ steps.set-matrix.outputs.custom_param }}
-      custom_param_list: ${{ steps.set-matrix.outputs.custom_param_list }}
+      custom_param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}
+      custom_param_list: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
@@ -32,8 +32,8 @@ jobs:
           echo "OS: ${{ steps.set-matrix.outputs.os }}"
           echo "Python Versions: ${{ steps.set-matrix.outputs.python_versions }}"
           echo "GH Pages Branch: ${{ steps.set-matrix.outputs.ghpages_branch }}"
-          echo "Custom Param: ${{ steps.set-matrix.outputs.custom_param }}"
-          echo "Custom Param List: ${{ steps.set-matrix.outputs.custom_param_list }}"
+          echo "Custom Param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}"
+          echo "Custom Param List: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}"
 
   run_tests:
     needs: generate_matrix
