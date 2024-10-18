@@ -26,7 +26,7 @@ jobs:
       - name: Parse JSON and set outputs
         id: set-matrix
         run: |
-          python3 .github/scripts/json_to_github_output.py .github/workflows/matrix.json
+          python3 .github/workflows/scripts/json_to_github_output.py .github/workflows/matrix.json
 
   run_tests:
     needs: generate_matrix
