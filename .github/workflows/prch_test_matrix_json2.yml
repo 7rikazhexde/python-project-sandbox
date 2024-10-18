@@ -83,17 +83,21 @@ jobs:
         run: |
           ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
           custom_param=${{ needs.generate_matrix.outputs.custom_param }}
-          custom_param_list=${{ needs.generate_matrix.outputs.custom_param_list }}
+          custom_param_list="${{ needs.generate_matrix.outputs.custom_param_list }}"
 
-          IFS=', ' read -ra elements <<< "${custom_param_list//[\[\]\"]/}"
+          # custom_param_listが正しい形式か確認
+          echo "Raw custom_param_list: $custom_param_list"
+
+          # Bashでリストの括弧やダブルクォートを削除
+          custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"')
 
           # リストを配列に変換
           custom_param_array=($custom_param_list)
 
           echo "GH Pages branch: $ghpages_branch"
           echo "Custom Param: $custom_param"
-          echo "First element: ${elements[0]}"
-          echo "Second element: ${elements[1]}"
+          echo "Custom Param List First Element: ${custom_param_array[0]}"
+          echo "Custom Param List Second Element: ${custom_param_array[1]}"
 
           output=$(poetry run pytest)
           echo "$output"
