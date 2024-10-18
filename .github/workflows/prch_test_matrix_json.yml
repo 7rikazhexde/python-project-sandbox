@@ -89,8 +89,8 @@ jobs:
           # custom_param_listが正しい形式か確認
           echo "Raw custom_param_list: $custom_param_list"
 
-          # Bashでリストの括弧やダブルクォートを削除
-          custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"' | sed 's/,[ ]*$//')
+          # Bashでリストの括弧やダブルクォートを削除し、各要素の末尾のカンマを削除
+          custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"' | sed 's/,[ ]*,/,/g' | sed 's/,[ ]*$//')
 
           # リストを配列に変換
           custom_param_array=($custom_param_list)
