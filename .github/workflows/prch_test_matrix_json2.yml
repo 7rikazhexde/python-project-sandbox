@@ -85,8 +85,8 @@ jobs:
           custom_param=${{ needs.generate_matrix.outputs.custom_param }}
           custom_param_list=${{ needs.generate_matrix.outputs.custom_param_list }}
 
-          # リストの括弧やダブルクォートを削除し、スペース区切りに変換
-          custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"' | tr ',' ' ')
+          # JSONリストをスペース区切りの文字列に変換するために jq を使用
+          custom_param_list=$(echo $custom_param_list | jq -r '.[]')
 
           # リストを配列に変換
           custom_param_array=($custom_param_list)
