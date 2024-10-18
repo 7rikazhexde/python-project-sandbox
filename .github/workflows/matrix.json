@@ -7,5 +7,6 @@
     "python_versions": [
         "3.11",
         "3.12"
-    ]
+    ],
+    "ghpages_branch": "ghgapes"
 }
