@@ -40,17 +40,11 @@ def parse_path(path: str) -> List[Union[str, int]]:
     パス文字列をリストに変換する。
     例: "['COMPLEX_LIST'][0]['name']" -> ['COMPLEX_LIST', 0, 'name']
     """
-    path = (
-        path.strip("[]")
-        .replace("][", ".")
-        .replace("[", ".")
-        .replace("]", "")
-        .replace("'", "")
-        .replace('"', "")
-    )
-    elements = path.split(".")
+    path = path.strip("[]")
+    elements = path.split("][")
     result: List[Union[str, int]] = []
     for element in elements:
+        element = element.replace("'", "").replace('"', "")
         if element.isdigit():
             result.append(int(element))
         else:
@@ -85,6 +79,7 @@ def main() -> None:
 
     # コマンドライン引数からパスを取得し、それぞれの値を取得して環境変数に設定
     for json_path in sys.argv[1:]:
+        # パスをリスト形式に変換
         path_list = parse_path(json_path)
         value = get_value_by_path(data, path_list)
 
