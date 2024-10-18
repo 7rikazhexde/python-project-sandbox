@@ -83,13 +83,16 @@ jobs:
         run: |
           ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
           custom_param=${{ needs.generate_matrix.outputs.custom_param }}
+          # リストの場合は明示的に""で囲んで文字列化する。
           custom_param_list="${{ needs.generate_matrix.outputs.custom_param_list }}"
 
           # custom_param_listが正しい形式か確認
           echo "Raw custom_param_list: $custom_param_list"
 
           # Bashでリストの括弧やダブルクォートを削除
-          custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"')
+          #custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"')
+          # jqを使ってJSONリストをスペース区切りの文字列に変換
+          custom_param_list=$(echo $custom_param_list | jq -r '.[]')
 
           # リストを配列に変換
           custom_param_array=($custom_param_list)
