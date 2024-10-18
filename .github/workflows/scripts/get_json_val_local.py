@@ -1,5 +1,4 @@
 import json
-import os
 import sys
 from typing import Any, List, Union
 
@@ -58,42 +57,30 @@ def parse_path(path: str) -> List[Union[str, int]]:
     return result
 
 
-def set_github_env(name: str, value: str) -> None:
-    """GitHub Actionsの環境ファイルを使って環境変数を設定"""
-    github_env = os.getenv("GITHUB_ENV")
-    if github_env is None:
-        print("GITHUB_ENV is not set. Unable to set environment variable.")
-        sys.exit(1)
-
-    with open(github_env, "a") as fh:
-        print(f"{name}={value}", file=fh)
-
-
 def main() -> None:
-    # 環境変数からJSONデータを取得
-    json_str = os.getenv("COMPLEX_LIST")
-    if not json_str:
-        print("COMPLEX_LIST is empty. Stopping workflow.")
-        sys.exit(1)
+    # ローカルテスト用にJSONを直接定義
+    json_str = """
+    [
+        {"name": "task1", "status": "complete", "details": {"time": "5m", "result": "success"}},
+        {"name": "task2", "status": "incomplete", "details": {"time": "10m", "result": "failed"}}
+    ]
+    """
 
     # JSONのパース
     try:
         data = json.loads(json_str)
     except json.JSONDecodeError:
-        print("Invalid JSON format. Stopping workflow.")
+        print("Invalid JSON format.")
         sys.exit(1)
 
-    # コマンドライン引数からパスを取得し、それぞれの値を取得して環境変数に設定
+    # コマンドライン引数からパスを取得し、それぞれの値を取得して表示
     for json_path in sys.argv[1:]:
         path_list = parse_path(json_path)
-        value = get_value_by_path(data, path_list)
-
-        # 環境変数名を生成（パスを結合して、大文字に変換）
-        env_var_name = f"VALUE_{'_'.join(map(str, path_list)).upper()}"
-        set_github_env(env_var_name, str(value))
-
-        # 確認用出力
-        print(f"Setting environment variable: {env_var_name}={value}")
+        try:
+            value = get_value_by_path(data, path_list)
+            print(f"Value at path {json_path}: {value}")
+        except Exception as e:
+            print(f"Error: {str(e)}")
 
 
 if __name__ == "__main__":
