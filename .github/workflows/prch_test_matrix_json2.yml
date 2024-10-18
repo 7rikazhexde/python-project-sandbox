@@ -1,0 +1,84 @@
+name: Test on PR by matrix.json (Except Dependabot)
+
+on:
+  pull_request:
+    branches: "main"
+
+jobs:
+  generate_matrix:
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.set-matrix.outputs.os }}
+      python_versions: ${{ steps.set-matrix.outputs.python_versions }}
+      ghpages_branch: ${{ steps.set-matrix.outputs.ghpages_branch }}
+      custom_param: ${{ steps.set-matrix.outputs.custom_param }}
+      custom_param_list: ${{ steps.set-matrix.outputs.custom_param_list }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: '3.12'
+      - name: Parse JSON and set outputs
+        id: set-matrix
+        run: |
+          python3 .github/scripts/json_to_github_output.py .github/workflows/matrix.json
+
+  run_tests:
+    needs: generate_matrix
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.generate_matrix.outputs.os) }}
+        python-version: ${{ fromJson(needs.generate_matrix.outputs.python_versions) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+
+      - name: Install poetry
+        run: |
+          pip install poetry
+          echo "Poetry version: $(poetry --version)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4.1.1
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
+          echo "Installed dependencies:"
+          poetry show --tree
+
+      - name: Run pytest
+        id: pytest
+        shell: bash
+        run: |
+          ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
+          custom_param=${{ needs.generate_matrix.outputs.custom_param }}
+          custom_param_list=${{ needs.generate_matrix.outputs.custom_param_list }}
+          echo "GH Pages branch: $ghpages_branch"
+          echo "Custom Param: $custom_param"
+          echo "Custom Param List: $custom_param_list"
+          output=$(poetry run pytest)
+          echo "$output"
