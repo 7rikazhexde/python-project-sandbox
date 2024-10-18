@@ -54,7 +54,7 @@ jobs:
       - name: Get JSON Value
         id: get_json_val
         run: |
-          python3 .github/workflows/scripts/get_json_val.py "['COMPLEX_LIST'][0]['name']" "['COMPLEX_LIST'][1]['status']"
+          python3 .github/workflows/scripts/get_json_val.py "['0']['name']" "['1']['status']"
         env:
           COMPLEX_LIST: '${{ needs.generate_matrix.outputs.complex_list }}'
 
