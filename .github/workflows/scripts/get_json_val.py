@@ -11,13 +11,32 @@ def get_value_by_path(data: Any, path: List[Union[str, int]]) -> Any:
     :param path: パスのリスト（例: ['COMPLEX_LIST', 0, 'name']）
     :return: 指定されたパスの値
     """
+    current_data = data
     for key in path:
-        try:
-            data = data[key]
-        except (KeyError, IndexError, TypeError) as e:
-            print(f"Error extracting value at {'.'.join(map(str, path))}: {e}")
+        if isinstance(current_data, list) and isinstance(key, int):
+            # リストの場合、インデックスとしてアクセス
+            try:
+                current_data = current_data[key]
+            except IndexError:
+                print(
+                    f"Error extracting value at {'.'.join(map(str, path))}: index {key} out of range"
+                )
+                sys.exit(1)
+        elif isinstance(current_data, dict) and isinstance(key, str):
+            # 辞書の場合、キーとしてアクセス
+            try:
+                current_data = current_data[key]
+            except KeyError:
+                print(
+                    f"Error extracting value at {'.'.join(map(str, path))}: key '{key}' not found"
+                )
+                sys.exit(1)
+        else:
+            print(
+                f"Error extracting value at {'.'.join(map(str, path))}: incompatible type or key/index"
+            )
             sys.exit(1)
-    return data
+    return current_data
 
 
 def set_github_env(name: str, value: str) -> None:
