@@ -82,8 +82,9 @@ jobs:
         shell: bash
         run: |
           ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
-          custom_param=${{ fromJson(needs.generate_matrix.outputs.custom_param) }}
-          custom_param_list=${{ fromJson(needs.generate_matrix.outputs.custom_param_list) }}
+          custom_param=${{ needs.generate_matrix.outputs.custom_param }}
+          custom_param_list=${{ needs.generate_matrix.outputs.custom_param_list }}
+          custom_param_list=$(echo $custom_param_list | tr -d '[],"')
           echo "GH Pages branch: $ghpages_branch"
           echo "Custom Param: $custom_param"
           echo "Custom Param List: $custom_param_list"
