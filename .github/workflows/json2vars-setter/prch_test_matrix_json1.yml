@@ -1,0 +1,109 @@
+name: Test on PR by matrix.json (Except Dependabot)
+
+on:
+  pull_request:
+    branches: "main"
+
+jobs:
+  generate_matrix:
+    if: github.actor != 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.set-matrix.outputs.os }}
+      python_versions: ${{ steps.set-matrix.outputs.python_versions }}
+      ghpages_branch: ${{ steps.set-matrix.outputs.ghpages_branch }}
+      custom_param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}
+      custom_param_list: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+      - name: Set up Python
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: '3.12'
+      - name: Parse JSON and set outputs
+        id: set-matrix
+        run: |
+          python3 .github/workflows/scripts/json_to_github_output.py .github/workflows/matrix.json
+      - name: Debug output values
+        run: |
+          echo "OS: ${{ steps.set-matrix.outputs.os }}"
+          echo "Python Versions: ${{ steps.set-matrix.outputs.python_versions }}"
+          echo "GH Pages Branch: ${{ steps.set-matrix.outputs.ghpages_branch }}"
+          echo "Custom Param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}"
+          #echo "Custom Param List: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}"
+          echo "CUSTOM_CUSTOM_PARAM_LIST=$(python -c 'import json,os;print(json.dumps(json.loads(os.environ["CUSTOM_CUSTOM_PARAM_LIST"])))' | sed 's/"/\"/g')" >> $GITHUB_OUTPUT
+
+  run_tests:
+    needs: generate_matrix
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.generate_matrix.outputs.os) }}
+        python-version: ${{ fromJson(needs.generate_matrix.outputs.python_versions) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+
+      - name: Install poetry
+        run: |
+          pip install poetry
+          echo "Poetry version: $(poetry --version)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4.1.1
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
+          echo "Installed dependencies:"
+          poetry show --tree
+
+      - name: Run pytest
+        id: pytest
+        shell: bash
+        run: |
+          ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
+          custom_param=${{ needs.generate_matrix.outputs.custom_param }}
+          # リストの場合は明示的に""で囲んで文字列化する。
+          #custom_param_list="${{ needs.generate_matrix.outputs.custom_param_list }}"
+
+          # JSONとして解析し、配列に変換
+          custom_param_list=$(echo '${{ needs.generate_matrix.outputs.custom_param_list }}' | jq -r '.[]')
+
+          # custom_param_listが正しい形式か確認
+          echo "Raw custom_param_list: $custom_param_list"
+
+          # Bashでリストの括弧やダブルクォートを削除
+          #custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"')
+
+          # リストを配列に変換
+          # custom_param_array=($custom_param_list)
+          mapfile -t custom_param_array <<< "$custom_param_list"
+
+          echo "GH Pages branch: $ghpages_branch"
+          echo "Custom Param: $custom_param"
+          echo "Custom Param List First Element: ${custom_param_array[0]}"
+          echo "Custom Param List Second Element: ${custom_param_array[1]}"
+
+          #output=$(poetry run pytest)
+          #echo "$output"
