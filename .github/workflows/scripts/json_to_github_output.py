@@ -29,12 +29,18 @@ def parse_json(
             if debug:
                 print(f"{prefix}{key.upper()}={list_values}")
             elif output_file:
+                print(
+                    f"Writing to GITHUB_OUTPUT: {prefix}{key.upper()}={list_values}"
+                )  # デバッグ用
                 output_file.write(f"{prefix}{key.upper()}={list_values}\n")
         else:
             # その他の単一の値をそのまま表示または書き込む
             if debug:
                 print(f"{prefix}{key.upper()}={value}")
             elif output_file:
+                print(
+                    f"Writing to GITHUB_OUTPUT: {prefix}{key.upper()}={value}"
+                )  # デバッグ用
                 output_file.write(f"{prefix}{key.upper()}={value}\n")
 
 
