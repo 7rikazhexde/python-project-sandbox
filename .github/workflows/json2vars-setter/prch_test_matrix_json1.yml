@@ -33,8 +33,8 @@ jobs:
           echo "Python Versions: ${{ steps.set-matrix.outputs.python_versions }}"
           echo "GH Pages Branch: ${{ steps.set-matrix.outputs.ghpages_branch }}"
           echo "Custom Param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}"
-          #echo "Custom Param List: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}"
-          echo "CUSTOM_CUSTOM_PARAM_LIST=$(python -c 'import json,os;print(json.dumps(json.loads(os.environ["CUSTOM_CUSTOM_PARAM_LIST"])))' | sed 's/"/\"/g')" >> $GITHUB_OUTPUT
+          echo "Custom Param List: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}"
+          #echo "CUSTOM_CUSTOM_PARAM_LIST=$(python -c 'import json,os;print(json.dumps(json.loads(os.environ["CUSTOM_CUSTOM_PARAM_LIST"])))' | sed 's/"/\"/g')" >> $GITHUB_OUTPUT
 
   run_tests:
     needs: generate_matrix
@@ -85,16 +85,16 @@ jobs:
           ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
           custom_param=${{ needs.generate_matrix.outputs.custom_param }}
           # リストの場合は明示的に""で囲んで文字列化する。
-          #custom_param_list="${{ needs.generate_matrix.outputs.custom_param_list }}"
+          custom_param_list="${{ needs.generate_matrix.outputs.custom_param_list }}"
 
           # JSONとして解析し、配列に変換
-          custom_param_list=$(echo '${{ needs.generate_matrix.outputs.custom_param_list }}' | jq -r '.[]')
+          #custom_param_list=$(echo '${{ needs.generate_matrix.outputs.custom_param_list }}' | jq -r '.[]')
 
           # custom_param_listが正しい形式か確認
           echo "Raw custom_param_list: $custom_param_list"
 
           # Bashでリストの括弧やダブルクォートを削除
-          #custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"')
+          custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"')
 
           # リストを配列に変換
           # custom_param_array=($custom_param_list)
