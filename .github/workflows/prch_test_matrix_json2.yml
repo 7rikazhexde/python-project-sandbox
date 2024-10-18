@@ -32,8 +32,8 @@ jobs:
     needs: generate_matrix
     strategy:
       matrix:
-        os: ${{ (needs.generate_matrix.outputs.os) }}
-        python-version: ${{ (needs.generate_matrix.outputs.python_versions) }}
+        os: ${{ fromJson(needs.generate_matrix.outputs.os) }}
+        python-version: ${{ fromJson(needs.generate_matrix.outputs.python_versions) }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
