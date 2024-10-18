@@ -35,10 +35,48 @@ jobs:
           echo "Custom Param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}"
           echo "Custom Param List: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}"
 
-  get_json_value:
+  run_tests:
     needs: generate_matrix
-    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.generate_matrix.outputs.os) }}
+        python-version: ${{ fromJson(needs.generate_matrix.outputs.python_versions) }}
+    runs-on: ${{ matrix.os }}
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.2.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+
+      - name: Install poetry
+        run: |
+          pip install poetry
+          echo "Poetry version: $(poetry --version)"
+
+      - name: Cache dependencies
+        uses: actions/cache@v4.1.1
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: |
+          poetry install
+          echo "Installed dependencies:"
+          poetry show --tree
+
       - name: Run pytest
         id: pytest
         shell: bash
@@ -50,7 +88,6 @@ jobs:
 
           # custom_param_listが正しい形式か確認
           echo "Raw custom_param_list: $custom_param_list"
-          echo "Raw complex_list: $complex_list"
 
           # Bashでリストの括弧やダブルクォートを削除
           #custom_param_list=$(echo $custom_param_list | sed 's/[][]//g' | tr -d '"')
@@ -63,5 +100,5 @@ jobs:
           echo "Custom Param List First Element: ${custom_param_array[0]}"
           echo "Custom Param List Second Element: ${custom_param_array[1]}"
 
-          #output=$(poetry run pytest)
-          #echo "$output"
+          output=$(poetry run pytest)
+          echo "$output"
