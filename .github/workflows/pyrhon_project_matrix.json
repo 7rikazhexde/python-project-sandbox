@@ -1,0 +1,73 @@
+{
+    "os": [
+        "ubuntu-latest",
+        "windows-latest",
+        "macos-latest"
+    ],
+    "python_versions": [
+        "3.11",
+        "3.12"
+    ],
+    "ghpages_branch": "ghgapes",
+    "custom": {
+        "custom_param": "custom_value",
+        "custom_param_list": [
+            "list_var1",
+            "list_var2"
+        ],
+        "custom_nested": {
+            "nested_key1": "nested_value1",
+            "nested_key2": "nested_value2"
+        }
+    },
+    "env": {
+        "ENV_VAR_1": "value1",
+        "ENV_VAR_2": "value2",
+        "ENV_VAR_LIST": [
+            "env_list_item1",
+            "env_list_item2",
+            "env_list_item3"
+        ]
+    },
+    "matrix": {
+        "os_python_combination": [
+            {
+                "os": "ubuntu-latest",
+                "python_version": "3.11"
+            },
+            {
+                "os": "windows-latest",
+                "python_version": "3.12"
+            }
+        ]
+    },
+    "flags": [
+        true,
+        false,
+        true
+    ],
+    "numbers": [
+        1,
+        2,
+        3.5,
+        4
+    ],
+    "complex_list": [
+        {
+            "name": "task1",
+            "status": "complete",
+            "details": {
+                "time": "5m",
+                "result": "success"
+            }
+        },
+        {
+            "name": "task2",
+            "status": "incomplete",
+            "details": {
+                "time": "10m",
+                "result": "failed"
+            }
+        }
+    ]
+}

@@ -10,113 +10,27 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       os: ${{ steps.json2vars.outputs.os }}
-      os_0: ${{ steps.json2vars.outputs.os_0 }}
-      os_1: ${{ steps.json2vars.outputs.os_1 }}
-      os_2: ${{ steps.json2vars.outputs.os_2 }}
       python_versions: ${{ steps.json2vars.outputs.python_versions }}
-      python_versions_0: ${{ steps.json2vars.outputs.python_versions_0 }}
-      python_versions_1: ${{ steps.json2vars.outputs.python_versions_1 }}
       ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
-      custom_custom_param: ${{ steps.json2vars.outputs.custom_custom_param }}
-      custom_custom_param_list: ${{ steps.json2vars.outputs.custom_custom_param_list }}
-      custom_custom_param_list_0: ${{ steps.json2vars.outputs.custom_custom_param_list_0 }}
-      custom_custom_param_list_1: ${{ steps.json2vars.outputs.custom_custom_param_list_1 }}
-      custom_custom_nested_nested_key1: ${{ steps.json2vars.outputs.custom_custom_nested_nested_key1 }}
-      custom_custom_nested_nested_key2: ${{ steps.json2vars.outputs.custom_custom_nested_nested_key2 }}
-      env_env_var_1: ${{ steps.json2vars.outputs.env_env_var_1 }}
-      env_env_var_2: ${{ steps.json2vars.outputs.env_env_var_2 }}
-      env_env_var_list: ${{ steps.json2vars.outputs.env_env_var_list }}
-      env_env_var_list_0: ${{ steps.json2vars.outputs.env_env_var_list_0 }}
-      env_env_var_list_1: ${{ steps.json2vars.outputs.env_env_var_list_1 }}
-      env_env_var_list_2: ${{ steps.json2vars.outputs.env_env_var_list_2 }}
-      matrix_os_python_combination: ${{ steps.json2vars.outputs.matrix_os_python_combination }}
-      matrix_os_python_combination_0_os: ${{ steps.json2vars.outputs.matrix_os_python_combination_0_os }}
-      matrix_os_python_combination_0_python_version: ${{ steps.json2vars.outputs.matrix_os_python_combination_0_python_version }}
-      matrix_os_python_combination_1_os: ${{ steps.json2vars.outputs.matrix_os_python_combination_1_os }}
-      matrix_os_python_combination_1_python_version: ${{ steps.json2vars.outputs.matrix_os_python_combination_1_python_version }}
-      flags: ${{ steps.json2vars.outputs.flags }}
-      flags_0: ${{ steps.json2vars.outputs.flags_0 }}
-      flags_1: ${{ steps.json2vars.outputs.flags_1 }}
-      flags_2: ${{ steps.json2vars.outputs.flags_2 }}
-      numbers: ${{ steps.json2vars.outputs.numbers }}
-      numbers_0: ${{ steps.json2vars.outputs.numbers_0 }}
-      numbers_1: ${{ steps.json2vars.outputs.numbers_1 }}
-      numbers_2: ${{ steps.json2vars.outputs.numbers_2 }}
-      numbers_3: ${{ steps.json2vars.outputs.numbers_3 }}
-      complex_list: ${{ steps.json2vars.outputs.complex_list }}
-      complex_list_0_name: ${{ steps.json2vars.outputs.complex_list_0_name }}
-      complex_list_0_status: ${{ steps.json2vars.outputs.complex_list_0_status }}
-      complex_list_0_details_time: ${{ steps.json2vars.outputs.complex_list_0_details_time }}
-      complex_list_0_details_result: ${{ steps.json2vars.outputs.complex_list_0_details_result }}
-      complex_list_1_name: ${{ steps.json2vars.outputs.complex_list_1_name }}
-      complex_list_1_status: ${{ steps.json2vars.outputs.complex_list_1_status }}
-      complex_list_1_details_time: ${{ steps.json2vars.outputs.complex_list_1_details_time }}
-
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
         with:
           fetch-depth: 0
 
-      #- name: Set variables from JSON
-      #  id: json2vars
-      #  run: |
-      #    python .github/workflows/scripts/json_to_github_output.py .github/workflows/matrix.json
-      #  env:
-      #    GITHUB_OUTPUT: $GITHUB_OUTPUT
-
       - name: Set variables from JSON
         id: json2vars
         uses: ./.github/actions/json2vars-setter
         with:
-          json-file: .github/workflows/matrix.json
+          json-file: .github/workflows/python_project_matrix.json
         env:
           GITHUB_OUTPUT: $GITHUB_OUTPUT
 
       - name: Debug output values
         run: |
           echo "os: ${{ steps.json2vars.outputs.os }}"
-          echo "os_0: ${{ steps.json2vars.outputs.os_0 }}"
-          echo "os_1: ${{ steps.json2vars.outputs.os_1 }}"
-          echo "os_2: ${{ steps.json2vars.outputs.os_2 }}"
           echo "python_versions: ${{ steps.json2vars.outputs.python_versions }}"
-          echo "python_versions_0: ${{ steps.json2vars.outputs.python_versions_0 }}"
-          echo "python_versions_1: ${{ steps.json2vars.outputs.python_versions_1 }}"
           echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
-          echo "custom.custom_param: ${{ steps.json2vars.outputs.custom_custom_param }}"
-          echo "custom.custom_param_list: ${{ steps.json2vars.outputs.custom_custom_param_list }}"
-          echo "custom.custom_param_list_0: ${{ steps.json2vars.outputs.custom_custom_param_list_0 }}"
-          echo "custom.custom_param_list_1: ${{ steps.json2vars.outputs.custom_custom_param_list_1 }}"
-          echo "custom.custom_nested.nested_key1: ${{ steps.json2vars.outputs.custom_custom_nested_nested_key1 }}"
-          echo "custom.custom_nested.nested_key2: ${{ steps.json2vars.outputs.custom_custom_nested_nested_key2 }}"
-          echo "env.env_var_1: ${{ steps.json2vars.outputs.env_env_var_1 }}"
-          echo "env.env_var_2: ${{ steps.json2vars.outputs.env_env_var_2 }}"
-          echo "env.env_var_list: ${{ steps.json2vars.outputs.env_env_var_list }}"
-          echo "env.env_var_list_0: ${{ steps.json2vars.outputs.env_env_var_list_0 }}"
-          echo "env.env_var_list_1: ${{ steps.json2vars.outputs.env_env_var_list_1 }}"
-          echo "env.env_var_list_2: ${{ steps.json2vars.outputs.env_env_var_list_2 }}"
-          echo "matrix_os_python_combination: ${{ steps.json2vars.outputs.matrix_os_python_combination }}"
-          echo "matrix_os_python_combination_0_os: ${{ steps.json2vars.outputs.matrix_os_python_combination_0_os }}"
-          echo "matrix_os_python_combination_0_python_version: ${{ steps.json2vars.outputs.matrix_os_python_combination_0_python_version }}"
-          echo "matrix_os_python_combination_1_os: ${{ steps.json2vars.outputs.matrix_os_python_combination_1_os }}"
-          echo "matrix_os_python_combination_1_python_version: ${{ steps.json2vars.outputs.matrix_os_python_combination_1_python_version }}"
-          echo "flags: ${{ steps.json2vars.outputs.flags }}"
-          echo "flags_0: ${{ steps.json2vars.outputs.flags_0 }}"
-          echo "flags_1: ${{ steps.json2vars.outputs.flags_1 }}"
-          echo "flags_2: ${{ steps.json2vars.outputs.flags_2 }}"
-          echo "numbers: ${{ steps.json2vars.outputs.numbers }}"
-          echo "numbers_0: ${{ steps.json2vars.outputs.numbers_0 }}"
-          echo "numbers_1: ${{ steps.json2vars.outputs.numbers_1 }}"
-          echo "numbers_2: ${{ steps.json2vars.outputs.numbers_2 }}"
-          echo "numbers_3: ${{ steps.json2vars.outputs.numbers_3 }}"
-          echo "complex_list: ${{ steps.json2vars.outputs.complex_list }}"
-          echo "complex_list_0_name: ${{ steps.json2vars.outputs.complex_list_0_name }}"
-          echo "complex_list_0_status: ${{ steps.json2vars.outputs.complex_list_0_status }}"
-          echo "complex_list_0_details_time: ${{ steps.json2vars.outputs.complex_list_0_details_time }}"
-          echo "complex_list_0_details_result: ${{ steps.json2vars.outputs.complex_list_0_details_result }}"
-          echo "complex_list_1_name: ${{ steps.json2vars.outputs.complex_list_1_name }}"
-          echo "complex_list_1_status: ${{ steps.json2vars.outputs.complex_list_1_status }}"
-          echo "complex_list_1_details_time: ${{ steps.json2vars.outputs.complex_list_1_details_time }}"
 
   run_tests:
     needs: generate_matrix
@@ -163,84 +77,16 @@ jobs:
       - name: Show matrix
         shell: bash
         run: |
-          # For list case
+          # リスト以外の場合
           ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
-          custom_custom_param=${{ needs.generate_matrix.outputs.custom_custom_param }}
-          custom_custom_param_list_0=${{ needs.generate_matrix.outputs.custom_custom_param_list_0 }}
-          custom_custom_param_list_1=${{ needs.generate_matrix.outputs.custom_custom_param_list_1 }}
-          custom_custom_nested_nested_key1=${{ needs.generate_matrix.outputs.custom_custom_nested_nested_key1 }}
-          custom_custom_nested_nested_key2=${{ needs.generate_matrix.outputs.custom_custom_nested_nested_key2 }}
-          env_env_var_1=${{ needs.generate_matrix.outputs.env_env_var_1 }}
-          env_env_var_2=${{ needs.generate_matrix.outputs.env_env_var_2 }}
-          env_env_var_list_0=${{ needs.generate_matrix.outputs.env_env_var_list_0 }}
-          env_env_var_list_1=${{ needs.generate_matrix.outputs.env_env_var_list_1 }}
-          env_env_var_list_2=${{ needs.generate_matrix.outputs.env_env_var_list_2 }}
-          matrix_os_python_combination_0_os=${{ needs.generate_matrix.outputs.matrix_os_python_combination_0_os }}
-          matrix_os_python_combination_0_python_version=${{ needs.generate_matrix.outputs.matrix_os_python_combination_0_python_version }}
-          matrix_os_python_combination_1_os=${{ needs.generate_matrix.outputs.matrix_os_python_combination_1_os }}
-          matrix_os_python_combination_1_python_version=${{ needs.generate_matrix.outputs.matrix_os_python_combination_1_python_version }}
-          flags_0=${{ needs.generate_matrix.outputs.flags_0 }}
-          flags_1=${{ needs.generate_matrix.outputs.flags_1 }}
-          flags_2=${{ needs.generate_matrix.outputs.flags_2 }}
-          numbers_0=${{ needs.generate_matrix.outputs.numbers_0 }}
-          numbers_1=${{ needs.generate_matrix.outputs.numbers_1 }}
-          numbers_2=${{ needs.generate_matrix.outputs.numbers_2 }}
-          numbers_3=${{ needs.generate_matrix.outputs.numbers_3 }}
-          complex_list_0_name=${{ needs.generate_matrix.outputs.complex_list_0_name }}
-          complex_list_0_status=${{ needs.generate_matrix.outputs.complex_list_0_status }}
-          complex_list_0_details_time=${{ needs.generate_matrix.outputs.complex_list_0_details_time }}
-          complex_list_0_details_result=${{ needs.generate_matrix.outputs.complex_list_0_details_result }}
-          complex_list_1_name=${{ needs.generate_matrix.outputs.complex_list_1_name }}
-          complex_list_1_status=${{ needs.generate_matrix.outputs.complex_list_1_status }}
-          complex_list_1_details_time=${{ needs.generate_matrix.outputs.complex_list_1_details_time }}
 
-          #  In the case of a list, explicitly enclose it in '' to make it a string. (Note that it is not “”.)
+          # リストの場合は明示的に""で囲んで文字列化する。
           os='${{ needs.generate_matrix.outputs.os }}'
           python_versions='${{ needs.generate_matrix.outputs.python_versions }}'
-          custom_custom_param_list='${{ needs.generate_matrix.outputs.custom_custom_param_list }}'
-          env_env_var_list='${{ needs.generate_matrix.outputs.env_env_var_list }}'
-          flags='${{ needs.generate_matrix.outputs.flags }}'
-          numbers='${{ needs.generate_matrix.outputs.numbers }}'
-          matrix_os_python_combination='${{ needs.generate_matrix.outputs.matrix_os_python_combination }}'
-          complex_list='${{ needs.generate_matrix.outputs.complex_list }}'
 
           echo "os: $os"
           echo "python_versions: $python_versions"
           echo "ghpages_branch: $ghpages_branch"
-          echo "custom.custom_param: $custom_custom_param"
-          echo "custom.custom_param_list: $custom_custom_param_list"
-          echo "custom.custom_param_list[0]: $custom_custom_param_list_0"
-          echo "custom.custom_param_list[1]: $custom_custom_param_list_1"
-          echo "custom.custom_nested.nested_key1: $custom_custom_nested_nested_key1"
-          echo "custom.custom_nested.nested_key2: $custom_custom_nested_nested_key2"
-          echo "env.env_var_1: $env_env_var_1"
-          echo "env.env_var_2: $env_env_var_2"
-          echo "env.env_var_list: $env_env_var_list"
-          echo "env.env_var_list[0]: $env_env_var_list_0"
-          echo "env.env_var_list[1]: $env_env_var_list_1"
-          echo "env.env_var_list[2]: $env_env_var_list_2"
-          echo "matrix_os_python_combination: $matrix_os_python_combination"
-          echo "matrix_os_python_combination_0_os: $matrix_os_python_combination_0_os"
-          echo "matrix_os_python_combination_0_python_version: $matrix_os_python_combination_0_python_version"
-          echo "matrix_os_python_combination_1_os: $matrix_os_python_combination_1_os"
-          echo "matrix_os_python_combination_1_python_version: $matrix_os_python_combination_1_python_version"
-          echo "flags: $flags"
-          echo "flags_0: $flags_0"
-          echo "flags_1: $flags_1"
-          echo "flags_2: $flags_2"
-          echo "numbers: $numbers"
-          echo "numbers_0: $numbers_0"
-          echo "numbers_1: $numbers_1"
-          echo "numbers_2: $numbers_2"
-          echo "numbers_3: $numbers_3"
-          echo "complex_list: $complex_list"
-          echo "complex_list_0_name: $complex_list_0_name"
-          echo "complex_list_0_status: $complex_list_0_status"
-          echo "complex_list_0_details_time: $complex_list_0_details_time"
-          echo "complex_list_0_details_result: $complex_list_0_details_result"
-          echo "complex_list_1_name: $complex_list_1_name"
-          echo "complex_list_1_status: $complex_list_1_status"
-          echo "complex_list_1_details_time: $complex_list_1_details_time"
 
       - name: Run pytest
         id: pytest

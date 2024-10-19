@@ -1,0 +1,19 @@
+name: 'JSON to Variables Setter'
+description: 'Parse JSON file and set GitHub Actions outputs'
+inputs:
+  json-file:
+    description: 'Path to the JSON file'
+    required: true
+    default: '.github/workflows/matrix.json'
+runs:
+  using: "composite"
+  steps:
+    - name: Set up Python
+      uses: actions/setup-python@v5.2.0
+      with:
+        python-version: '3.12'
+
+    - name: Parse JSON and set outputs
+      shell: bash
+      run: |
+        python .github/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
