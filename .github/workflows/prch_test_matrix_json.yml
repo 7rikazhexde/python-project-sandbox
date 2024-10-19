@@ -29,6 +29,7 @@ jobs:
           echo "os: ${{ steps.json2vars.outputs.os }}"
           echo "python_versions: ${{ steps.json2vars.outputs.python_versions }}"
           echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+          echo "custom.custom_param_list_0: ${{ steps.json2vars.outputs.custom_custom_param_list_0 }}"
 
   run_tests:
     needs: generate_matrix
@@ -85,6 +86,7 @@ jobs:
           echo "os: $os"
           echo "python_versions: $python_versions"
           echo "ghpages_branch: $ghpages_branch"
+          echo "custom.custom_param_list[0]: $custom_custom_param_list_0"
 
       - name: Run pytest
         id: pytest

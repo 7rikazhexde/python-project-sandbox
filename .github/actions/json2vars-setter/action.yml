@@ -15,6 +15,9 @@ outputs:
   ghpages_branch:
     description: 'GitHub Pages branch'
     value: ${{ steps.set_outputs.outputs.ghpages_branch }}
+  custom_custom_param_list_0:
+    description: 'custom_param_list[0]'
+    value: ${{ steps.set_outputs.outputs.custom_custom_param_list_0 }}
 runs:
   using: "composite"
   steps:
