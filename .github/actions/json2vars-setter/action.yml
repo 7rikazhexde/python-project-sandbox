@@ -25,11 +25,5 @@ runs:
       shell: bash
       run: |
         python .github/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
-        # Read from GITHUB_OUTPUT and set the outputs
-        while IFS= read -r line; do
-          key=$(echo "$line" | cut -d'=' -f1)
-          value=$(echo "$line" | cut -d'=' -f2-)
-          echo "$key=$value" >> $GITHUB_OUTPUT
-        done < "$GITHUB_OUTPUT"
       env:
         GITHUB_OUTPUT: $GITHUB_OUTPUT
