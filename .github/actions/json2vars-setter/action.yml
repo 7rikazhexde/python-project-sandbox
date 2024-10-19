@@ -22,6 +22,7 @@ runs:
 
     - name: Parse JSON and set outputs
       id: set_outputs
+      shell: bash
       run: |
         python .github/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
       env:
