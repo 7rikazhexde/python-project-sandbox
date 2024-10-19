@@ -15,7 +15,7 @@ jobs:
       custom_custom_param: ${{ steps.json2vars.outputs.custom_custom_param }}
       custom_custom_param_list: ${{ steps.json2vars.outputs.custom_custom_param_list }}
       custom_custom_param_list_0: ${{ steps.json2vars.outputs.custom_custom_param_list_0 }}
-      custom_custom_nested_key1: ${{ steps.json2vars.outputs.custom_custom_nested_key1 }}
+      custom_custom_nested_nested_key1: ${{ steps.json2vars.outputs.custom_custom_nested_nested_key1 }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
@@ -36,7 +36,7 @@ jobs:
           echo "custom_custom_param: ${{ steps.json2vars.outputs.custom_custom_param }}"
           echo "custom_custom_param_list: ${{ steps.json2vars.outputs.custom_custom_param_list }}"
           echo "custom_custom_param_list_0: ${{ steps.json2vars.outputs.custom_custom_param_list_0 }}"
-          echo "custom_custom_nested.nested_key1: ${{ steps.json2vars.outputs.custom_custom_nested_nested_key1 }}"
+          echo "custom_custom_nested_nested_key1: ${{ steps.json2vars.outputs.custom_custom_nested_nested_key1 }}"
 
 
   run_tests:
@@ -88,7 +88,7 @@ jobs:
           ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
           custom_custom_param=${{ needs.generate_matrix.outputs.custom_custom_param }}
           custom_custom_param_list_0=${{ needs.generate_matrix.outputs.custom_custom_param_list_0 }}
-          custom_custom_nested_nested_key1=${{ needs.generate_matrix.outputs.custom_custom_nested_key1 }}
+          custom_custom_nested_nested_key1=${{ needs.generate_matrix.outputs.custom_custom_nested_nested_key1 }}
 
           # リストの場合は明示的に""で囲んで文字列化する。
           os='${{ needs.generate_matrix.outputs.os }}'
