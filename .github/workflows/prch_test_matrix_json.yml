@@ -36,6 +36,8 @@ jobs:
         uses: ./.github/actions/json2vars-setter
         with:
           json-file: .github/workflows/matrix.json
+        env:
+          GITHUB_OUTPUT: $GITHUB_OUTPUT
 
       - name: Debug output values
         run: |
