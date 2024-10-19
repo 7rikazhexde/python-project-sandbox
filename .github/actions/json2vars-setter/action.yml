@@ -4,7 +4,14 @@ inputs:
   json-file:
     description: 'Path to the JSON file'
     required: true
-    default: '.github/workflows/matrix.json'
+    default: '.github/workflows/python_project_matrix.json'
+outputs:
+  os:
+    description: 'List of operating systems'
+  python_versions:
+    description: 'List of Python versions'
+  ghpages_branch:
+    description: 'GitHub Pages branch'
 runs:
   using: "composite"
   steps:
@@ -14,6 +21,13 @@ runs:
         python-version: '3.12'
 
     - name: Parse JSON and set outputs
-      shell: bash
+      id: parse_json
       run: |
-        python .github/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
+        python .github/actions/json2vars-setter/scripts/json_to_github_output.py ${{ inputs.json-file }}
+        while IFS= read -r line; do
+          key=$(echo "$line" | cut -d'=' -f1)
+          value=$(echo "$line" | cut -d'=' -f2-)
+          echo "$key=$value" >> $GITHUB_OUTPUT
+        done < "$GITHUB_OUTPUT"
+      env:
+        GITHUB_OUTPUT: $GITHUB_OUTPUT
