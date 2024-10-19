@@ -16,20 +16,23 @@ def set_github_output(name: str, value: str) -> None:
         print(f"Error: The GITHUB_OUTPUT file at {github_output} does not exist.")
         sys.exit(1)
 
+    # 特殊文字のエスケープ
+    escaped_value = value.replace("%", "%25").replace("\n", "%0A").replace("\r", "%0D")
+
     with open(github_output, "a") as fh:
-        fh.write(f"{name}={value}\n")
-        fh.flush()  # デバッグのため、書き込み後にフラッシュ
+        fh.write(f"{name}={escaped_value}\n")
+        fh.flush()  # 書き込み直後にフラッシュして即座に反映
         print(
-            f"Debug: Written to GITHUB_OUTPUT -> {name}={value}"
+            f"Debug: Written to GITHUB_OUTPUT -> {name}={escaped_value}"
         )  # デバッグ情報の追加
 
-    # GITHUB_ENVを利用して環境変数としても設定
+    # GITHUB_ENVも利用して、次のステップでの確認を容易にする
     github_env = os.getenv("GITHUB_ENV")
     if github_env:
         with open(github_env, "a") as env_file:
-            env_file.write(f"{name}={value}\n")
+            env_file.write(f"{name}={escaped_value}\n")
             print(
-                f"Debug: Written to GITHUB_ENV -> {name}={value}"
+                f"Debug: Written to GITHUB_ENV -> {name}={escaped_value}"
             )  # デバッグ情報の追加
 
 
