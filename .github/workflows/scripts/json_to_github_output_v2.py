@@ -23,6 +23,15 @@ def set_github_output(name: str, value: str) -> None:
             f"Debug: Written to GITHUB_OUTPUT -> {name}={value}"
         )  # デバッグ情報の追加
 
+    # GITHUB_ENVを利用して環境変数としても設定
+    github_env = os.getenv("GITHUB_ENV")
+    if github_env:
+        with open(github_env, "a") as env_file:
+            env_file.write(f"{name}={value}\n")
+            print(
+                f"Debug: Written to GITHUB_ENV -> {name}={value}"
+            )  # デバッグ情報の追加
+
 
 def parse_json(
     data: Any,
