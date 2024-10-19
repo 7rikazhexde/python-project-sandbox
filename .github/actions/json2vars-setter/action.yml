@@ -8,10 +8,13 @@ inputs:
 outputs:
   os:
     description: 'List of operating systems'
+    value: ${{ steps.set_outputs.outputs.os }}
   python_versions:
     description: 'List of Python versions'
+    value: ${{ steps.set_outputs.outputs.python_versions }}
   ghpages_branch:
     description: 'GitHub Pages branch'
+    value: ${{ steps.set_outputs.outputs.ghpages_branch }}
 runs:
   using: "composite"
   steps:
@@ -21,9 +24,15 @@ runs:
         python-version: '3.12'
 
     - name: Parse JSON and set outputs
-      id: parse_json
+      id: set_outputs
       shell: bash
       run: |
         python .github/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
+        # Read from GITHUB_OUTPUT and set the composite action's outputs
+        while IFS= read -r line; do
+          key=$(echo "$line" | cut -d'=' -f1)
+          value=$(echo "$line" | cut -d'=' -f2-)
+          echo "::set-output name=$key::$value"
+        done < "$GITHUB_OUTPUT"
       env:
         GITHUB_OUTPUT: $GITHUB_OUTPUT
