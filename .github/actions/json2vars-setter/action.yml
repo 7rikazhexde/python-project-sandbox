@@ -32,7 +32,7 @@ runs:
         while IFS= read -r line; do
           key=$(echo "$line" | cut -d'=' -f1)
           value=$(echo "$line" | cut -d'=' -f2-)
-          echo "::set-output name=$key::$value"
+          echo "$key=$value" >> $GITHUB_OUTPUT
         done < "$GITHUB_OUTPUT"
       env:
         GITHUB_OUTPUT: $GITHUB_OUTPUT
