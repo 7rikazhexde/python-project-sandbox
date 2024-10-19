@@ -26,7 +26,7 @@ outputs:
     value: ${{ steps.set_outputs.outputs.custom_custom_param_list_0 }}
   custom_custom_nested_key1:
     description: 'Nested custom key 1'
-    value: ${{ steps.set_outputs.outputs.custom_nested_key1 }}
+    value: ${{ steps.set_outputs.outputs.custom_custom_nested_key1 }}
 runs:
   using: "composite"
   steps:
