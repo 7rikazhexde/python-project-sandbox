@@ -22,6 +22,7 @@ runs:
 
     - name: Parse JSON and set outputs
       id: parse_json
+      shell: bash
       run: |
         python .github/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
         while IFS= read -r line; do
