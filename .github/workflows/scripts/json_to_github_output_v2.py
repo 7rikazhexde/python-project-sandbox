@@ -12,7 +12,7 @@ def set_github_output(name: str, value: str) -> None:
         sys.exit(1)
 
     with open(github_output, "a") as fh:
-        print(f"{name}={value}", file=fh)
+        fh.write(f"{name}={value}\n")
 
 
 def parse_json(
