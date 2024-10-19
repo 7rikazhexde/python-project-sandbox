@@ -29,7 +29,7 @@ jobs:
           echo "os: ${{ steps.json2vars.outputs.os }}"
           echo "python_versions: ${{ steps.json2vars.outputs.python_versions }}"
           echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
-          echo "custom.custom_param_list_0: ${{ steps.json2vars.outputs.custom_custom_param_list_0 }}"
+          echo "custom_custom_param_list_0: ${{ steps.json2vars.outputs.custom_custom_param_list_0 }}"
 
   run_tests:
     needs: generate_matrix
@@ -78,6 +78,7 @@ jobs:
         run: |
           # リスト以外の場合
           ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
+          custom_custom_param_list_0=${{ needs.generate_matrix.outputs.custom_custom_param_list_0 }}
 
           # リストの場合は明示的に""で囲んで文字列化する。
           os='${{ needs.generate_matrix.outputs.os }}'
