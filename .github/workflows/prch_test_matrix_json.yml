@@ -61,7 +61,7 @@ jobs:
       - name: Set variables from JSON
         id: json2vars
         run: |
-          python .github/workflows/scripts/json_to_github_output_v3.py .github/workflows/matrix.json
+          python .github/workflows/scripts/json_to_github_output.py .github/workflows/matrix.json
         env:
           GITHUB_OUTPUT: $GITHUB_OUTPUT
 
