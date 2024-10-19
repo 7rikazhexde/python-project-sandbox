@@ -12,8 +12,7 @@ def set_github_output(name: str, value: str) -> None:
         sys.exit(1)
 
     with open(github_output, "a") as fh:
-        fh.write(f"{name}={value}\n")
-        fh.flush()  # フラッシュを追加することで書き込みを確実に反映する
+        print(f"{name}={value}", file=fh)
 
 
 def parse_json(
