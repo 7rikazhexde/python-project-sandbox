@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "python-project-sandbox"
-version = "1.1.1"
+version = "1.1.2"
 description = "An experimental project to test out various tools."
 authors = ["7rikaz"]
 license = "MIT"
