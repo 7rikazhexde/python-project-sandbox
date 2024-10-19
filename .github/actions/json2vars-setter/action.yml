@@ -23,7 +23,7 @@ runs:
     - name: Parse JSON and set outputs
       id: parse_json
       run: |
-        python .github/actions/json2vars-setter/scripts/json_to_github_output.py ${{ inputs.json-file }}
+        python .github/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
         while IFS= read -r line; do
           key=$(echo "$line" | cut -d'=' -f1)
           value=$(echo "$line" | cut -d'=' -f2-)
