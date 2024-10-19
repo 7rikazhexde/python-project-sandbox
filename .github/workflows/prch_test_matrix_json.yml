@@ -32,14 +32,14 @@ jobs:
           python3 .github/workflows/scripts/json_to_github_output.py .github/workflows/matrix.json
       - name: Debug output values
         run: |
-          echo "os: ${{ steps.set-matrix.outputs.os }}"
-          echo "python_versions: ${{ steps.set-matrix.outputs.python_versions }}"
-          echo "ghpages_branch: ${{ steps.set-matrix.outputs.ghpages_branch }}"
-          echo "custom.custom_param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}"
-          echo "custom.custom_param_list: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}"
-          echo "custom.custom_param_list[0]: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST_0 }}"
-          echo "custom.custom_nested.nested_key1: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_NESTED_NESTED_KEY1 }}"
-          echo "complex_list[1].details.time": ${{steps.set-matrix.outputs.COMPLEX_LIST_1_DETAILS_TIME}}"
+          echo 'os: ${{ steps.set-matrix.outputs.os }}'
+          echo 'python_versions: ${{ steps.set-matrix.outputs.python_versions }}'
+          echo 'ghpages_branch: ${{ steps.set-matrix.outputs.ghpages_branch }}'
+          echo 'custom.custom_param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}'
+          echo 'custom.custom_param_list: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}'
+          echo 'custom.custom_param_list[0]: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST_0 }}'
+          echo 'custom.custom_nested.nested_key1: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_NESTED_NESTED_KEY1 }}'
+          echo 'complex_list[1].details.time": ${{steps.set-matrix.outputs.COMPLEX_LIST_1_DETAILS_TIME}}'
 
   run_tests:
     needs: generate_matrix
