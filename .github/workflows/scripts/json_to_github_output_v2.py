@@ -34,27 +34,27 @@ def parse_json(
                     )  # デバッグ用
                     output_file.write(f"{prefix}{key.upper()}={value}\n")
     elif isinstance(data, list):
-        # リストはJSON形式で表示または書き込む
-        list_values = json.dumps(data)
-        if debug:
-            print(f"{prefix[:-1]}={list_values}")  # 最後の不要なアンダースコアを削除
-        elif output_file:
-            print(
-                f"Writing to GITHUB_OUTPUT: {prefix[:-1]}={list_values}"
-            )  # デバッグ用
-            output_file.write(f"{prefix[:-1]}={list_values}\n")
-        # リスト内の辞書を個別に処理
         for index, item in enumerate(data):
             if isinstance(item, dict):
+                # リスト内の辞書を個別に処理
                 parse_json(item, prefix + f"{index}_", debug, output_file)
             else:
+                # リスト内の単一の値をそのまま表示または書き込む
+                list_values = json.dumps(item)
                 if debug:
-                    print(f"{prefix}{index}={item}")
+                    print(f"{prefix}{index}={list_values}")
                 elif output_file:
                     print(
-                        f"Writing to GITHUB_OUTPUT: {prefix}{index}={item}"
+                        f"Writing to GITHUB_OUTPUT: {prefix}{index}={list_values}"
                     )  # デバッグ用
-                    output_file.write(f"{prefix}{index}={item}\n")
+                    output_file.write(f"{prefix}{index}={list_values}\n")
+    else:
+        # その他の単一の値をそのまま表示または書き込む
+        if debug:
+            print(f"{prefix}={data}")
+        elif output_file:
+            print(f"Writing to GITHUB_OUTPUT: {prefix}={data}")  # デバッグ用
+            output_file.write(f"{prefix}={data}\n")
 
 
 if __name__ == "__main__":
