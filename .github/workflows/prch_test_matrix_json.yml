@@ -25,9 +25,10 @@ jobs:
 
       - name: Set variables from JSON
         id: json2vars
-        uses: ./.github/actions/json2vars-setter
-        with:
-          json-file: .github/workflows/matrix.json
+        run: |
+          python .github/workflows/scripts/json_to_github_output_v3.py .github/workflows/matrix.json
+        env:
+          GITHUB_OUTPUT: $GITHUB_OUTPUT
 
       - name: Debug output values
         run: |
