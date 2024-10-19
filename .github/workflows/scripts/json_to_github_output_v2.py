@@ -11,8 +11,17 @@ def set_github_output(name: str, value: str) -> None:
         print("GITHUB_OUTPUT is not set. Unable to set output.")
         sys.exit(1)
 
+    # ファイルの存在を確認し、存在しない場合はエラーメッセージを表示
+    if not os.path.exists(github_output):
+        print(f"Error: The GITHUB_OUTPUT file at {github_output} does not exist.")
+        sys.exit(1)
+
     with open(github_output, "a") as fh:
-        print(f"{name}={value}", file=fh)
+        fh.write(f"{name}={value}\n")
+        fh.flush()  # デバッグのため、書き込み後にフラッシュ
+        print(
+            f"Debug: Written to GITHUB_OUTPUT -> {name}={value}"
+        )  # デバッグ情報の追加
 
 
 def parse_json(
@@ -39,6 +48,9 @@ def parse_json(
                 if debug:
                     print(output)
                 else:
+                    print(
+                        f"Debug: Processing key={prefix + key.upper()} value={value}"
+                    )  # デバッグ情報の追加
                     set_github_output(prefix + key.upper(), str(value))
     elif isinstance(data, list):
         # リストはJSON形式で表示または書き込む
@@ -47,6 +59,9 @@ def parse_json(
         if debug:
             print(output)
         else:
+            print(
+                f"Debug: Processing list prefix={prefix[:-1]} value={list_values}"
+            )  # デバッグ情報の追加
             set_github_output(prefix[:-1], list_values)
         # リスト内の辞書を個別に処理
         for index, item in enumerate(data):
@@ -57,6 +72,9 @@ def parse_json(
                 if debug:
                     print(output)
                 else:
+                    print(
+                        f"Debug: Processing list item prefix={prefix + str(index)} value={item}"
+                    )  # デバッグ情報の追加
                     set_github_output(prefix + str(index), str(item))
 
 
