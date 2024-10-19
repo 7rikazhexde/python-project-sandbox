@@ -8,6 +8,15 @@ jobs:
   generate_matrix:
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
     runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.set_outputs.outputs.os }}
+      python_versions: ${{ steps.set_outputs.outputs.python_versions }}
+      ghpages_branch: ${{ steps.set_outputs.outputs.ghpages_branch }}
+      custom_custom_param: ${{ steps.set_outputs.outputs.custom_custom_param }}
+      custom_custom_param_list: ${{ steps.set_outputs.outputs.custom_custom_param_list }}
+      custom_custom_param_list_0: ${{ steps.set_outputs.outputs.custom_custom_param_list_0 }}
+      custom_custom_nested_nested_key1: ${{ steps.set_outputs.outputs.custom_custom_nested_nested_key1 }}
+      complex_list_1_details_time: ${{ steps.set_outputs.outputs.complex_list_1_details_time }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.1
@@ -20,32 +29,44 @@ jobs:
         with:
           json-file: .github/workflows/matrix.json
 
+      - name: Set outputs from environment variables
+        id: set_outputs
+        run: |
+          echo "os=${OS}" >> $GITHUB_OUTPUT
+          echo "python_versions=${PYTHON_VERSIONS}" >> $GITHUB_OUTPUT
+          echo "ghpages_branch=${GHPAGES_BRANCH}" >> $GITHUB_OUTPUT
+          echo "custom_custom_param=${CUSTOM_CUSTOM_PARAM}" >> $GITHUB_OUTPUT
+          echo "custom_custom_param_list=${CUSTOM_CUSTOM_PARAM_LIST}" >> $GITHUB_OUTPUT
+          echo "custom_custom_param_list_0=${CUSTOM_CUSTOM_PARAM_LIST_0}" >> $GITHUB_OUTPUT
+          echo "custom_custom_nested_nested_key1=${CUSTOM_CUSTOM_NESTED_NESTED_KEY1}" >> $GITHUB_OUTPUT
+          echo "complex_list_1_details_time=${COMPLEX_LIST_1_DETAILS_TIME}" >> $GITHUB_OUTPUT
+        env:
+          OS: ${{ env.OS }}
+          PYTHON_VERSIONS: ${{ env.PYTHON_VERSIONS }}
+          GHPAGES_BRANCH: ${{ env.GHPAGES_BRANCH }}
+          CUSTOM_CUSTOM_PARAM: ${{ env.CUSTOM_CUSTOM_PARAM }}
+          CUSTOM_CUSTOM_PARAM_LIST: ${{ env.CUSTOM_CUSTOM_PARAM_LIST }}
+          CUSTOM_CUSTOM_PARAM_LIST_0: ${{ env.CUSTOM_CUSTOM_PARAM_LIST_0 }}
+          CUSTOM_CUSTOM_NESTED_NESTED_KEY1: ${{ env.CUSTOM_CUSTOM_NESTED_NESTED_KEY1 }}
+          COMPLEX_LIST_1_DETAILS_TIME: ${{ env.COMPLEX_LIST_1_DETAILS_TIME }}
+
       - name: Debug output values
         run: |
-          echo "os: $OS"
-          echo "python_versions: $PYTHON_VERSIONS"
-          echo "ghpages_branch: $GHPAGES_BRANCH"
-          echo "custom.custom_param: $CUSTOM_CUSTOM_PARAM"
-          echo "custom.custom_param_list: $CUSTOM_CUSTOM_PARAM_LIST"
-          echo "custom.custom_param_list[0]: $CUSTOM_CUSTOM_PARAM_LIST_0"
-          echo "custom.custom_nested.nested_key1: $CUSTOM_CUSTOM_NESTED_NESTED_KEY1"
-          echo "complex_list[1].details.time: $COMPLEX_LIST_1_DETAILS_TIME"
-        env:
-          OS: ${{ steps.json2vars.outputs.OS }}
-          PYTHON_VERSIONS: ${{ steps.json2vars.outputs.PYTHON_VERSIONS }}
-          GHPAGES_BRANCH: ${{ steps.json2vars.outputs.GHPAGES_BRANCH }}
-          CUSTOM_CUSTOM_PARAM: ${{ steps.json2vars.outputs.CUSTOM_CUSTOM_PARAM }}
-          CUSTOM_CUSTOM_PARAM_LIST: ${{ steps.json2vars.outputs.CUSTOM_CUSTOM_PARAM_LIST }}
-          CUSTOM_CUSTOM_PARAM_LIST_0: ${{ steps.json2vars.outputs.CUSTOM_CUSTOM_PARAM_LIST_0 }}
-          CUSTOM_CUSTOM_NESTED_NESTED_KEY1: ${{ steps.json2vars.outputs.CUSTOM_CUSTOM_NESTED_NESTED_KEY1 }}
-          COMPLEX_LIST_1_DETAILS_TIME: ${{ steps.json2vars.outputs.COMPLEX_LIST_1_DETAILS_TIME }}
+          echo "os: ${{ steps.set_outputs.outputs.os }}"
+          echo "python_versions: ${{ steps.set_outputs.outputs.python_versions }}"
+          echo "ghpages_branch: ${{ steps.set_outputs.outputs.ghpages_branch }}"
+          echo "custom.custom_param: ${{ steps.set_outputs.outputs.custom_custom_param }}"
+          echo "custom.custom_param_list: ${{ steps.set_outputs.outputs.custom_custom_param_list }}"
+          echo "custom.custom_param_list[0]: ${{ steps.set_outputs.outputs.custom_custom_param_list_0 }}"
+          echo "custom.custom_nested.nested_key1: ${{ steps.set_outputs.outputs.custom_custom_nested_nested_key1 }}"
+          echo "complex_list[1].details.time: ${{ steps.set_outputs.outputs.complex_list_1_details_time }}"
 
   run_tests:
     needs: generate_matrix
     strategy:
       matrix:
-        os: ${{ fromJson(needs.generate_matrix.outputs.OS) }}
-        python-version: ${{ fromJson(needs.generate_matrix.outputs.PYTHON_VERSIONS) }}
+        os: ${{ fromJson(needs.generate_matrix.outputs.os) }}
+        python-version: ${{ fromJson(needs.generate_matrix.outputs.python_versions) }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -93,8 +114,8 @@ jobs:
           complex_list_1_details_time=${{ needs.generate_matrix.outputs.complex_list_1_details_time }}
 
           # リストの場合は明示的に""で囲んで文字列化する。
-          os='${{needs.generate_matrix.outputs.os}}'
-          python_versions='${{needs.generate_matrix.outputs.python_versions}}'
+          os='${{ needs.generate_matrix.outputs.os }}'
+          python_versions='${{ needs.generate_matrix.outputs.python_versions }}'
           custom_custom_param_list='${{ needs.generate_matrix.outputs.custom_custom_param_list }}'
 
           echo "os: $os"
