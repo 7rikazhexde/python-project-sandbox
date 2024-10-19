@@ -17,3 +17,5 @@ runs:
       shell: bash
       run: |
         python .github/workflows/scripts/json_to_github_output_v2.py ${{ inputs.json-file }}
+      env:
+          GITHUB_OUTPUT: $GITHUB_OUTPUT
