@@ -32,14 +32,14 @@ jobs:
           python3 .github/workflows/scripts/json_to_github_output.py .github/workflows/matrix.json
       - name: Debug output values
         run: |
-          echo 'os: ${{ steps.set-matrix.outputs.os }}'
-          echo 'python_versions: ${{ steps.set-matrix.outputs.python_versions }}'
-          echo 'ghpages_branch: ${{ steps.set-matrix.outputs.ghpages_branch }}'
-          echo 'custom.custom_param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}'
-          echo 'custom.custom_param_list: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}'
-          echo 'custom.custom_param_list[0]: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST_0 }}'
-          echo 'custom.custom_nested.nested_key1: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_NESTED_NESTED_KEY1 }}'
-          echo 'complex_list[1].details.time": ${{steps.set-matrix.outputs.COMPLEX_LIST_1_DETAILS_TIME}}'
+          echo "os: ${{ steps.set-matrix.outputs.os }}"
+          echo "python_versions: ${{ steps.set-matrix.outputs.python_versions }}"
+          echo "ghpages_branch: ${{ steps.set-matrix.outputs.ghpages_branch }}"
+          echo "custom.custom_param: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM }}"
+          echo "custom.custom_param_list: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST }}"
+          echo "custom.custom_param_list[0]: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_PARAM_LIST_0 }}"
+          echo "custom.custom_nested.nested_key1: ${{ steps.set-matrix.outputs.CUSTOM_CUSTOM_NESTED_NESTED_KEY1 }}"
+          echo "complex_list[1].details.time: ${{steps.set-matrix.outputs.COMPLEX_LIST_1_DETAILS_TIME}}"
 
   run_tests:
     needs: generate_matrix
@@ -87,16 +87,16 @@ jobs:
         shell: bash
         run: |
           # リスト以外の場合
+          ghpages_branch=${{ needs.generate_matrix.outputs.ghpages_branch }}
           custom_custom_param=${{ needs.generate_matrix.outputs.custom_custom_param }}
           custom_custom_param_list_0=${{ needs.generate_matrix.outputs.custom_custom_param_list_0 }}
           custom_custom_nested_nested_key1=${{ needs.generate_matrix.outputs.custom_custom_nested_nested_key1 }}
           complex_list_1_details_time=${{ needs.generate_matrix.outputs.complex_list_1_details_time }}
 
           # リストの場合は明示的に""で囲んで文字列化する。
-          os=${{needs.generate_matrix.outputs.os}}
-          python_versions="${{needs.generate_matrix.outputs.python_versions}}"
-          ghpages_branch="${{ needs.generate_matrix.outputs.ghpages_branch }}"
-          custom_custom_param_list="${{ needs.generate_matrix.outputs.custom_custom_param_list }}"
+          os='${{needs.generate_matrix.outputs.os}}'
+          python_versions='${{needs.generate_matrix.outputs.python_versions}}'
+          custom_custom_param_list='${{ needs.generate_matrix.outputs.custom_custom_param_list }}'
 
           # Bashでリストの括弧やダブルクォートを削除し、各要素の末尾のカンマを削除
           custom_custom_param_list=$(echo $custom_custom_param_list | sed 's/[][]//g' | tr -d '"' | sed 's/, */, /g' | sed 's/, *$//')
