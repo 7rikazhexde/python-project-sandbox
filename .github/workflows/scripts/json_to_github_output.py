@@ -1,82 +1,125 @@
 import json
 import os
 import sys
-from typing import Any, Dict, Optional, TextIO
+from typing import Any, Dict
+
+
+def set_github_output(name: str, value: str) -> None:
+    """
+    Set a GitHub Actions output variable by appending it to the GITHUB_OUTPUT file.
+
+    :param name: The name of the output variable to set.
+    :param value: The value of the output variable to set.
+    """
+    github_output = os.getenv("GITHUB_OUTPUT")
+    if github_output is None:
+        print("GITHUB_OUTPUT is not set. Unable to set output.")
+        sys.exit(1)
+
+    # Check if the GITHUB_OUTPUT file exists; if not, exit with an error message.
+    if not os.path.exists(github_output):
+        print(f"Error: The GITHUB_OUTPUT file at {github_output} does not exist.")
+        sys.exit(1)
+
+    with open(github_output, "a") as fh:
+        fh.write(f"{name}={value}\n")
+        fh.flush()  # Flush after writing for debugging purposes
+        print(
+            f"Debug: Written to GITHUB_OUTPUT -> {name}={value}"
+        )  # Additional debug information
+
+
+def set_github_env(name: str, value: str) -> None:
+    """
+    Set an environment variable for GitHub Actions by appending it to the GITHUB_ENV file.
+
+    :param name: The name of the environment variable to set.
+    :param value: The value of the environment variable to set.
+    """
+    github_env = os.getenv("GITHUB_ENV")
+    if github_env is None:
+        print("GITHUB_ENV is not set. Unable to set environment variable.")
+        sys.exit(1)
+
+    # Check if the GITHUB_ENV file exists; if not, exit with an error message.
+    if not os.path.exists(github_env):
+        print(f"Error: The GITHUB_ENV file at {github_env} does not exist.")
+        sys.exit(1)
+
+    with open(github_env, "a") as env_file:
+        env_file.write(f"{name}={value}\n")
+        env_file.flush()  # Flush after writing to ensure changes are saved
+        print(
+            f"Debug: Written to GITHUB_ENV -> {name}={value}"
+        )  # Additional debug information
 
 
 def parse_json(
     data: Any,
     prefix: str = "",
     debug: bool = False,
-    output_file: Optional[TextIO] = None,
 ) -> None:
     """
-    JSONデータを再帰的に探索し、デバッグモードなら標準出力に表示、
-    通常モードならGITHUB_OUTPUTに書き込む。
+    Recursively parse JSON data and set GitHub Actions outputs and environment variables.
 
-    :param data: JSON形式の辞書データ
-    :param prefix: 環境変数名に付加するプレフィックス（ネストされた辞書対応）
-    :param debug: デバッグモードの有無
-    :param output_file: GITHUB_OUTPUT用のファイルオブジェクト
+    :param data: The JSON data to be parsed.
+    :param prefix: Prefix to add to the variable names (used for nested dictionaries).
+    :param debug: If True, print debug information to standard output.
     """
     if isinstance(data, dict):
         for key, value in data.items():
             if isinstance(value, (dict, list)):
-                # ネストされた辞書やリストを再帰的に処理
-                parse_json(value, prefix + key.upper() + "_", debug, output_file)
+                # Recursively handle nested dictionaries and lists
+                parse_json(value, prefix + key.upper() + "_", debug)
             else:
-                # その他の単一の値をそのまま表示または書き込む
+                # Handle single values
+                output = f"{prefix}{key.upper()}={value}"
                 if debug:
-                    print(f"{prefix}{key.upper()}={value}")
-                elif output_file:
+                    print(output)
+                else:
                     print(
-                        f"Writing to GITHUB_OUTPUT: {prefix}{key.upper()}={value}"
-                    )  # デバッグ用
-                    output_file.write(f"{prefix}{key.upper()}={value}\n")
+                        f"Debug: Processing key={prefix + key.upper()} value={value}"
+                    )  # Debug information
+                    set_github_output(prefix + key.upper(), str(value))
+                    set_github_env(prefix + key.upper(), str(value))
     elif isinstance(data, list):
-        # リストはJSON形式で表示または書き込む
+        # Write the entire list as a JSON string
         list_values = json.dumps(data)
+        output = (
+            f"{prefix[:-1]}={list_values}"  # Remove the trailing underscore from prefix
+        )
         if debug:
-            print(f"{prefix[:-1]}={list_values}")  # 最後の不要なアンダースコアを削除
-        elif output_file:
+            print(output)
+        else:
             print(
-                f"Writing to GITHUB_OUTPUT: {prefix[:-1]}={list_values}"
-            )  # デバッグ用
-            output_file.write(f"{prefix[:-1]}={list_values}\n")
-        # リスト内の辞書を個別に処理
+                f"Debug: Processing list prefix={prefix[:-1]} value={list_values}"
+            )  # Debug information
+            set_github_output(prefix[:-1], list_values)
+            set_github_env(prefix[:-1], list_values)
+        # Process each item in the list individually
         for index, item in enumerate(data):
             if isinstance(item, dict):
-                parse_json(item, prefix + f"{index}_", debug, output_file)
+                parse_json(item, prefix + f"{index}_", debug)
             else:
+                output = f"{prefix}{index}={item}"
                 if debug:
-                    print(f"{prefix}{index}={item}")
-                elif output_file:
+                    print(output)
+                else:
                     print(
-                        f"Writing to GITHUB_OUTPUT: {prefix}{index}={item}"
-                    )  # デバッグ用
-                    output_file.write(f"{prefix}{index}={item}\n")
+                        f"Debug: Processing list item prefix={prefix + str(index)} value={item}"
+                    )  # Debug information
+                    set_github_output(prefix + str(index), str(item))
+                    set_github_env(prefix + str(index), str(item))
 
 
 if __name__ == "__main__":
-    # コマンドライン引数からJSONファイルのパスとオプションを取得
+    # Retrieve the JSON file path and optional debug flag from command line arguments
     json_file: str = sys.argv[1]
     debug = "--debug" in sys.argv
 
-    # デバッグモードでない場合、GITHUB_OUTPUTを取得
-    output_file: Optional[TextIO] = None
-    if not debug:
-        github_output = os.getenv("GITHUB_OUTPUT")
-        if not github_output:
-            raise ValueError("GITHUB_OUTPUT environment variable is not set.")
-        output_file = open(github_output, "a")
-
-    # JSONファイルの読み込み
+    # Load the JSON data from the file
     with open(json_file, "r") as f:
         data: Dict[str, Any] = json.load(f)
 
-    # JSONデータの解析とGITHUB_OUTPUTへの書き出し（デバッグモードなら標準出力に表示）
-    parse_json(data, debug=debug, output_file=output_file)
-
-    # ファイルが開かれていれば閉じる
-    if output_file:
-        output_file.close()
+    # Parse the JSON data and write to GITHUB_OUTPUT and GITHUB_ENV (or print if in debug mode)
+    parse_json(data, debug=debug)
