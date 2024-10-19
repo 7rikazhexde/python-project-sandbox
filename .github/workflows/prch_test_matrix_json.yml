@@ -164,6 +164,9 @@ jobs:
           custom_custom_nested_nested_key2=${{ needs.generate_matrix.outputs.custom_custom_nested_nested_key2 }}
           env_env_var_1=${{ needs.generate_matrix.outputs.env_env_var_1 }}
           env_env_var_2=${{ needs.generate_matrix.outputs.env_env_var_2 }}
+          env_env_var_list_0=${{ needs.generate_matrix.outputs.env_env_var_list_0 }}
+          env_env_var_list_1=${{ needs.generate_matrix.outputs.env_env_var_list_1 }}
+          env_env_var_list_2=${{ needs.generate_matrix.outputs.env_env_var_list_2 }}
           matrix_os_python_combination_0_os=${{ needs.generate_matrix.outputs.matrix_os_python_combination_0_os }}
           matrix_os_python_combination_0_python_version=${{ needs.generate_matrix.outputs.matrix_os_python_combination_0_python_version }}
           matrix_os_python_combination_1_os=${{ needs.generate_matrix.outputs.matrix_os_python_combination_1_os }}
