@@ -16,4 +16,4 @@ runs:
     - name: Parse JSON and set outputs
       shell: bash
       run: |
-        python ${{ github.action_path }}/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
+        python ${{ github.action_path }}/python-project-sandbox/.github/workflows/scripts/json_to_github_output.py ${{ inputs.json-file }}
