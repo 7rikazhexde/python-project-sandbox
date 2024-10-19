@@ -107,9 +107,11 @@ jobs:
           echo "os: $os"
           echo "python_versions: $python_versions"
           echo "ghpages_branch: $ghpages_branch"
-          echo "custom.custom_param: $custom_param"
+          echo "custom.custom_param: $custom_custom_param"
           echo "custom.custom_param_list: $custom_custom_param_list"
           echo "custom.custom_param_list[0]: $custom_custom_param_list_0"
+          echo "custom.custom_param_list[0] processd by sed: ${custom_param_array[0]}"
+          echo "custom.custom_param_list[1] processd by sed: ${custom_param_array[1]}"
           echo "custom.custom_nested.nested_key1: $custom_custom_nested_nested_key1"
           echo "complex_list[1].details.time: $complex_list_1_details_time"
 
