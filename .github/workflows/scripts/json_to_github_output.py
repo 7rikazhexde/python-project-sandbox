@@ -11,6 +11,8 @@ def set_github_output(outputs: Dict[str, str]) -> None:
     :param outputs: Dictionary of output variables to set.
     """
     github_output = os.getenv("GITHUB_OUTPUT")
+    github_env = os.getenv("GITHUB_ENV")
+
     if github_output is None:
         print("GITHUB_OUTPUT is not set. Unable to set output.")
         sys.exit(1)
@@ -21,6 +23,14 @@ def set_github_output(outputs: Dict[str, str]) -> None:
             fh.write(f"{name}={value}\n")
         fh.flush()
         print(f"Debug: Written to GITHUB_OUTPUT -> {outputs}")
+
+    # Additionally write to GITHUB_ENV to make sure they are set as environment variables
+    if github_env:
+        with open(github_env, "a") as env_file:
+            for name, value in outputs.items():
+                env_file.write(f"{name}={value}\n")
+            env_file.flush()
+            print(f"Debug: Written to GITHUB_ENV -> {outputs}")
 
 
 def parse_json(data: Any, prefix: str = "") -> Dict[str, str]:
@@ -57,6 +67,6 @@ if __name__ == "__main__":
     with open(json_file, "r") as f:
         data = json.load(f)
 
-    # Parse the JSON data and write to GITHUB_OUTPUT
+    # Parse the JSON data and write to GITHUB_OUTPUT and GITHUB_ENV
     collected_outputs = parse_json(data)
     set_github_output(collected_outputs)
