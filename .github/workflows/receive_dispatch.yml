@@ -1,0 +1,12 @@
+name: Handle repository_dispatch with os_list
+on:
+  repository_dispatch:
+    types: [pr-os-list]
+
+jobs:
+  process-os-list:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Display os_list
+        run: |
+          echo "Received os_list: ${{ github.event.client_payload.os_list }}"
