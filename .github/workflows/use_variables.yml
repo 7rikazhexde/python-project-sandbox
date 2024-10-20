@@ -1,0 +1,26 @@
+name: Download and Use Variables
+on:
+  workflow_run:
+    workflows: ["Create and Upload Variables"]
+    types:
+      - completed
+
+jobs:
+  download-artifact:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Download artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: variables-artifact
+          path: .
+
+      - name: Load variables
+        run: |
+          source variables.env
+          echo "Loaded os_list: $os_list"
+
+      - name: Use variables
+        run: |
+          echo "OS List is: $os_list"
