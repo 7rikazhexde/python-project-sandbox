@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     outputs:
       os: ${{ steps.json2vars.outputs.os }}
-      python_versions: ${{ steps.json2vars.outputs.python_versions }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
       ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
       # For future additions
       #custom_custom_param: ${{ steps.json2vars.outputs.custom_custom_param }}
@@ -32,7 +32,7 @@ jobs:
       - name: Debug output values
         run: |
           echo "os: ${{ steps.json2vars.outputs.os }}"
-          echo "python_versions: ${{ steps.json2vars.outputs.python_versions }}"
+          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
           echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
           # For future additions
           #echo "custom_custom_param: ${{ steps.json2vars.outputs.custom_custom_param }}"
@@ -46,7 +46,7 @@ jobs:
     strategy:
       matrix:
         os: ${{ fromJson(needs.generate_matrix.outputs.os) }}
-        python-version: ${{ fromJson(needs.generate_matrix.outputs.python_versions) }}
+        python-version: ${{ fromJson(needs.generate_matrix.outputs.versions_python) }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
@@ -95,12 +95,12 @@ jobs:
 
           # For lists, explicitly enclose the list in “” to make it a string. (Note that it is not ''.)
           os='${{ needs.generate_matrix.outputs.os }}'
-          python_versions='${{ needs.generate_matrix.outputs.python_versions }}'
+          versions_python='${{ needs.generate_matrix.outputs.versions_python }}'
           # For future additions
           # custom_custom_param_list='${{ needs.generate_matrix.outputs.custom_custom_param_list }}'
 
           echo "os: $os"
-          echo "python_versions: $python_versions"
+          echo "versions_python: $versions_python"
           echo "ghpages_branch: $ghpages_branch"
           # For future additions
           #echo "custom.custom_param: $custom_custom_param"

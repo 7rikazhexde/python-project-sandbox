@@ -9,9 +9,9 @@ outputs:
   os:
     description: 'List of operating systems'
     value: ${{ steps.set_outputs.outputs.os }}
-  python_versions:
+  versions_python:
     description: 'List of Python versions'
-    value: ${{ steps.set_outputs.outputs.python_versions }}
+    value: ${{ steps.set_outputs.outputs.versions_python }}
   ghpages_branch:
     description: 'GitHub Pages branch'
     value: ${{ steps.set_outputs.outputs.ghpages_branch }}
