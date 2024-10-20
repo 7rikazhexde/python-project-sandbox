@@ -9,14 +9,14 @@ jobs:
 
     steps:
       - name: Checkout code
-        uses: actions/checkout@v3
+        uses: actions/checkout@v4.2.1
 
       - name: Create variable file
         run: |
           echo "os_list=ubuntu-latest,windows-latest" > variables.env
 
       - name: Upload variables as artifact
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v4.4.3
         with:
           name: variables-artifact
           path: variables.env

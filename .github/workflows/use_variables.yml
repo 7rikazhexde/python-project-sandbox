@@ -1,7 +1,7 @@
 name: Download and Use Variables
 on:
   workflow_run:
-    workflows: ["Create and Upload Variables"]
+    workflows: [Create and Upload Variables]
     types:
       - completed
 
@@ -11,7 +11,7 @@ jobs:
 
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v4.1.8
         with:
           name: variables-artifact
           path: .
