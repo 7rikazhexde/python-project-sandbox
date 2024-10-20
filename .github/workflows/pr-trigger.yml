@@ -1,0 +1,24 @@
+name: PR Trigger
+on:
+  pull_request:
+    types: [opened, synchronize, reopened]
+
+jobs:
+  generate-and-upload:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Generate variables
+        run: |
+          echo "VAR1=value1" >> $GITHUB_ENV
+          echo "VAR2=value2" >> $GITHUB_ENV
+
+      - name: Create artifact file
+        run: |
+          echo "VAR1=${{ env.VAR1 }}" >> variables.txt
+          echo "VAR2=${{ env.VAR2 }}" >> variables.txt
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: workflow-variables
+          path: variables.txt
