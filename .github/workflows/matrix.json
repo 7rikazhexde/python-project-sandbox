@@ -4,10 +4,12 @@
         "windows-latest",
         "macos-latest"
     ],
-    "python_versions": [
-        "3.11",
-        "3.12"
-    ],
+    "versions": {
+        "python": [
+            "3.11",
+            "3.12"
+        ]
+    },
     "ghpages_branch": "ghgapes",
     "custom": {
         "custom_param": "custom_value",
