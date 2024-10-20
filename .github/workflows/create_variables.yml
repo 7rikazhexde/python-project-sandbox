@@ -1,0 +1,22 @@
+name: Create and Upload Variables
+on:
+  pull_request:
+    types: [opened, synchronize]
+
+jobs:
+  create-artifact:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Create variable file
+        run: |
+          echo "os_list=ubuntu-latest,windows-latest" > variables.env
+
+      - name: Upload variables as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: variables-artifact
+          path: variables.env
