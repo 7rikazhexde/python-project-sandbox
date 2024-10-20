@@ -26,12 +26,38 @@ on:
     branches: "main"
 
 jobs:
-  test:
+  set_variables:
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+      ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.1
+        with:
+          fetch-depth: 0
+
+      - name: Set variables from JSON
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@main
+        with:
+          json-file: .github/workflows/matrix.json
+
+      - name: Debug output values
+        run: |
+          echo "os: ${{ steps.json2vars.outputs.os }}"
+          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+
+  test:
+    #if: github.actor != 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
+    needs: set_variables
     strategy:
       matrix:
-        os: [macos-13, ubuntu-latest, windows-latest]
-        python-version: ['3.11', '3.12']
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: 'Asia/Tokyo'

@@ -27,8 +27,8 @@ jobs:
         id: json2vars
         #uses: ./.github/actions/json2vars-setter
         uses: 7rikazhexde/json2vars-setter@main
-        with:
-          json-file: .github/workflows/python_project_matrix.json
+        #with:
+        #  json-file: .github/workflows/python_project_matrix.json
 
       - name: Debug output values
         run: |
