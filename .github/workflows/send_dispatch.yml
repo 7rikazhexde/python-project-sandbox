@@ -10,7 +10,7 @@ jobs:
       - name: Trigger repository_dispatch with os_list
         run: |
           curl -X POST \
-          -H "Authorization: token ${{ secrets.GITHUB_TOKEN }}" \
+          -H "Authorization: token ${{ secrets.PAT_FOR_PUSHES  }}" \
           -H "Accept: application/vnd.github.everest-preview+json" \
           https://api.github.com/repos/${{ github.repository }}/dispatches \
           -d '{"event_type": "pr-os-list", "client_payload": {"os_list": ["ubuntu-latest", "windows-latest"]}}'
