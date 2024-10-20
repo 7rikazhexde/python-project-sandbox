@@ -8,19 +8,39 @@ on:
 jobs:
   download-artifact:
     runs-on: ubuntu-latest
-
+    if: ${{ github.event.workflow_run.conclusion == 'success' }}
     steps:
       - name: Download artifact
-        uses: actions/download-artifact@v4.1.8
+        uses: dawidd6/action-download-artifact@v6
         with:
+          github_token: ${{secrets.GITHUB_TOKEN}}
+          workflow: Create and Upload Variables
+          run_id: ${{github.event.workflow_run.id}}
           name: variables-artifact
           path: .
 
       - name: Load variables
         run: |
-          source variables.env
-          echo "Loaded os_list: $os_list"
+          if [ -f variables.env ]; then
+            source variables.env
+            echo "Loaded os_list: $os_list"
+            echo "os_list=$os_list" >> $GITHUB_ENV
+          else
+            echo "variables.env file not found"
+            exit 1
+          fi
 
       - name: Use variables
         run: |
-          echo "OS List is: $os_list"
+          echo "OS List is: ${{ env.os_list }}"
+
+  use-variables:
+    needs: download-artifact
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.download-artifact.outputs.os_list) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Use OS
+        run: |
+          echo "Running on ${{ matrix.os }}"
