@@ -6,7 +6,7 @@ name: PR Check (Except Dependabot)
 #    - Dependabotによる実行でないこと
 #    - コミットメッセージが"Bump version"で始まっていないこと
 # 2. ジョブの条件判定: Dependabot によるPRでないことをチェック
-# 3. OS毎の環境設定 (macos-13, ubuntu-latest, windows-latest)
+# 3. OS毎の環境設定 (macos-latest, ubuntu-latest, windows-latest)
 # 4. Python環境のセットアップ (3.11, 3.12)
 # 5. タイムゾーンの設定 (Asia/Tokyo)
 # 6. リポジトリのチェックアウト

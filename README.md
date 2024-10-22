@@ -10,19 +10,19 @@ An experimental project to test out various tools.
 
 [![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml)
 
-| Python Version | ubuntu-latest | macos-13 | windows-latest |
+| Python Version | ubuntu-latest | macos-latest | windows-latest |
 |----------------|---------------|----------|----------------|
-| 3.11 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_ubuntu-latest_python_3.11/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_macos-13_python_3.11/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_windows-latest_python_3.11/report_page.html) |
-| 3.12 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_ubuntu-latest_python_3.12/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_macos-13_python_3.12/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_windows-latest_python_3.12/report_page.html) |
+| 3.11 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_ubuntu-latest_python_3.11/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_macos-latest_python_3.11/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_windows-latest_python_3.11/report_page.html) |
+| 3.12 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_ubuntu-latest_python_3.12/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_macos-latest_python_3.12/report_page.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report_windows-latest_python_3.12/report_page.html) |
 
 ## pytest-cov
 
 [![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml)
 
-| Python Version | ubuntu-latest | macos-13 | windows-latest |
+| Python Version | ubuntu-latest | macos-latest | windows-latest |
 |----------------|---------------|----------|----------------|
-| 3.11 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_ubuntu-latest_python_3.11/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_macos-13_python_3.11/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_windows-latest_python_3.11/index.html) |
-| 3.12 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_ubuntu-latest_python_3.12/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_macos-13_python_3.12/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_windows-latest_python_3.12/index.html) |
+| 3.11 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_ubuntu-latest_python_3.11/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_macos-latest_python_3.11/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_windows-latest_python_3.11/index.html) |
+| 3.12 | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_ubuntu-latest_python_3.12/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_macos-latest_python_3.12/index.html) | [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report_windows-latest_python_3.12/index.html) |
 
 ## Tabale of contents
 

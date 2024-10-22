@@ -5,7 +5,7 @@ name: pytest-cov Report and Deploy Multi-OS
 #    - pytest-testmon ワークフローの完了後に repository_dispatch イベントで起動
 # 2. 複数の環境（OS、Pythonバージョン）でのセットアップ
 #    - .github/workflows/send_payload_to_pytest_testmon.ymlで設定
-#      - macOS-13, Ubuntu, Windowsの最新バージョンで実行
+#      - macos-latest, Ubuntu, Windowsの最新バージョンで実行
 #      - Python 3.11 と 3.12 を使用
 # 3. testmon データの取得とテストの実行確認
 #    - testmon の結果に基づき、実行対象外の場合はテストをスキップ
