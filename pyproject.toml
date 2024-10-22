@@ -23,7 +23,7 @@ httpx = "^0.27.2"
 python-dotenv = "^1.0.1"
 freezegun = "^1.5.1"
 tomlkit = "^0.13.2"
-pytonapi = "^0.4.1"
+pytonapi = "^0.4.2"
 types-pytz = "^2024.2.0.20240913"
 
 [tool.poetry.group.dev.dependencies]
