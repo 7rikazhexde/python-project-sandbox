@@ -170,7 +170,7 @@ jobs:
             fi
 
             # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
-            for os in macos-13 ubuntu-latest windows-latest; do
+            for os in macos-latest ubuntu-latest windows-latest; do
               for version in 3.11 3.12; do
                 echo "## Coverage Report (os: $os / python-version: $version)"
                 if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
