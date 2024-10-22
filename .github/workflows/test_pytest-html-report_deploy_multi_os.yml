@@ -263,6 +263,11 @@ jobs:
               export CURRENT_PYTHON_VERSION=$python_version
               python3 .github/check_exclude_testmon.py
 
+              # 環境ファイルから最新の値を読み込む
+              if [ -f "$GITHUB_ENV" ]; then
+                source "$GITHUB_ENV"
+              fi
+
               # skip_tests が true ならばURLをスキップ
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
                 echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
