@@ -267,11 +267,11 @@ jobs:
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
                 echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
                 continue
+              else
+                # 対象の場合はURLリストに追加
+                URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
+                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
               fi
-
-              # 対象の場合はURLリストに追加
-              URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
-            https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
             done
           done
 
