@@ -132,7 +132,7 @@ jobs:
         id: pytest-html
         run: |
           mkdir -p test_results_${{ matrix.os }}_python_${{ matrix.python-version }}
-          poetry run pytest --html=test_results_${{ matrix.os }}_python_${{ matrix.python-version }}/report_page.html
+          poetry run pytest --html=test_results_${{ matrix.os }}_python_${{ matrix.python-version }}/report_page.html --css=css/style.css
         shell: bash
 
       - name: Upload pytest-html results
