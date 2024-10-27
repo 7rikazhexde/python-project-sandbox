@@ -45,7 +45,7 @@ jobs:
 
       - name: Set GHPAGES_BRANCH from client_payload
         id: set-ghpages-branch
-        run: echo "ghpages_branch=${{ github.event.client_payload.ghpages_branch }}" >> $GITHUB_OUTPUT
+        run: echo "ghpages_branch=${{ github.event.client_payload.ghpages_branch }}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
@@ -100,16 +100,18 @@ jobs:
           output=$(poetry run pytest --testmon -v)
           echo "$output"
 
-          echo "testmon_output<<EOF" >> $GITHUB_OUTPUT
-          echo "$output" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "testmon_output<<EOF"
+            echo "$output"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
           if echo "$output" | grep -q "collected 0 items"; then
            echo "No tests executed. Skipping deployment and further workflows."
-           echo "tests_executed=false" >> $GITHUB_OUTPUT
+           echo "tests_executed=false" >> "$GITHUB_OUTPUT"
           else
            echo "Tests executed. Proceeding with deployment and further workflows."
-           echo "tests_executed=true" >> $GITHUB_OUTPUT
+           echo "tests_executed=true" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Create testmon directory and move .testmondata
@@ -169,15 +171,15 @@ jobs:
           echo "OS List: $os_list"
           echo "Python Versions List: $python_versions_list"
 
-          echo "os_list=$os_list" >> $GITHUB_ENV
-          echo "python_versions_list=$python_versions_list" >> $GITHUB_ENV
+          echo "os_list=$os_list" >> "$GITHUB_ENV"
+          echo "python_versions_list=$python_versions_list" >> "$GITHUB_ENV"
 
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         run: |
           echo "Deploying testmon data to GitHub Pages..."
-          git fetch origin ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}:${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
-          git checkout ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
+          git fetch origin "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}":"${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}" || git checkout -b "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}"
+          git checkout "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}"
 
           changes_made=false
           updated_testmon_json="["
@@ -217,15 +219,15 @@ jobs:
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages" || echo "No changes to commit"
-            git push origin ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} || echo "No changes to push"
-            echo "deploy_status=updated" >> $GITHUB_OUTPUT
+            git push origin "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}" || echo "No changes to push"
+            echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
           else
             echo "No changes to commit"
-            echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
+            echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
-          echo "exclude_testmon_json=$exclude_testmon_json" >> $GITHUB_OUTPUT
+          echo "updated_testmon_json=$updated_testmon_json" >> "$GITHUB_OUTPUT"
+          echo "exclude_testmon_json=$exclude_testmon_json" >> "$GITHUB_OUTPUT"
 
       - name: List deployed files
         if: always()
@@ -265,11 +267,13 @@ jobs:
           echo "ghpage_branch: $ghpage_branch"
 
           # GitHub Actions出力に渡す
-          echo "os_list=$os_list" >> $GITHUB_OUTPUT
-          echo "python_versions=$python_versions" >> $GITHUB_OUTPUT
-          echo "updated_testmon_json=$updated_testmon_json" >> $GITHUB_OUTPUT
-          echo "updated_exclude_testmon_json=$updated_exclude_testmon_json" >> $GITHUB_OUTPUT
-          echo "ghpage_branch=$ghpage_branch" >> $GITHUB_OUTPUT
+          {
+            echo "os_list=${os_list}"
+            echo "python_versions=${python_versions}"
+            echo "updated_testmon_json=${updated_testmon_json}"
+            echo "updated_exclude_testmon_json=${updated_exclude_testmon_json}"
+            echo "ghpage_branch=${ghpage_branch}"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Trigger pytest-cov workflow
         uses: peter-evans/repository-dispatch@v3.0.0

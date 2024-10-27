@@ -35,7 +35,8 @@ name: pytest-cov Report and Deploy Multi-OS
 
 on:
   repository_dispatch:
-    types: [run-pytest-cov]
+    types:
+      - run-pytest-cov
 
 jobs:
   test-and-coverage:
@@ -65,12 +66,12 @@ jobs:
           echo "Raw ghpage_branch value: ${{ github.event.client_payload.ghpage_branch }}"
 
           # 配列の最初の要素を取得
-          ghpages_branch=${{ github.event.client_payload.ghpage_branch[0] }}
+          ghpages_branch="${{ github.event.client_payload.ghpage_branch[0] }}"
 
           echo "Extracted ghpages_branch: $ghpages_branch"
 
           # GITHUB_OUTPUTに出力
-          echo "ghpages_branch=$ghpages_branch" >> $GITHUB_OUTPUT
+          echo "ghpages_branch=$ghpages_branch" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
@@ -184,56 +185,56 @@ jobs:
         env:
           UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
-          git fetch origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}:${{ needs.test-and-coverage.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-coverage.outputs.ghpages_branch }}
-          git checkout ${{ needs.test-and-coverage.outputs.ghpages_branch }}
-          git pull origin ${{ needs.test-and-coverage.outputs.ghpages_branch }} --rebase
+          git fetch origin "${{ needs.test-and-coverage.outputs.ghpages_branch }}":"${{ needs.test-and-coverage.outputs.ghpages_branch }}" || git checkout -b "${{ needs.test-and-coverage.outputs.ghpages_branch }}"
+          git checkout "${{ needs.test-and-coverage.outputs.ghpages_branch }}"
+          git pull origin "${{ needs.test-and-coverage.outputs.ghpages_branch }}" --rebase
 
           changes_made=false
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
           # テスト対象のみを含める
-          for os in $os_list; do
-            for python_version in $python_versions_list; do
-              export CURRENT_OS=$os
-              export CURRENT_PYTHON_VERSION=$python_version
+          for os in ${os_list}; do
+            for python_version in ${python_versions_list}; do
+              export CURRENT_OS="${os}"
+              export CURRENT_PYTHON_VERSION="${python_version}"
               python3 .github/check_exclude_testmon.py
 
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
-                echo "Skipping deployment for OS=$os, Python=$python_version as it is excluded."
+                echo "Skipping deployment for OS=${os}, Python=${python_version} as it is excluded."
                 continue
               fi
 
-              coverage_path="pytest-cov-report/$os/python/$python_version"
-              artifact_path="coverage-results-$os-python-$python_version"
+              coverage_path="pytest-cov-report/${os}/python/${python_version}"
+              artifact_path="coverage-results-${os}-python-${python_version}"
 
-              if [ -d "$artifact_path" ]; then
-                if [ ! -d "$coverage_path" ] || ! diff -r "$artifact_path" "$coverage_path" > /dev/null; then
-                  echo "Changes detected for $os with Python $python_version, updating..."
-                  mkdir -p "$coverage_path"
-                  rm -rf "$coverage_path"
-                  mv "$artifact_path" "$coverage_path"
-                  git add "$coverage_path"
+              if [ -d "${artifact_path}" ]; then
+                if [ ! -d "${coverage_path}" ] || ! diff -r "${artifact_path}" "${coverage_path}" > /dev/null; then
+                  echo "Changes detected for ${os} with Python ${python_version}, updating..."
+                  mkdir -p "${coverage_path}"
+                  rm -rf "${coverage_path}"
+                  mv "${artifact_path}" "${coverage_path}"
+                  git add "${coverage_path}"
                   changes_made=true
                 else
-                  echo "No changes for $os with Python $python_version, skipping..."
+                  echo "No changes for ${os} with Python ${python_version}, skipping..."
                 fi
               else
-                echo "No pytest-cov report found for $os with Python $python_version"
+                echo "No pytest-cov report found for ${os} with Python ${python_version}"
               fi
             done
           done
 
-          if [ "$changes_made" = true ]; then
+          if [ "${changes_made}" = true ]; then
             git commit -m "Update pytest-cov reports on GitHub Pages"
-            if ! git push origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}; then
-              git pull origin ${{ needs.test-and-coverage.outputs.ghpages_branch }} --rebase
-              git push origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}
+            if ! git push origin "${{ needs.test-and-coverage.outputs.ghpages_branch }}"; then
+              git pull origin "${{ needs.test-and-coverage.outputs.ghpages_branch }}" --rebase
+              git push origin "${{ needs.test-and-coverage.outputs.ghpages_branch }}"
             fi
-            echo "deploy_status=updated" >> $GITHUB_OUTPUT
+            echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
           else
             echo "No changes to commit"
-            echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
+            echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate URL list
@@ -242,38 +243,42 @@ jobs:
           UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
           IFS='/' read -ra REPO_INFO <<< "$GITHUB_REPOSITORY"
-          REPO_OWNER=${REPO_INFO[0]}
-          REPO_NAME=${REPO_INFO[1]}
+          REPO_OWNER="${REPO_INFO[0]}"
+          REPO_NAME="${REPO_INFO[1]}"
           URL_LIST=""
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
           # テスト対象のみにURLを生成
-          for os in $os_list; do
-            for python_version in $python_versions_list; do
-              export CURRENT_OS=$os
-              export CURRENT_PYTHON_VERSION=$python_version
+          for os in ${os_list}; do
+            for python_version in ${python_versions_list}; do
+              export CURRENT_OS="${os}"
+              export CURRENT_PYTHON_VERSION="${python_version}"
               python3 .github/check_exclude_testmon.py
 
               # 環境ファイルから最新の値を読み込む
-              if [ -f "$GITHUB_ENV" ]; then
-                source "$GITHUB_ENV"
+              if [ -f "${GITHUB_ENV}" ]; then
+                # shellcheck disable=SC1090,SC1091
+                # GitHub Actionsの環境ファイルを読み込むため、動的なsourceを許可
+                source "${GITHUB_ENV}"
               fi
 
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
-                echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
+                echo "Skipping URL generation for OS=${os}, Python=${python_version} as it is excluded."
                 continue
               else
-                coverage_path="pytest-cov-report/$os/python/$python_version"
+                coverage_path="pytest-cov-report/${os}/python/${python_version}"
                 URL_LIST="${URL_LIST}${coverage_path}:\n\
                 https://${REPO_OWNER}.github.io/${REPO_NAME}/${coverage_path}/index.html\n\n"
               fi
             done
           done
 
-          echo "url_list<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$URL_LIST" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "url_list<<EOF"
+            echo -e "${URL_LIST}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Send LINE Notify (Updated)
         if: steps.check_and_deploy.outputs.deploy_status == 'updated'
