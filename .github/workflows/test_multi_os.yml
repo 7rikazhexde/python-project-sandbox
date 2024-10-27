@@ -141,6 +141,14 @@ jobs:
         uses: actions/download-artifact@v4.1.8
       - name: Update README in coverage branch
         run: |
+          # GitHub Actionsの変数形式で設定
+          os='${{ needs.set_variables.outputs.os }}'
+          python_versions='${{ needs.set_variables.outputs.versions_python }}'
+
+          # JSON形式の文字列から配列を作成
+          os_list=$(echo "$os" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
+          python_versions_list=$(echo "$python_versions" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
+
           # "coverage" ブランチが存在する場合はチェックアウト、存在しない場合は新規作成する
           if git ls-remote --heads origin coverage | grep coverage; then
             git checkout coverage
@@ -181,8 +189,8 @@ jobs:
             fi
 
             # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
-            for os in macos-latest ubuntu-latest windows-latest; do
-              for version in 3.11 3.12; do
+            for os in $os_list; do
+              for version in $python_versions_list; do
                 echo "## Coverage Report (os: $os / python-version: $version)"
                 if [ -f "coverage-data-$os-$version/summary-report.md" ]; then
                   sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-$os-$version/summary-report.md" |
