@@ -83,10 +83,10 @@ jobs:
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
           git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $testmon_path/.testmondata || true
-          if [ -f $testmon_path/.testmondata ]; then
+          if [ -f "${testmon_path}/.testmondata" ]; then
             echo "Previous testmon data found. Moving to current directory."
-            mv $testmon_path/.testmondata .testmondata
-            rm -rf $testmon_path
+            mv "${testmon_path}/.testmondata" ".testmondata"
+            rm -rf "${testmon_path}"
           else
             echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
@@ -98,15 +98,15 @@ jobs:
         run: |
           echo "Running tests with testmon..."
           output=$(poetry run pytest --testmon -v)
-          echo "$output"
+          echo "${output}"
 
           {
             echo "testmon_output<<EOF"
-            echo "$output"
+            echo "${output}"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-          if echo "$output" | grep -q "collected 0 items"; then
+          if echo "${output}" | grep -q "collected 0 items"; then
            echo "No tests executed. Skipping deployment and further workflows."
            echo "tests_executed=false" >> "$GITHUB_OUTPUT"
           else
@@ -216,7 +216,7 @@ jobs:
           echo "Updated testmon JSON: $updated_testmon_json"
           echo "Exclude testmon JSON: $exclude_testmon_json"
 
-          if [ "$changes_made" = true ]; then
+          if [ "${changes_made}" = true ]; then
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages" || echo "No changes to commit"
             git push origin "${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}" || echo "No changes to push"
@@ -226,8 +226,8 @@ jobs:
             echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
           fi
 
-          echo "updated_testmon_json=$updated_testmon_json" >> "$GITHUB_OUTPUT"
-          echo "exclude_testmon_json=$exclude_testmon_json" >> "$GITHUB_OUTPUT"
+          echo "updated_testmon_json=${updated_testmon_json}" >> "$GITHUB_OUTPUT"
+          echo "exclude_testmon_json=${exclude_testmon_json}" >> "$GITHUB_OUTPUT"
 
       - name: List deployed files
         if: always()
@@ -262,9 +262,9 @@ jobs:
 
           ghpage_branch=$(echo '${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}' | jq -R -c '. | [.]')
 
-          echo "os_list: $os_list"
-          echo "python_versions: $python_versions"
-          echo "ghpage_branch: $ghpage_branch"
+          echo "os_list: ${os_list}"
+          echo "python_versions: ${python_versions}"
+          echo "ghpage_branch: ${ghpage_branch}"
 
           # GitHub Actions出力に渡す
           {
