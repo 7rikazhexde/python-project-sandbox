@@ -103,12 +103,12 @@ jobs:
         shell: bash
         run: |
           echo "Fetching testmon data..."
-          git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
+          git fetch origin "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}":"${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" || true
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $testmon_path/.testmondata || true
-          if [ -f $testmon_path/.testmondata ]; then
+          git checkout "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" -- "${testmon_path}/.testmondata" || true
+          if [ -f "${testmon_path}/.testmondata" ]; then
             echo "Testmon data found. Moving to current directory."
-            mv $testmon_path/.testmondata .testmondata
+            mv "${testmon_path}/.testmondata" ".testmondata"
           else
             echo "No testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
@@ -131,11 +131,11 @@ jobs:
       - name: Run tests with pytest-cov
         if: steps.check_tests.outputs.skip_tests != 'true'
         id: pytest-cov
+        shell: bash
         run: |
           coverage_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          mkdir -p "$coverage_path"
-          poetry run pytest --cov=project_a --cov-report=html:$coverage_path
-        shell: bash
+          mkdir -p "${coverage_path}"
+          poetry run pytest --cov=project_a --cov-report="html:${coverage_path}"
 
       - name: Upload pytest-cov results
         if: steps.check_tests.outputs.skip_tests != 'true'
