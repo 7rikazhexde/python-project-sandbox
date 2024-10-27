@@ -81,7 +81,7 @@ jobs:
         run: |
           echo "Fetching previous testmon data..."
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
-          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
           git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
           if [ -f $folder_name/.testmondata ]; then
             echo "Previous testmon data found. Moving to current directory."
@@ -116,7 +116,7 @@ jobs:
         shell: bash
         run: |
           echo "Creating testmon directory..."
-          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
           mkdir -p "$folder_name"
           echo "Moving .testmondata file..."
           if [ -f ".testmondata" ]; then
@@ -185,8 +185,8 @@ jobs:
 
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              folder_name="testmon-data/${os}/python/${python_version}"
-              artifact_folder="downloaded-artifacts/testmon-data/${os}/python/${python_version}"
+              folder_name="testmon-data_${os}_python_${python_version}"
+              artifact_folder="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
               echo "Processing $os with Python $python_version..."
               if [ -d "$artifact_folder" ]; then
                 if [ -f "${artifact_folder}/.testmondata" ]; then

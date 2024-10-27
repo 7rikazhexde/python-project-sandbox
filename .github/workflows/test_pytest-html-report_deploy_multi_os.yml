@@ -103,7 +103,7 @@ jobs:
         run: |
           echo "Fetching testmon data..."
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
-          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
+          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
           git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
           if [ -f $folder_name/.testmondata ]; then
             echo "Testmon data found. Moving to current directory."
@@ -204,20 +204,20 @@ jobs:
                 continue
               fi
 
-              folder_name="pytest-html-report_${os}_python_${python_version}"
+              folder_name="pytest-html-report/${os}/python/${python_version}"
               mkdir -p $folder_name # フォルダを作成
 
               # テスト結果のHTMLファイルが存在するか確認
-              if [ -f test-results-$os-python-$python_version/report_page.html ]; then
+              if [ -f test-results/$os/python/$python_version/report_page.html ]; then
                 # HTMLファイルに差分があるかどうかを確認
-                if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os-python-$python_version/report_page.html $folder_name/report_page.html > /dev/null; then
+                if [ ! -f $folder_name/report_page.html ] || ! diff test-results/$os/python/$python_version/report_page.html $folder_name/report_page.html > /dev/null; then
                   echo "Changes detected for $os with Python $python_version, updating..."
-                  mv test-results-$os-python-$python_version/report_page.html $folder_name/
+                  mv test-results/$os/python/$python_version/report_page.html $folder_name/
 
                   # assets ディレクトリも存在する場合はコピー
-                  if [ -d test-results-$os-python-$python_version/assets ]; then
+                  if [ -d test-results/$os/python/$python_version/assets ]; then
                     rm -rf $folder_name/assets
-                    cp -r test-results-$os-python-$python_version/assets $folder_name/
+                    cp -r test-results/$os/python/$python_version/assets $folder_name/
                   fi
                   git add $folder_name
                   changes_made=true
@@ -274,8 +274,8 @@ jobs:
                 continue
               else
                 # 対象の場合はURLリストに追加
-                URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
-                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
+                URL_LIST="${URL_LIST}pytest-html-report/${os}/python/${python_version}:\n\
+                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report/${os}/python/${python_version}/report_page.html\n\n"
               fi
             done
           done

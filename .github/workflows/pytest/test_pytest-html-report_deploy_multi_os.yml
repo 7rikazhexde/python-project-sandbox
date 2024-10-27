@@ -1,4 +1,4 @@
-name: pytest-cov Report and Deploy Multi-OS
+name: pytest-html Report and Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
@@ -10,7 +10,7 @@ name: pytest-cov Report and Deploy Multi-OS
 # 3. testmon データの取得とテストの実行確認
 #    - testmon の結果に基づき、実行対象外の場合はテストをスキップ
 #    - スキップ対象の判定は .github/check_exclude_testmon.py(mainブランチ内) で行う
-# 4. pytest-cov を使用してカバレッジレポートを生成
+# 4. pytest-html を使用して HTML レポートを生成
 #    - 各 OS 環境と Python バージョンごとに個別のレポートを生成
 #    - スキップ対象は pytest-cov を実行しない
 #    - スキップ対象の判定は .github/check_exclude_testmon.py(ghpagesブランチ内) で行う
@@ -35,10 +35,10 @@ name: pytest-cov Report and Deploy Multi-OS
 
 on:
   repository_dispatch:
-    types: [run-pytest-cov]
+    types: [run-pytest-html]
 
 jobs:
-  test-and-coverage:
+  test-and-report:
     strategy:
       matrix:
         os: ${{ github.event.client_payload.os }}
@@ -48,7 +48,7 @@ jobs:
       TZ: "Asia/Tokyo"
     outputs:
       ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
-      skip_tests: ${{ steps.check_tests.outputs.skip_tests}}
+      skip_tests: ${{ steps.check_tests.outputs.skip_tests }}
     permissions:
       contents: write
       pull-requests: write
@@ -103,7 +103,7 @@ jobs:
         run: |
           echo "Fetching testmon data..."
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
-          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
           git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
           if [ -f $folder_name/.testmondata ]; then
             echo "Testmon data found. Moving to current directory."
@@ -127,35 +127,35 @@ jobs:
         run: |
           echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
 
-      - name: Run tests with pytest-cov
+      - name: Run tests with pytest-html
         if: steps.check_tests.outputs.skip_tests != 'true'
-        id: pytest-cov
+        id: pytest-html
         run: |
-          mkdir -p htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
-          poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
+          mkdir -p test_results_${{ matrix.os }}_python_${{ matrix.python-version }}
+          poetry run pytest --html=test_results_${{ matrix.os }}_python_${{ matrix.python-version }}/report_page.html --css=css/style.css
         shell: bash
 
-      - name: Upload pytest-cov results
+      - name: Upload pytest-html results
         if: steps.check_tests.outputs.skip_tests != 'true'
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
-          path: htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
+          name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: test_results_${{ matrix.os }}_python_${{ matrix.python-version }}
 
   check_all_tests:
-    if: needs.test-and-coverage.outputs.skip_tests != 'true'
-    needs: test-and-coverage
+    if: needs.test-and-report.outputs.skip_tests != 'true'
+    needs: test-and-report
     runs-on: ubuntu-latest
     steps:
       - name: Check test results
-        if: contains(needs.test-and-coverage.result, 'failure')
+        if: contains(needs.test-and-report.result, 'failure')
         run: |
           echo "Some tests failed. Please check the test results and fix any issues before merging."
           exit 1
 
   deploy:
-    if: needs.test-and-coverage.outputs.skip_tests != 'true' && needs.check_all_tests.result == 'success'
-    needs: [test-and-coverage, check_all_tests]
+    if: needs.test-and-report.outputs.skip_tests != 'true' && needs.check_all_tests.result == 'success'
+    needs: [test-and-report, check_all_tests]
     runs-on: ubuntu-latest
     outputs:
       deploy_status: ${{ steps.check_and_deploy.outputs.deploy_status }}
@@ -170,7 +170,7 @@ jobs:
         with:
           python-version: '3.12'
 
-      - name: Download pytest-cov artifacts
+      - name: Download pytest-html artifacts
         uses: actions/download-artifact@v4.1.8
 
       - name: Setup Git
@@ -183,48 +183,60 @@ jobs:
         env:
           UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
-          git fetch origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}:${{ needs.test-and-coverage.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-coverage.outputs.ghpages_branch }}
-          git checkout ${{ needs.test-and-coverage.outputs.ghpages_branch }}
-          git pull origin ${{ needs.test-and-coverage.outputs.ghpages_branch }} --rebase
+          git fetch origin ${{ needs.test-and-report.outputs.ghpages_branch }}:${{ needs.test-and-report.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-report.outputs.ghpages_branch }}
+          git checkout ${{ needs.test-and-report.outputs.ghpages_branch }}
+          git pull origin ${{ needs.test-and-report.outputs.ghpages_branch }} --rebase
 
           changes_made=false
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
-          # テスト対象のみを含める
+          # テスト対象を確認するためのPythonスクリプトを実行
           for os in $os_list; do
             for python_version in $python_versions_list; do
               export CURRENT_OS=$os
               export CURRENT_PYTHON_VERSION=$python_version
               python3 .github/check_exclude_testmon.py
 
+              # skip_tests が true の場合はそのOSとPythonバージョンをスキップ
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
                 echo "Skipping deployment for OS=$os, Python=$python_version as it is excluded."
                 continue
               fi
 
-              folder_name="pytest-cov-report/${os}/python/${python_version}"
-              if [ -d coverage-results/$os/python/$python_version ]; then
-                if [ ! -d $folder_name ] || ! diff -r coverage-results/$os/python/$python_version $folder_name > /dev/null; then
+              folder_name="pytest-html-report_${os}_python_${python_version}"
+              mkdir -p $folder_name # フォルダを作成
+
+              # テスト結果のHTMLファイルが存在するか確認
+              if [ -f test-results-$os-python-$python_version/report_page.html ]; then
+                # HTMLファイルに差分があるかどうかを確認
+                if [ ! -f $folder_name/report_page.html ] || ! diff test-results-$os-python-$python_version/report_page.html $folder_name/report_page.html > /dev/null; then
                   echo "Changes detected for $os with Python $python_version, updating..."
-                  rm -rf $folder_name
-                  mv coverage-results/$os/python/$python_version $folder_name
+                  mv test-results-$os-python-$python_version/report_page.html $folder_name/
+
+                  # assets ディレクトリも存在する場合はコピー
+                  if [ -d test-results-$os-python-$python_version/assets ]; then
+                    rm -rf $folder_name/assets
+                    cp -r test-results-$os-python-$python_version/assets $folder_name/
+                  fi
                   git add $folder_name
                   changes_made=true
                 else
                   echo "No changes for $os with Python $python_version, skipping..."
                 fi
               else
-                echo "No pytest-cov report found for $os with Python $python_version"
+                echo "No pytest-html report found for $os with Python $python_version"
               fi
             done
           done
 
+          # 変更があった場合のみコミットとプッシュを行う
           if [ "$changes_made" = true ]; then
-            git commit -m "Update pytest-cov reports on GitHub Pages"
-            if ! git push origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}; then
-              git pull origin ${{ needs.test-and-coverage.outputs.ghpages_branch }} --rebase
-              git push origin ${{ needs.test-and-coverage.outputs.ghpages_branch }}
+            git commit -m "Update pytest-html reports on GitHub Pages"
+            # コミットとプッシュが失敗した場合の対処
+            if ! git push origin ${{ needs.test-and-report.outputs.ghpages_branch }}; then
+              git pull origin ${{ needs.test-and-report.outputs.ghpages_branch }} --rebase
+              git push origin ${{ needs.test-and-report.outputs.ghpages_branch }}
             fi
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
           else
@@ -244,7 +256,7 @@ jobs:
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
-          # テスト対象のみにURLを生成
+          # テスト対象のOSとPythonバージョンごとにチェックしてURLリストを生成
           for os in $os_list; do
             for python_version in $python_versions_list; do
               export CURRENT_OS=$os
@@ -256,12 +268,14 @@ jobs:
                 source "$GITHUB_ENV"
               fi
 
+              # skip_tests が true ならばURLをスキップ
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
                 echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
                 continue
               else
-                URL_LIST="${URL_LIST}pytest-cov-report/${os}/python/${python_version}:\n\
-                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report/${os}/python/${python_version}/index.html\n\n"
+                # 対象の場合はURLリストに追加
+                URL_LIST="${URL_LIST}pytest-html-report_${os}_python_${python_version}:\n\
+                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report_${os}_python_${python_version}/report_page.html\n\n"
               fi
             done
           done
@@ -275,7 +289,7 @@ jobs:
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          message="pytest-cov report deployment completed. Changes were made.
+          message="pytest-html report deployment completed. Changes were made.
 
           Check URLs:
           ${{ steps.generate_url_list.outputs.url_list }}"
@@ -289,7 +303,7 @@ jobs:
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
-          message="pytest-cov report check completed. No changes were necessary."
+          message="pytest-html report check completed. No changes were necessary."
 
           curl -X POST https://notify-api.line.me/api/notify \
             -H "Authorization: Bearer $LINE_NOTIFY_TOKEN"
