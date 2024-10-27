@@ -103,7 +103,7 @@ jobs:
         run: |
           echo "Fetching testmon data..."
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
-          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          folder_name="testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}"
           git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
           if [ -f $folder_name/.testmondata ]; then
             echo "Testmon data found. Moving to current directory."
@@ -203,12 +203,12 @@ jobs:
                 continue
               fi
 
-              folder_name="pytest-cov-report/${os}/python/${python_version}"
-              if [ -d coverage-results/$os/python/$python_version ]; then
-                if [ ! -d $folder_name ] || ! diff -r coverage-results/$os/python/$python_version $folder_name > /dev/null; then
+              folder_name="pytest-cov-report_${os}_python_${python_version}"
+              if [ -d coverage-results-$os-python-$python_version ]; then
+                if [ ! -d $folder_name ] || ! diff -r coverage-results-$os-python-$python_version $folder_name > /dev/null; then
                   echo "Changes detected for $os with Python $python_version, updating..."
                   rm -rf $folder_name
-                  mv coverage-results/$os/python/$python_version $folder_name
+                  mv coverage-results-$os-python-$python_version $folder_name
                   git add $folder_name
                   changes_made=true
                 else
@@ -260,8 +260,8 @@ jobs:
                 echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
                 continue
               else
-                URL_LIST="${URL_LIST}pytest-cov-report/${os}/python/${python_version}:\n\
-                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report/${os}/python/${python_version}/index.html\n\n"
+                URL_LIST="${URL_LIST}pytest-cov-report_${os}_python_${python_version}:\n\
+                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report_${os}_python_${python_version}/index.html\n\n"
               fi
             done
           done
