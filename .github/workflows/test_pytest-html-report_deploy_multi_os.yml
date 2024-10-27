@@ -103,11 +103,11 @@ jobs:
         run: |
           echo "Fetching testmon data..."
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
-          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
-          if [ -f $folder_name/.testmondata ]; then
+          testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $testmon_path/.testmondata || true
+          if [ -f $testmon_path/.testmondata ]; then
             echo "Testmon data found. Moving to current directory."
-            mv $folder_name/.testmondata .testmondata
+            mv $testmon_path/.testmondata .testmondata
           else
             echo "No testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
@@ -131,8 +131,9 @@ jobs:
         if: steps.check_tests.outputs.skip_tests != 'true'
         id: pytest-html
         run: |
-          mkdir -p test_results_${{ matrix.os }}_python_${{ matrix.python-version }}
-          poetry run pytest --html=test_results_${{ matrix.os }}_python_${{ matrix.python-version }}/report_page.html --css=css/style.css
+          report_path="test_results/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          mkdir -p "$report_path"
+          poetry run pytest --html=$report_path/report_page.html --css=css/style.css
         shell: bash
 
       - name: Upload pytest-html results
@@ -140,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@v4.4.3
         with:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
-          path: test_results_${{ matrix.os }}_python_${{ matrix.python-version }}
+          path: test_results/${{ matrix.os }}/python/${{ matrix.python-version }}
 
   check_all_tests:
     if: needs.test-and-report.outputs.skip_tests != 'true'
@@ -204,22 +205,23 @@ jobs:
                 continue
               fi
 
-              folder_name="pytest-html-report/${os}/python/${python_version}"
-              mkdir -p $folder_name # フォルダを作成
+              html_path="pytest-html-report/$os/python/$python_version"
+              mkdir -p "$html_path"
 
               # テスト結果のHTMLファイルが存在するか確認
-              if [ -f test-results/$os/python/$python_version/report_page.html ]; then
+              artifact_path="test-results-$os-python-$python_version"
+              if [ -f "$artifact_path/report_page.html" ]; then
                 # HTMLファイルに差分があるかどうかを確認
-                if [ ! -f $folder_name/report_page.html ] || ! diff test-results/$os/python/$python_version/report_page.html $folder_name/report_page.html > /dev/null; then
+                if [ ! -f "$html_path/report_page.html" ] || ! diff "$artifact_path/report_page.html" "$html_path/report_page.html" > /dev/null; then
                   echo "Changes detected for $os with Python $python_version, updating..."
-                  mv test-results/$os/python/$python_version/report_page.html $folder_name/
+                  mv "$artifact_path/report_page.html" "$html_path/"
 
                   # assets ディレクトリも存在する場合はコピー
-                  if [ -d test-results/$os/python/$python_version/assets ]; then
-                    rm -rf $folder_name/assets
-                    cp -r test-results/$os/python/$python_version/assets $folder_name/
+                  if [ -d "$artifact_path/assets" ]; then
+                    rm -rf "$html_path/assets"
+                    cp -r "$artifact_path/assets" "$html_path/"
                   fi
-                  git add $folder_name
+                  git add "$html_path"
                   changes_made=true
                 else
                   echo "No changes for $os with Python $python_version, skipping..."
@@ -274,8 +276,9 @@ jobs:
                 continue
               else
                 # 対象の場合はURLリストに追加
-                URL_LIST="${URL_LIST}pytest-html-report/${os}/python/${python_version}:\n\
-                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-html-report/${os}/python/${python_version}/report_page.html\n\n"
+                report_url="pytest-html-report/$os/python/$python_version"
+                URL_LIST="${URL_LIST}${report_url}:\n\
+                https://${REPO_OWNER}.github.io/${REPO_NAME}/${report_url}/report_page.html\n\n"
               fi
             done
           done
@@ -306,5 +309,5 @@ jobs:
           message="pytest-html report check completed. No changes were necessary."
 
           curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN"
+            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
             -F "message=${message}"

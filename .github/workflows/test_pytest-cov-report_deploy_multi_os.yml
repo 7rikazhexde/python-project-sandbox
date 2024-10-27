@@ -103,11 +103,11 @@ jobs:
         run: |
           echo "Fetching testmon data..."
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
-          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
-          if [ -f $folder_name/.testmondata ]; then
+          testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $testmon_path/.testmondata || true
+          if [ -f $testmon_path/.testmondata ]; then
             echo "Testmon data found. Moving to current directory."
-            mv $folder_name/.testmondata .testmondata
+            mv $testmon_path/.testmondata .testmondata
           else
             echo "No testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
@@ -131,8 +131,9 @@ jobs:
         if: steps.check_tests.outputs.skip_tests != 'true'
         id: pytest-cov
         run: |
-          mkdir -p htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
-          poetry run pytest --cov=project_a --cov-report=html:htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
+          coverage_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          mkdir -p "$coverage_path"
+          poetry run pytest --cov=project_a --cov-report=html:$coverage_path
         shell: bash
 
       - name: Upload pytest-cov results
@@ -140,7 +141,7 @@ jobs:
         uses: actions/upload-artifact@v4.4.3
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
-          path: htmlcov_${{ matrix.os }}_python_${{ matrix.python-version }}
+          path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
 
   check_all_tests:
     if: needs.test-and-coverage.outputs.skip_tests != 'true'
@@ -203,13 +204,16 @@ jobs:
                 continue
               fi
 
-              folder_name="pytest-cov-report/${os}/python/${python_version}"
-              if [ -d coverage-results/$os/python/$python_version ]; then
-                if [ ! -d $folder_name ] || ! diff -r coverage-results/$os/python/$python_version $folder_name > /dev/null; then
+              coverage_path="pytest-cov-report/$os/python/$python_version"
+              artifact_path="coverage-results-$os-python-$python_version"
+
+              if [ -d "$artifact_path" ]; then
+                if [ ! -d "$coverage_path" ] || ! diff -r "$artifact_path" "$coverage_path" > /dev/null; then
                   echo "Changes detected for $os with Python $python_version, updating..."
-                  rm -rf $folder_name
-                  mv coverage-results/$os/python/$python_version $folder_name
-                  git add $folder_name
+                  mkdir -p "$coverage_path"
+                  rm -rf "$coverage_path"
+                  mv "$artifact_path" "$coverage_path"
+                  git add "$coverage_path"
                   changes_made=true
                 else
                   echo "No changes for $os with Python $python_version, skipping..."
@@ -260,8 +264,9 @@ jobs:
                 echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
                 continue
               else
-                URL_LIST="${URL_LIST}pytest-cov-report/${os}/python/${python_version}:\n\
-                https://${REPO_OWNER}.github.io/${REPO_NAME}/pytest-cov-report/${os}/python/${python_version}/index.html\n\n"
+                coverage_path="pytest-cov-report/$os/python/$python_version"
+                URL_LIST="${URL_LIST}${coverage_path}:\n\
+                https://${REPO_OWNER}.github.io/${REPO_NAME}/${coverage_path}/index.html\n\n"
               fi
             done
           done
@@ -292,5 +297,5 @@ jobs:
           message="pytest-cov report check completed. No changes were necessary."
 
           curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN"
+            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
             -F "message=${message}"
