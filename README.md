@@ -24,7 +24,7 @@ This repository generates test coverage results using [Pytest Coverage Comment](
 
 ## Pytest Reports
 
-[![Pytest Status](https://img.shields.io/badge/Pytest_Report-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage)
+[![Pytest Status](https://img.shields.io/badge/Pytest_Report-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages)
 
 This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and [pytest-cov](https://pypi.org/project/pytest-cov/) reports to GitHub Pages based on the [execution results](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages/testmon-data) from [pytest-testmon](https://pypi.org/project/pytest-testmon/).
 
