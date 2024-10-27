@@ -35,7 +35,8 @@ name: pytest-html Report and Deploy Multi-OS
 
 on:
   repository_dispatch:
-    types: [run-pytest-html]
+    types:
+      - run-pytest-html
 
 jobs:
   test-and-report:
@@ -70,7 +71,7 @@ jobs:
           echo "Extracted ghpages_branch: $ghpages_branch"
 
           # GITHUB_OUTPUTに出力
-          echo "ghpages_branch=$ghpages_branch" >> $GITHUB_OUTPUT
+          echo "ghpages_branch=$ghpages_branch" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
@@ -184,44 +185,44 @@ jobs:
         env:
           UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
-          git fetch origin ${{ needs.test-and-report.outputs.ghpages_branch }}:${{ needs.test-and-report.outputs.ghpages_branch }} || git checkout -b ${{ needs.test-and-report.outputs.ghpages_branch }}
-          git checkout ${{ needs.test-and-report.outputs.ghpages_branch }}
-          git pull origin ${{ needs.test-and-report.outputs.ghpages_branch }} --rebase
+          git fetch origin "${{ needs.test-and-report.outputs.ghpages_branch }}":"${{ needs.test-and-report.outputs.ghpages_branch }}" || git checkout -b "${{ needs.test-and-report.outputs.ghpages_branch }}"
+          git checkout "${{ needs.test-and-report.outputs.ghpages_branch }}"
+          git pull origin "${{ needs.test-and-report.outputs.ghpages_branch }}" --rebase
 
           changes_made=false
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
           # テスト対象を確認するためのPythonスクリプトを実行
-          for os in $os_list; do
-            for python_version in $python_versions_list; do
-              export CURRENT_OS=$os
-              export CURRENT_PYTHON_VERSION=$python_version
+          for os in ${os_list}; do
+            for python_version in ${python_versions_list}; do
+              export CURRENT_OS="${os}"
+              export CURRENT_PYTHON_VERSION="${python_version}"
               python3 .github/check_exclude_testmon.py
 
               # skip_tests が true の場合はそのOSとPythonバージョンをスキップ
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
-                echo "Skipping deployment for OS=$os, Python=$python_version as it is excluded."
+                echo "Skipping deployment for OS=${os}, Python=${python_version} as it is excluded."
                 continue
               fi
 
-              html_path="pytest-html-report/$os/python/$python_version"
+              html_path="pytest-html-report/${os}/python/${python_version}"
               mkdir -p "$html_path"
 
               # テスト結果のHTMLファイルが存在するか確認
-              artifact_path="test-results-$os-python-$python_version"
+              artifact_path="test-results-${os}-python-${python_version}"
               if [ -f "$artifact_path/report_page.html" ]; then
                 # HTMLファイルに差分があるかどうかを確認
-                if [ ! -f "$html_path/report_page.html" ] || ! diff "$artifact_path/report_page.html" "$html_path/report_page.html" > /dev/null; then
-                  echo "Changes detected for $os with Python $python_version, updating..."
-                  mv "$artifact_path/report_page.html" "$html_path/"
+                if [ ! -f "${html_path}/report_page.html" ] || ! diff "${artifact_path}/report_page.html" "${html_path}/report_page.html" > /dev/null; then
+                  echo "Changes detected for ${os} with Python ${python_version}, updating..."
+                  mv "${artifact_path}/report_page.html" "${html_path}/"
 
                   # assets ディレクトリも存在する場合はコピー
-                  if [ -d "$artifact_path/assets" ]; then
-                    rm -rf "$html_path/assets"
-                    cp -r "$artifact_path/assets" "$html_path/"
+                  if [ -d "${artifact_path}/assets" ]; then
+                    rm -rf "${html_path}/assets"
+                    cp -r "${artifact_path}/assets" "${html_path}/"
                   fi
-                  git add "$html_path"
+                  git add "${html_path}"
                   changes_made=true
                 else
                   echo "No changes for $os with Python $python_version, skipping..."
@@ -233,17 +234,17 @@ jobs:
           done
 
           # 変更があった場合のみコミットとプッシュを行う
-          if [ "$changes_made" = true ]; then
+          if [ "${changes_made}" = true ]; then
             git commit -m "Update pytest-html reports on GitHub Pages"
             # コミットとプッシュが失敗した場合の対処
-            if ! git push origin ${{ needs.test-and-report.outputs.ghpages_branch }}; then
-              git pull origin ${{ needs.test-and-report.outputs.ghpages_branch }} --rebase
-              git push origin ${{ needs.test-and-report.outputs.ghpages_branch }}
+            if ! git push origin "${{ needs.test-and-report.outputs.ghpages_branch }}"; then
+              git pull origin "${{ needs.test-and-report.outputs.ghpages_branch }}" --rebase
+              git push origin "${{ needs.test-and-report.outputs.ghpages_branch }}"
             fi
-            echo "deploy_status=updated" >> $GITHUB_OUTPUT
+            echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
           else
             echo "No changes to commit"
-            echo "deploy_status=unchanged" >> $GITHUB_OUTPUT
+            echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate URL list
@@ -252,40 +253,44 @@ jobs:
           UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
         run: |
           IFS='/' read -ra REPO_INFO <<< "$GITHUB_REPOSITORY"
-          REPO_OWNER=${REPO_INFO[0]}
-          REPO_NAME=${REPO_INFO[1]}
+          REPO_OWNER="${REPO_INFO[0]}"
+          REPO_NAME="${REPO_INFO[1]}"
           URL_LIST=""
           os_list="${{ join(github.event.client_payload.os, ' ') }}"
           python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
           # テスト対象のOSとPythonバージョンごとにチェックしてURLリストを生成
-          for os in $os_list; do
-            for python_version in $python_versions_list; do
-              export CURRENT_OS=$os
-              export CURRENT_PYTHON_VERSION=$python_version
+          for os in ${os_list}; do
+            for python_version in ${python_versions_list}; do
+              export CURRENT_OS="${os}"
+              export CURRENT_PYTHON_VERSION="${python_version}"
               python3 .github/check_exclude_testmon.py
 
               # 環境ファイルから最新の値を読み込む
-              if [ -f "$GITHUB_ENV" ]; then
-                source "$GITHUB_ENV"
+              if [ -f "${GITHUB_ENV}" ]; then
+                # shellcheck disable=SC1090,SC1091
+                # GitHub Actionsの環境ファイルを読み込むため、動的なsourceを許可
+                source "${GITHUB_ENV}"
               fi
 
               # skip_tests が true ならばURLをスキップ
               if [ "$TEST_SHOULD_BE_SKIPPED" = "true" ]; then
-                echo "Skipping URL generation for OS=$os, Python=$python_version as it is excluded."
+                echo "Skipping URL generation for OS=${os}, Python=${python_version} as it is excluded."
                 continue
               else
                 # 対象の場合はURLリストに追加
-                report_url="pytest-html-report/$os/python/$python_version"
+                report_url="pytest-html-report/${os}/python/${python_version}"
                 URL_LIST="${URL_LIST}${report_url}:\n\
                 https://${REPO_OWNER}.github.io/${REPO_NAME}/${report_url}/report_page.html\n\n"
               fi
             done
           done
 
-          echo "url_list<<EOF" >> $GITHUB_OUTPUT
-          echo -e "$URL_LIST" >> $GITHUB_OUTPUT
-          echo "EOF" >> $GITHUB_OUTPUT
+          {
+            echo "url_list<<EOF"
+            echo -e "${URL_LIST}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
 
       - name: Send LINE Notify (Updated)
         if: steps.check_and_deploy.outputs.deploy_status == 'updated'

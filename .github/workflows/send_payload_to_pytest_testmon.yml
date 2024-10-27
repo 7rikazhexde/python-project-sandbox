@@ -3,7 +3,7 @@ name: Use Send Payload Action to Pytest Testmon
 on:
   push:
     branches:
-      - 'main'
+      - main
 
 jobs:
   test-and-send-dispatch:

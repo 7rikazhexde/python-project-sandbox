@@ -3,7 +3,7 @@ name: Test Multi-OS
 on:
   push:
     branches:
-      - 'main'
+      - main
 
 jobs:
   set_variables:
