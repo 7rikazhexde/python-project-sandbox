@@ -1,5 +1,7 @@
 # Pytest Report
 
+[![pytest-testmon Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-testmon_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-testmon_deploy_multi_os.yml)
+
 This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and [pytest-cov](https://pypi.org/project/pytest-cov/) reports to GitHub Pages based on the [execution results](./testmon-data/) from [pytest-testmon](https://pypi.org/project/pytest-testmon/).
 
 ## pytest-html
