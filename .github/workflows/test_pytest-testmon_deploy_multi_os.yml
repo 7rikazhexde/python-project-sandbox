@@ -81,12 +81,12 @@ jobs:
         run: |
           echo "Fetching previous testmon data..."
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
-          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $folder_name/.testmondata || true
-          if [ -f $folder_name/.testmondata ]; then
+          testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $testmon_path/.testmondata || true
+          if [ -f $testmon_path/.testmondata ]; then
             echo "Previous testmon data found. Moving to current directory."
-            mv $folder_name/.testmondata .testmondata
-            rm -rf $folder_name
+            mv $testmon_path/.testmondata .testmondata
+            rm -rf $testmon_path
           else
             echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
@@ -116,22 +116,22 @@ jobs:
         shell: bash
         run: |
           echo "Creating testmon directory..."
-          folder_name="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          mkdir -p "$folder_name"
+          testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          mkdir -p "$testmon_path"
           echo "Moving .testmondata file..."
           if [ -f ".testmondata" ]; then
-            mv ".testmondata" "$folder_name/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
+            mv ".testmondata" "$testmon_path/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
           else
             echo "Warning: .testmondata file not found in root directory."
           fi
-          echo "Contents of $folder_name:"
-          ls -la "$folder_name"
+          echo "Contents of $testmon_path:"
+          ls -la "$testmon_path"
 
       - name: Upload testmon data
         uses: actions/upload-artifact@v4.4.3
         with:
           name: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}
-          path: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}/.testmondata
+          path: testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}/.testmondata
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 1
@@ -185,23 +185,24 @@ jobs:
 
           for os in $os_list; do
             for python_version in $python_versions_list; do
-              folder_name="testmon-data/${os}/python/${python_version}"
-              artifact_folder="downloaded-artifacts/testmon-data/${os}/python/${python_version}"
+              # 新しいパス構造を反映
+              testmon_path="testmon-data/${os}/python/${python_version}"
+              artifact_path="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
               echo "Processing $os with Python $python_version..."
-              if [ -d "$artifact_folder" ]; then
-                if [ -f "${artifact_folder}/.testmondata" ]; then
+              if [ -d "$artifact_path" ]; then
+                if [ -f "${artifact_path}/.testmondata" ]; then
                   echo "Changes detected for $os with Python $python_version, updating..."
-                  mkdir -p "$folder_name"
-                  cp "${artifact_folder}/.testmondata" "$folder_name/.testmondata"
-                  git add "$folder_name"
+                  mkdir -p "$testmon_path"
+                  cp "${artifact_path}/.testmondata" "$testmon_path/.testmondata"
+                  git add "$testmon_path"
                   changes_made=true
                   updated_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 else
-                  echo "No .testmondata file found in $artifact_folder"
+                  echo "No .testmondata file found in $artifact_path"
                   exclude_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 fi
               else
-                echo "Artifact folder not found: $artifact_folder"
+                echo "Artifact folder not found: $artifact_path"
                 exclude_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
               fi
             done
@@ -216,7 +217,6 @@ jobs:
           if [ "$changes_made" = true ]; then
             echo "Changes made, committing and pushing..."
             git commit -m "Update testmon data on GitHub Pages" || echo "No changes to commit"
-            #git push origin ghpages || echo "No changes to push"
             git push origin ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} || echo "No changes to push"
             echo "deploy_status=updated" >> $GITHUB_OUTPUT
           else
@@ -230,11 +230,9 @@ jobs:
       - name: List deployed files
         if: always()
         run: |
-          #git checkout ghpages
           git checkout ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}
           echo "Deployed testmon data files:"
           find . -name ".testmondata"
-          #echo "Contents of ghpages branch:"
           echo "Contents of ${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }} branch:"
           ls -R
 
