@@ -38,5 +38,5 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
           git add requirements.txt requirements-dev.txt
-          git commit -m "Update requirements files after dependency update" || echo "No changes to commit"
+          git commit -m ":wrench:Update requirements files after dependency update [skip ci]" || echo "No changes to commit"
           git push
