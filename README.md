@@ -16,7 +16,6 @@ An experimental project to test out various tools.
   - [post-commit](#post-commit)
     - [Overview](#overview-1)
     - [Usage](#usage-1)
-    - [pytest-coverage-comment](#pytest-coverage-comment)
 
 ## Pytest Coverages Summary
 
@@ -147,8 +146,3 @@ If you are committing to a project for the first time, create a post-commit scri
    ```bash
    .git/hooks/post-commit
    ```
-
-### pytest-coverage-comment
-
-Use the following actions.
-[pytest-coverage-comment](https://github.com/MishaKav/pytest-coverage-comment#example-usage)
