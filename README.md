@@ -2,11 +2,13 @@
 
 An experimental project to test out various tools.
 
+[![Pytest_Coverages_Summary](https://img.shields.io/badge/Pytest_Coverages_Summary-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage) [![Pytest_Reports](https://img.shields.io/badge/Pytest_Reports-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages)
+
 ## Tabale of contents
 
 - [python-project-sandbox](#python-project-sandbox)
   - [Tabale of contents](#tabale-of-contents)
-  - [Pytest Coverages](#pytest-coverages)
+  - [Pytest Coverages Summary](#pytest-coverages-summary)
   - [Pytest Reports](#pytest-reports)
   - [pre-commit](#pre-commit)
     - [Overview](#overview)
@@ -16,17 +18,13 @@ An experimental project to test out various tools.
     - [Usage](#usage-1)
     - [pytest-coverage-comment](#pytest-coverage-comment)
 
-## Pytest Coverages
-
-[![Coverage Status](https://img.shields.io/badge/Coverage_Data-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage)
+## Pytest Coverages Summary
 
 This repository generates test coverage results using [Pytest Coverage Comment](https://github.com/marketplace/actions/pytest-coverage-comment) and outputs them to the [coverage branch](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage).
 
 ## Pytest Reports
 
-[![Pytest Status](https://img.shields.io/badge/Pytest_Report-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages)
-
-This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and [pytest-cov](https://pypi.org/project/pytest-cov/) reports to GitHub Pages based on the [execution results](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages/testmon-data) from [pytest-testmon](https://pypi.org/project/pytest-testmon/).
+This repository deploys [pytest-html](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-html) and [pytest-cov](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-cov) reports to GitHub Pages based on the [execution results](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages/testmon-data) from [pytest-testmon](https://pypi.org/project/pytest-testmon/).
 
 ## pre-commit
 
