@@ -53,7 +53,6 @@ jobs:
           echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
 
   test:
-    #if: github.actor != 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
     needs: set_variables
     strategy:
       matrix:
@@ -81,7 +80,7 @@ jobs:
         shell: bash
         run: |
           echo "System date: $(date)"
-          echo "TZ environment variable: $TZ"
+          echo "TZ environment variable: ${TZ}"
           python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
       - name: Install poetry
         run: pip install poetry
@@ -102,20 +101,16 @@ jobs:
         run: |
           poetry run task test_ci_xml
           coverage_percentage=$(poetry run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
-          echo "Current coverage: $coverage_percentage%"
-          echo "COVERAGE=$coverage_percentage" >> "$GITHUB_ENV"
+          echo "Current coverage: ${coverage_percentage}%"
+          echo "COVERAGE=${coverage_percentage}" >> "$GITHUB_ENV"
       - name: Check coverage
         shell: bash
-        #if: ${{ env.COVERAGE < 90 }}
-        #run: |
-        #  echo "Test coverage is below 90%. Current coverage: ${{ env.COVERAGE }}%"
-        #  exit 1
         run: |
-          if [ "$COVERAGE" -lt 90 ]; then
-            echo "Test coverage is below 90%. Current coverage: $COVERAGE%"
+          if [ "${COVERAGE}" -lt 90 ]; then
+            echo "Test coverage is below 90%. Current coverage: ${COVERAGE}%"
             exit 1
           else
-            echo "Test coverage is above or equal to 90%. Current coverage: $COVERAGE%"
+            echo "Test coverage is above or equal to 90%. Current coverage: ${COVERAGE}%"
           fi
       - name: Pytest coverage comment
         id: coverageComment
@@ -161,17 +156,16 @@ jobs:
     runs-on: ubuntu-latest
     if: github.actor != 'dependabot[bot]' && !startsWith(github.event.pull_request.title, 'Bump version')
     steps:
-      # https://docs.github.com/ja/actions/security-guides/using-secrets-in-github-actions#creating-secrets-for-an-environment
       - name: Send LINE Notify
         env:
           LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
         run: |
           status="${{ contains(needs.test.result, 'failure') && 'FAILED' || 'SUCCESS' }}"
-          message="'pullrequest_check.yml' workflow completed with status: $status
+          message="'pullrequest_check.yml' workflow completed with status: ${status}
 
           Check URL:
           https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/pullrequest_check.yml"
 
           curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer $LINE_NOTIFY_TOKEN" \
+            -H "Authorization: Bearer ${LINE_NOTIFY_TOKEN}" \
             -F "message=${message}"
