@@ -80,15 +80,15 @@ jobs:
         shell: bash
         run: |
           echo "Fetching previous testmon data..."
-          git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
+          git fetch origin "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}":"${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" || true
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- ${testmon_path}/.testmondata || true
+          git checkout "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" -- "${testmon_path}/.testmondata" || true
           if [ -f "${testmon_path}/.testmondata" ]; then
             echo "Previous testmon data found. Moving to current directory."
             mv "${testmon_path}/.testmondata" ".testmondata"
             rm -rf "${testmon_path}"
           else
-            echo "No previous testmon data found for ${matrix.os} with Python ${matrix.python-version}."
+            echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
         continue-on-error: true
 
