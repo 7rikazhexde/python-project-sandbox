@@ -2,7 +2,7 @@
 
 An experimental project to test out various tools.
 
-[![Pytest_Coverages_Summary](https://img.shields.io/badge/Pytest_Coverages_Summary-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage) [![Pytest_Reports](https://img.shields.io/badge/Pytest_Reports-check%20here-blue.svg)](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages)
+[![Pytest_Coverages_Summary](https://img.shields.io/badge/Pytest_Coverages_Summary-gray?logo=python&logoColor=white)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary) [![Pytest_Reports](https://img.shields.io/badge/Pytest_Reports-gray?logo=python&logoColor=white)](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report)
 
 ## Tabale of contents
 
@@ -17,11 +17,11 @@ An experimental project to test out various tools.
     - [Overview](#overview-1)
     - [Usage](#usage-1)
 
-## Pytest Coverages Summary
+## [Pytest Coverages Summary](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary)
 
 This repository generates test coverage results using [Pytest Coverage Comment](https://github.com/marketplace/actions/pytest-coverage-comment) and outputs them to the [coverage branch](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage).
 
-## Pytest Reports
+## [Pytest Reports](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report)
 
 This repository deploys [pytest-html](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-html) and [pytest-cov](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-cov) reports to GitHub Pages based on the [execution results](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages/testmon-data) from [pytest-testmon](https://pypi.org/project/pytest-testmon/).
 
