@@ -82,13 +82,13 @@ jobs:
           echo "Fetching previous testmon data..."
           git fetch origin ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}:${{ steps.set-ghpages-branch.outputs.ghpages_branch }} || true
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- $testmon_path/.testmondata || true
+          git checkout ${{ steps.set-ghpages-branch.outputs.ghpages_branch }} -- ${testmon_path}/.testmondata || true
           if [ -f "${testmon_path}/.testmondata" ]; then
             echo "Previous testmon data found. Moving to current directory."
             mv "${testmon_path}/.testmondata" ".testmondata"
             rm -rf "${testmon_path}"
           else
-            echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
+            echo "No previous testmon data found for ${matrix.os} with Python ${matrix.python-version}."
           fi
         continue-on-error: true
 
@@ -119,15 +119,15 @@ jobs:
         run: |
           echo "Creating testmon directory..."
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          mkdir -p "$testmon_path"
+          mkdir -p "${testmon_path}"
           echo "Moving .testmondata file..."
           if [ -f ".testmondata" ]; then
-            mv ".testmondata" "$testmon_path/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
+            mv ".testmondata" "${testmon_path}/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
           else
             echo "Warning: .testmondata file not found in root directory."
           fi
-          echo "Contents of $testmon_path:"
-          ls -la "$testmon_path"
+          echo "Contents of ${testmon_path}:"
+          ls -la "${testmon_path}"
 
       - name: Upload testmon data
         uses: actions/upload-artifact@v4.4.3
@@ -168,11 +168,11 @@ jobs:
           os_list='${{ join(github.event.client_payload.os_list, ' ') }}'
           python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
 
-          echo "OS List: $os_list"
-          echo "Python Versions List: $python_versions_list"
+          echo "OS List: ${os_list}"
+          echo "Python Versions List: ${python_versions_list}"
 
-          echo "os_list=$os_list" >> "$GITHUB_ENV"
-          echo "python_versions_list=$python_versions_list" >> "$GITHUB_ENV"
+          echo "os_list=${os_list}" >> "$GITHUB_ENV"
+          echo "python_versions_list=${python_versions_list}" >> "$GITHUB_ENV"
 
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
@@ -185,26 +185,26 @@ jobs:
           updated_testmon_json="["
           exclude_testmon_json="["
 
-          for os in $os_list; do
-            for python_version in $python_versions_list; do
+          for os in ${os_list}; do
+            for python_version in ${python_versions_list}; do
               # 新しいパス構造を反映
               testmon_path="testmon-data/${os}/python/${python_version}"
               artifact_path="downloaded-artifacts/testmon-data_${os}_python_${python_version}"
-              echo "Processing $os with Python $python_version..."
-              if [ -d "$artifact_path" ]; then
+              echo "Processing ${os} with Python ${python_version}..."
+              if [ -d "${artifact_path}" ]; then
                 if [ -f "${artifact_path}/.testmondata" ]; then
-                  echo "Changes detected for $os with Python $python_version, updating..."
-                  mkdir -p "$testmon_path"
-                  cp "${artifact_path}/.testmondata" "$testmon_path/.testmondata"
-                  git add "$testmon_path"
+                  echo "Changes detected for ${os} with Python ${python_version}, updating..."
+                  mkdir -p "${testmon_path}"
+                  cp "${artifact_path}/.testmondata" "${testmon_path}/.testmondata"
+                  git add "${testmon_path}"
                   changes_made=true
                   updated_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 else
-                  echo "No .testmondata file found in $artifact_path"
+                  echo "No .testmondata file found in ${artifact_path}"
                   exclude_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
                 fi
               else
-                echo "Artifact folder not found: $artifact_path"
+                echo "Artifact folder not found: ${artifact_path}"
                 exclude_testmon_json+="{\"os\":\"${os}\", \"python_version\":\"${python_version}\"},"
               fi
             done
@@ -213,8 +213,8 @@ jobs:
           # JSONの末尾のカンマを削除して配列を閉じる
           updated_testmon_json="${updated_testmon_json%,}]"
           exclude_testmon_json="${exclude_testmon_json%,}]"
-          echo "Updated testmon JSON: $updated_testmon_json"
-          echo "Exclude testmon JSON: $exclude_testmon_json"
+          echo "Updated testmon JSON: ${updated_testmon_json}"
+          echo "Exclude testmon JSON: ${exclude_testmon_json}"
 
           if [ "${changes_made}" = true ]; then
             echo "Changes made, committing and pushing..."
@@ -252,13 +252,13 @@ jobs:
         id: prepare-payload
         run: |
           updated_testmon_json='${{ needs.deploy-testmon.outputs.updated_testmon_json }}'
-          echo "Updated JSON: $updated_testmon_json"
+          echo "Updated JSON: ${updated_testmon_json}"
 
           updated_exclude_testmon_json='${{ needs.deploy-testmon.outputs.exclude_testmon_json }}'
-          echo "Updated Exclude JSON: $updated_exclude_testmon_json"
+          echo "Updated Exclude JSON: ${updated_exclude_testmon_json}"
 
-          os_list=$(echo "$updated_testmon_json" | jq -c '[.[].os] | unique')
-          python_versions=$(echo "$updated_testmon_json" | jq -c '[.[].python_version] | unique')
+          os_list=$(echo "${updated_testmon_json}" | jq -c '[.[].os] | unique')
+          python_versions=$(echo "${updated_testmon_json}" | jq -c '[.[].python_version] | unique')
 
           ghpage_branch=$(echo '${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}' | jq -R -c '. | [.]')
 
