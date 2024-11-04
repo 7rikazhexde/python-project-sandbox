@@ -3,7 +3,13 @@ name: Use Send Payload Action to Pytest Testmon
 on:
   push:
     branches:
-      - main
+      - 'main'
+    paths:
+      - 'project_a/**'
+      - 'tests/**'
+      - '.github/workflows/test_pytest-testmon_deploy_multi_os'
+      - '.github/workflows/test_pytest-cov-report_deploy_multi_os.yml'
+      - '.github/workflows/test_pytest-html-report_deploy_multi_os.yml'
 
 jobs:
   test-and-send-dispatch:
