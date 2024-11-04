@@ -3,7 +3,10 @@ name: Test Multi-OS
 on:
   push:
     branches:
-      - main
+      - 'main'
+    paths:
+      - 'project_a/**'
+      - 'tests/**'
 
 jobs:
   set_variables:
