@@ -7,6 +7,9 @@ on:
     paths:
       - 'project_a/**'
       - 'tests/**'
+      - 'pyproject.toml'
+      - 'requirements-dev.txt'
+      - 'requirements.txt'
 
 jobs:
   set_variables:
