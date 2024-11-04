@@ -8,8 +8,6 @@ on:
       - 'project_a/**'
       - 'tests/**'
       - 'pyproject.toml'
-      - 'requirements-dev.txt'
-      - 'requirements.txt'
       - '.github/workflows/test_pytest-testmon_deploy_multi_os'
       - '.github/workflows/test_pytest-cov-report_deploy_multi_os.yml'
       - '.github/workflows/test_pytest-html-report_deploy_multi_os.yml'
