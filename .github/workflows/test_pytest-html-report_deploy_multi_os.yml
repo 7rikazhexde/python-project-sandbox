@@ -85,21 +85,39 @@ jobs:
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
 
+      - name: Check if tests should be executed
+        id: check_tests
+        run: |
+         python3 .github/check_exclude_testmon.py
+        env:
+          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
+          CURRENT_OS: '${{ matrix.os }}'
+          CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
+
+      - name: Stop workflow if tests are skipped
+        if: steps.check_tests.outputs.skip_tests == 'true'
+        run: |
+          echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
+
       - name: Install poetry
+        if: steps.check_tests.outputs.skip_tests != 'true'
         run: |
           pip install poetry
           echo "Poetry version: $(poetry --version)"
 
       - name: Cache dependencies
+        if: steps.check_tests.outputs.skip_tests != 'true'
         uses: actions/cache@v4.1.2
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
+        if: steps.check_tests.outputs.skip_tests != 'true'
         run: poetry install
 
       - name: Fetch testmon data
+        if: steps.check_tests.outputs.skip_tests != 'true'
         shell: bash
         run: |
           echo "Fetching testmon data..."
@@ -114,19 +132,19 @@ jobs:
           fi
         continue-on-error: true
 
-      - name: Check if tests should be executed
-        id: check_tests
-        run: |
-         poetry run python .github/check_exclude_testmon.py
-        env:
-          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
-          CURRENT_OS: '${{ matrix.os }}'
-          CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
+      #- name: Check if tests should be executed
+      #  id: check_tests
+      #  run: |
+      #   poetry run python .github/check_exclude_testmon.py
+      #  env:
+      #    UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
+      #    CURRENT_OS: '${{ matrix.os }}'
+      #    CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
 
-      - name: Stop workflow if tests are skipped
-        if: steps.check_tests.outputs.skip_tests == 'true'
-        run: |
-          echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
+      #- name: Stop workflow if tests are skipped
+      #  if: steps.check_tests.outputs.skip_tests == 'true'
+      #  run: |
+      #    echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
 
       - name: Run tests with pytest-html
         if: steps.check_tests.outputs.skip_tests != 'true'
