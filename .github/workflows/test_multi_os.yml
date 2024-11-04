@@ -8,6 +8,7 @@ on:
       - 'project_a/**'
       - 'tests/**'
       - 'pyproject.toml'
+      - 'poetry.lock'
       - 'requirements-dev.txt'
       - 'requirements.txt'
 
