@@ -3,19 +3,25 @@ name: pytest-testmon Deploy Multi-OS
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
 #    - リポジトリディスパッチイベント（test_pytest-testmon_deploy_multi_os）により起動
-# 2. 複数の環境（OS、Pythonバージョン）でのセットアップと前回の.testmondataの取得
+# 2. 複数の環境（OS、Pythonバージョン）でのセットアップ
 #    - client_payloadで指定されたOS、Pythonバージョンで実行
-# 3. 各OS・Pythonバージョンごとに個別の.testmondataファイルを取得
+# 3. GhPagesブランチから前回の.testmondataを取得
+#    - OS、Pythonバージョンごとに個別のパスから取得
+#    - 取得できない場合は新規作成として扱う
 # 4. pytest-testmonを使用してテスト実行
-#    - 前回の.testmondataがある場合、それを使用して差分テストを実行
-# 5. testmon結果の確認とテスト実行有無の判定
-#    - テストが実行された場合、後続のジョブをトリガー
-# 6. 更新された.testmondataファイルのアップロード
-#    - テストが実行された場合のみ実行
-# 7. GitHub Pagesへの.testmondataファイルのデプロイ
-#    - テストが実行され、かつ変更がある場合のみ実行
-# 8. pytest-covとpytest-htmlワークフローのトリガー
-#    - テストが実行された場合のみトリガー
+#    - 取得した.testmondataを使用して差分テストを実行
+#    - テスト実行結果を確認し、実行の有無をフラグとして保持
+# 5. .testmondataファイルのアップロード
+#    - テストが実行された場合のみ、成果物としてアップロード
+# 6. GitHub Pagesへのデプロイ
+#    - アップロードされた.testmondataをGhPagesブランチにデプロイ
+#    - 変更の有無を確認し、変更があった場合のみ更新を実行
+# 7. .testmondataの更新情報のJSON生成
+#    - 更新された環境（OS、Pythonバージョン）の情報を含むJSONを作成
+#    - 更新されなかった環境の情報も別途JSONとして作成
+# 8. 後続ワークフローのトリガー
+#    - 更新情報JSONを含むペイロードを作成
+#    - pytest-covとpytest-htmlワークフローをトリガー
 
 on:
   repository_dispatch:
