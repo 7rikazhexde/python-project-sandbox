@@ -27,7 +27,7 @@ jobs:
     strategy:
       matrix:
         os: ${{ github.event.client_payload.os_list }}
-        python-version: ${{ github.event.client_payload.python_versions }}
+        python-version: ${{ github.event.client_payload.version_list }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
@@ -166,7 +166,7 @@ jobs:
       - name: Prepare os_list and python_versions
         run: |
           os_list='${{ join(github.event.client_payload.os_list, ' ') }}'
-          python_versions_list='${{ join(github.event.client_payload.python_versions, ' ') }}'
+          python_versions_list='${{ join(github.event.client_payload.version_list, ' ') }}'
 
           echo "OS List: ${os_list}"
           echo "Python Versions List: ${python_versions_list}"
