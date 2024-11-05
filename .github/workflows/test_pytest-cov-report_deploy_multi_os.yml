@@ -2,36 +2,26 @@ name: pytest-cov Report and Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - pytest-testmon ワークフローの完了後に repository_dispatch イベントで起動
+#    - pytest-testmonワークフローの完了後にrepository_dispatchイベントで起動
 # 2. 複数の環境（OS、Pythonバージョン）でのセットアップ
-#    - .github/workflows/send_payload_to_pytest_testmon.ymlで設定
-#      - macos-latest, Ubuntu, Windowsの最新バージョンで実行
-#      - Python 3.11 と 3.12 を使用
-# 3. testmon データの取得とテストの実行確認
-#    - testmon の結果に基づき、実行対象外の場合はテストをスキップ
-#    - スキップ対象の判定は .github/check_exclude_testmon.py(mainブランチ内) で行う
-# 4. pytest-cov を使用してカバレッジレポートを生成
-#    - 各 OS 環境と Python バージョンごとに個別のレポートを生成
-#    - スキップ対象は pytest-cov を実行しない
-#    - スキップ対象の判定は .github/check_exclude_testmon.py(ghpagesブランチ内) で行う
-# 5. カバレッジ結果のアップロード
-#    - 各レポートを GitHub Actions の成果物としてアップロード
-#    - スキップ対象は アップロードしない
-#    - スキップ対象の判定は .github/check_exclude_testmon.py(ghpagesブランチ内) で行う
-# 6. 全テスト結果の確認
-#    - いずれかのテストが失敗した場合、エラーを報告
-# 7. GitHub Pages へのデプロイ
-#    - スキップ対象以外のデプロイを実行
-#    - スキップ対象の判定は .github/check_exclude_testmon.py(ghpagesブランチ内) で行う
-#    - 変更がある場合のみデプロイを行う
-# 8. デプロイしたレポートの URL を生成
-#    - スキップの対象外はRunnnig testとスキップの対象はSkiping testと区別する
-#    - スキップ対象の判定は .github/check_exclude_testmon.py(ghpagesブランチ内) で行う
-# 9. 変更の有無に応じた LINE 通知の送信
-#    - 変更があった場合と変更がなかった場合で異なるメッセージを送信
-#    - 変更があった場合はデプロイしたレポートの URL をメッセージとして作成して送信する
-# Note
-#    - jobの実行内容でpythonコマンドの実行方法はpoetryとpython3(3.12)で分けています。
+#    - ペイロードで指定されたOS、Pythonバージョンで実行
+# 3. テスト実行の要否確認
+#    - testmonの更新情報JSONに基づき実行要否を判定
+#    - 実行対象外の場合はスキップフラグを設定
+# 4. カバレッジレポートの生成
+#    - テスト実行対象の環境でpytest-covを実行
+#    - OS、Pythonバージョンごとに個別のレポートを生成
+# 5. カバレッジレポートのアップロード
+#    - 生成されたレポートをGitHub Actionsの成果物としてアップロード
+# 6. GitHub Pagesへのデプロイ
+#    - アップロードされたレポートをGhPagesブランチにデプロイ
+#    - 変更の有無を確認し、変更があった場合のみ更新を実行
+# 7. レポートURLの生成
+#    - デプロイしたレポートのURLリストを作成
+#    - テスト実行/スキップの状態に応じて適切なメッセージを付加
+# 8. LINE通知の送信
+#    - デプロイ状態に応じたメッセージを作成
+#    - 変更があった場合はURLリストを含めて通知
 
 on:
   repository_dispatch:
@@ -131,20 +121,6 @@ jobs:
             echo "No testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
         continue-on-error: true
-
-      #- name: Check if tests should be executed
-      #  id: check_tests
-      #  run: |
-      #   poetry run python .github/check_exclude_testmon.py
-      #  env:
-      #    UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
-      #    CURRENT_OS: '${{ matrix.os }}'
-      #    CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
-
-      #- name: Stop workflow if tests are skipped
-      #  if: steps.check_tests.outputs.skip_tests == 'true'
-      #  run: |
-      #    echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
 
       - name: Run tests with pytest-cov
         if: steps.check_tests.outputs.skip_tests != 'true'
