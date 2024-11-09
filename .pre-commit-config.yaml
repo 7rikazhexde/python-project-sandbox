@@ -3,7 +3,6 @@ fail_fast: true
 # A list of repository mappings
 repos:
   - repo: https://github.com/pre-commit/pre-commit-hooks
-    # Specify version or tag to use (as of 24.8.3)
     rev: v4.6.0
     hooks:
       # Remove spaces at end of lines except markdown
