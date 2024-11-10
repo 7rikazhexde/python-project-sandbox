@@ -153,6 +153,9 @@ jobs:
     if: needs.test-and-report.outputs.skip_tests != 'true' && needs.check_all_tests.result == 'success'
     needs: [test-and-report, check_all_tests]
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     outputs:
       deploy_status: ${{ steps.check_and_deploy.outputs.deploy_status }}
     steps:
