@@ -1,5 +1,16 @@
 name: Version Update and Release
 
+# Workflow Process Flow:
+# 1. Trigger Conditions:
+#    - Manual execution (workflow_dispatch)
+# 2. Environment Setup (Ubuntu, Python, Poetry)
+# 3. Retrieve the current version
+# 4. Update to the new version (patch, minor, or major)
+# 5. Commit and push the changes
+# 6. Create and push a new tag
+# 7. Generate the changelog
+# 8. Create a GitHub release
+
 on:
   workflow_dispatch:
     inputs:
@@ -9,134 +20,68 @@ on:
         default: 'patch'
         type: choice
         options:
-          - patch
-          - minor
-          - major
+        - patch
+        - minor
+        - major
 
 jobs:
   update-version-and-release:
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
-      pull-requests: write
-      packages: write
-
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-
+          token: ${{ secrets.PAT_FOR_PUSHES }}
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
         with:
           python-version: '3.12'
-
       - name: Install poetry
         run: |
           python -m pip install --upgrade pip
           pip install poetry
-
       - name: Configure Git
         run: |
-          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
       - name: Get current version
         id: current_version
         run: echo "version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
-
       - name: Update version
         id: update_version
-        if: github.ref == 'refs/heads/main'
         run: |
-          echo "Current version before update: $(poetry version -s)"
           poetry version ${{ github.event.inputs.update_type }}
-          NEW_VERSION=$(poetry version -s)
-          echo "Version updated from ${{ steps.current_version.outputs.version }} to $NEW_VERSION"
-          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
-
-      - name: Create branch and push changes
-        if: github.ref == 'refs/heads/main' && steps.update_version.outputs.new_version != ''
+          echo "new_version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
+      - name: Commit and push if changed
         run: |
-          git checkout -b "update-version-${{ steps.update_version.outputs.new_version }}"
           git add pyproject.toml
-          git commit -m ":wrench: Bump version to ${{ steps.update_version.outputs.new_version }}"
-          git push -u origin "update-version-${{ steps.update_version.outputs.new_version }}"
-
-      - name: Create Pull Request
-        if: github.ref == 'refs/heads/main' && steps.update_version.outputs.new_version != ''
-        uses: peter-evans/create-pull-request@v7.0.5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: "update-version-${{ steps.update_version.outputs.new_version }}"
-          title: "Bump version to ${{ steps.update_version.outputs.new_version }}"
-          body: |
-            This PR updates the version to ${{ steps.update_version.outputs.new_version }}.
-
-            After merging this PR:
-            1. Wait for all CI checks to pass
-            2. Re-run this workflow to create the release
-          base: main
-
-      - name: Check if on main branch
-        id: check_branch
+          git commit -m ":wrench:Bump version to ${{ steps.update_version.outputs.new_version }}" || echo "No changes to commit"
+          git push
+      - name: Create and push new tag
         run: |
-          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          echo "is_main=$([[ "$CURRENT_BRANCH" == "main" ]] && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
-
-      - name: Check if tag exists
-        id: check_tag
-        if: steps.check_branch.outputs.is_main == 'true'
-        run: |
-          TAG_NAME="v${{ steps.current_version.outputs.version }}"
-          TAG_EXISTS=$(git tag -l "$TAG_NAME" | wc -l)
-          echo "tag_exists=$TAG_EXISTS" >> "$GITHUB_OUTPUT"
-          echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-
+          git tag v${{ steps.update_version.outputs.new_version }}
+          git push --tags
       - name: Generate changelog
         id: changelog
-        if: steps.check_branch.outputs.is_main == 'true' && steps.check_tag.outputs.tag_exists == '0'
         run: |
-          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
-          if [ -n "$PREV_TAG" ]; then
-            changelog=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
-          else
-            changelog=$(git log --pretty=format:"- %s" -n 10)
-          fi
-
+          changelog=$(git log --pretty=format:"- %s" v${{ steps.current_version.outputs.version }}..v${{ steps.update_version.outputs.new_version }})
           {
             echo "changelog<<EOF"
             echo "$changelog"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
-
-      - name: Create and push tag
-        if: steps.check_branch.outputs.is_main == 'true' && steps.check_tag.outputs.tag_exists == '0'
-        run: |
-          git tag "v${{ steps.current_version.outputs.version }}"
-          git push origin "v${{ steps.current_version.outputs.version }}"
-
       - name: Create Release
-        if: steps.check_branch.outputs.is_main == 'true' && steps.check_tag.outputs.tag_exists == '0'
         uses: softprops/action-gh-release@v2.0.9
         with:
-          tag_name: v${{ steps.current_version.outputs.version }}
-          name: python-project-sandbox-v${{ steps.current_version.outputs.version }}
+          tag_name: v${{ steps.update_version.outputs.new_version }}
+          name: python-project-sandbox-v${{ steps.update_version.outputs.new_version }}
           body: |
             ## Changes in this Release
 
             ${{ steps.changelog.outputs.changelog }}
 
-            For full changes, see the [GitHub commit history](${{ github.server_url }}/${{ github.repository }}/commits/main)
+            For full changes, see the [comparison view](${{ github.server_url }}/${{ github.repository }}/compare/v${{ steps.current_version.outputs.version }}..v${{ steps.update_version.outputs.new_version }})
           draft: false
           prerelease: false
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Output workflow status
-        run: |
-          echo "Current version: ${{ steps.current_version.outputs.version }}"
-          echo "New version (if updated): ${{ steps.update_version.outputs.new_version }}"
-          echo "Branch is main: ${{ steps.check_branch.outputs.is_main }}"
-          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
+          GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
