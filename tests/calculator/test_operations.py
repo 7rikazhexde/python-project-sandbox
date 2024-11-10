@@ -29,6 +29,7 @@ def test_multiply() -> None:
     assert multiply(-2, 4) == -8
     assert multiply(-2, 5) == -10
     assert multiply(-1000, 5) == -5000
+    assert multiply(-2, 6) == -12
 
 
 def test_divide() -> None:
