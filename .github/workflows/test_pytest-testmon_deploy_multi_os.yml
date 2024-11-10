@@ -248,6 +248,9 @@ jobs:
     needs: [test-and-deploy-testmon, deploy-testmon]
     if: needs.test-and-deploy-testmon.result == 'success' && needs.deploy-testmon.outputs.updated_testmon_json != '[]'
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
     steps:
       - name: Output os and python versions
         run: |
