@@ -40,8 +40,8 @@ jobs:
           poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
       - name: Commit and push changes
         run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
           git add requirements.txt requirements-dev.txt
           git commit -m ":wrench:Update requirements files after dependency update [skip ci]" || echo "No changes to commit"
           git push
