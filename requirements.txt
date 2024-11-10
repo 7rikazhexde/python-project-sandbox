@@ -60,7 +60,7 @@ types-requests==2.32.0.20241016 ; python_version >= "3.11" and python_version < 
 typing-extensions==4.12.2 ; python_version >= "3.11" and python_version < "4.0"
 tzdata==2024.2 ; python_version >= "3.11" and python_version < "4.0"
 urllib3==2.2.3 ; python_version >= "3.11" and python_version < "4.0"
-websockets==13.1 ; python_version >= "3.11" and python_version < "4.0"
+websockets==14.0 ; python_version >= "3.11" and python_version < "4.0"
 werkzeug==3.0.6 ; python_version >= "3.11" and python_version < "4.0"
 x25519==0.0.2 ; python_version >= "3.11" and python_version < "4.0"
 yarl==1.17.1 ; python_version >= "3.11" and python_version < "4.0"
