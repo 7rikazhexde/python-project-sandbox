@@ -1,5 +1,12 @@
 name: Version Update and Release
 
+# ワークフローの処理の流れ:
+# 1. 手動実行（workflow_dispatch）でトリガーされ、ユーザーはバージョンの種類（patch, minor, major）を指定可能
+# 2. 環境設定（PythonおよびPoetryのインストール）
+# 3. 現在のバージョンを取得し、新しいバージョンに更新
+# 4. 更新された内容を新しいブランチにコミットし、プルリクエストを作成
+# 5. チェンジログを生成し、リリースを作成
+
 on:
   workflow_dispatch:
     inputs:
@@ -66,13 +73,13 @@ jobs:
           git push -u origin "update-version-${{ steps.update_version.outputs.new_version }}"
 
       - name: Create Pull Request
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr create --title "Bump version to ${{ steps.update_version.outputs.new_version }}" \
-                       --body "This PR updates the version to ${{ steps.update_version.outputs.new_version }}." \
-                       --base main \
-                       --head "update-version-${{ steps.update_version.outputs.new_version }}"
+        uses: peter-evans/create-pull-request@v7.0.5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "update-version-${{ steps.update_version.outputs.new_version }}"
+          title: "Bump version to ${{ steps.update_version.outputs.new_version }}"
+          body: "This PR updates the version to ${{ steps.update_version.outputs.new_version }}."
+          base: main
 
       - name: Generate changelog
         id: changelog
