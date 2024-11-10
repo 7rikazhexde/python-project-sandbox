@@ -18,6 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
       packages: write
 
     steps:
@@ -47,39 +48,59 @@ jobs:
 
       - name: Update version
         id: update_version
+        if: github.ref == 'refs/heads/main'
         run: |
+          echo "Current version before update: $(poetry version -s)"
           poetry version ${{ github.event.inputs.update_type }}
           NEW_VERSION=$(poetry version -s)
-          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
           echo "Version updated from ${{ steps.current_version.outputs.version }} to $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
-      - name: Commit and push changes
+      - name: Create branch and push changes
+        if: github.ref == 'refs/heads/main' && steps.update_version.outputs.new_version != ''
         run: |
+          git checkout -b "update-version-${{ steps.update_version.outputs.new_version }}"
           git add pyproject.toml
           git commit -m ":wrench: Bump version to ${{ steps.update_version.outputs.new_version }}"
-          git push
+          git push -u origin "update-version-${{ steps.update_version.outputs.new_version }}"
+
+      - name: Create Pull Request
+        if: github.ref == 'refs/heads/main' && steps.update_version.outputs.new_version != ''
+        uses: peter-evans/create-pull-request@v7.0.5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: "update-version-${{ steps.update_version.outputs.new_version }}"
+          title: "Bump version to ${{ steps.update_version.outputs.new_version }}"
+          body: |
+            This PR updates the version to ${{ steps.update_version.outputs.new_version }}.
+
+            After merging this PR:
+            1. Wait for all CI checks to pass
+            2. Re-run this workflow to create the release
+          base: main
+
+      - name: Check if on main branch
+        id: check_branch
+        run: |
+          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
+          echo "is_main=$([[ "$CURRENT_BRANCH" == "main" ]] && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
 
       - name: Check if tag exists
         id: check_tag
+        if: steps.check_branch.outputs.is_main == 'true'
         run: |
-          TAG_NAME="v${{ steps.update_version.outputs.new_version }}"
-          if git rev-parse "$TAG_NAME" >/dev/null 2>&1; then
-            git tag -d "$TAG_NAME"
-            git push origin ":refs/tags/$TAG_NAME"
-          fi
+          TAG_NAME="v${{ steps.current_version.outputs.version }}"
+          TAG_EXISTS=$(git tag -l "$TAG_NAME" | wc -l)
+          echo "tag_exists=$TAG_EXISTS" >> "$GITHUB_OUTPUT"
           echo "tag_name=$TAG_NAME" >> "$GITHUB_OUTPUT"
-
-      - name: Create and push new tag
-        run: |
-          git tag "v${{ steps.update_version.outputs.new_version }}"
-          git push --tags
 
       - name: Generate changelog
         id: changelog
+        if: steps.check_branch.outputs.is_main == 'true' && steps.check_tag.outputs.tag_exists == '0'
         run: |
-          PREV_VERSION="v${{ steps.current_version.outputs.version }}"
-          if git rev-parse "$PREV_VERSION" >/dev/null 2>&1; then
-            changelog=$(git log --pretty=format:"- %s" "$PREV_VERSION"..HEAD)
+          PREV_TAG=$(git describe --tags --abbrev=0 2>/dev/null || echo "")
+          if [ -n "$PREV_TAG" ]; then
+            changelog=$(git log --pretty=format:"- %s" "$PREV_TAG"..HEAD)
           else
             changelog=$(git log --pretty=format:"- %s" -n 10)
           fi
@@ -90,18 +111,32 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      - name: Create and push tag
+        if: steps.check_branch.outputs.is_main == 'true' && steps.check_tag.outputs.tag_exists == '0'
+        run: |
+          git tag "v${{ steps.current_version.outputs.version }}"
+          git push origin "v${{ steps.current_version.outputs.version }}"
+
       - name: Create Release
+        if: steps.check_branch.outputs.is_main == 'true' && steps.check_tag.outputs.tag_exists == '0'
         uses: softprops/action-gh-release@v2.0.9
         with:
-          tag_name: v${{ steps.update_version.outputs.new_version }}
-          name: python-project-sandbox-v${{ steps.update_version.outputs.new_version }}
+          tag_name: v${{ steps.current_version.outputs.version }}
+          name: python-project-sandbox-v${{ steps.current_version.outputs.version }}
           body: |
             ## Changes in this Release
 
             ${{ steps.changelog.outputs.changelog }}
 
-            For full changes, see the [comparison view](${{ github.server_url }}/${{ github.repository }}/compare/v${{ steps.current_version.outputs.version }}..v${{ steps.update_version.outputs.new_version }})
+            For full changes, see the [GitHub commit history](${{ github.server_url }}/${{ github.repository }}/commits/main)
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Output workflow status
+        run: |
+          echo "Current version: ${{ steps.current_version.outputs.version }}"
+          echo "New version (if updated): ${{ steps.update_version.outputs.new_version }}"
+          echo "Branch is main: ${{ steps.check_branch.outputs.is_main }}"
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
