@@ -18,6 +18,7 @@ def test_subtract() -> None:
     assert subtract(-2, -2) == 0
     assert subtract(-1, 4) == -5
     assert subtract(-1, -4) == 3
+    assert subtract(-1, -5001) == 5000
 
 
 def test_multiply() -> None:
