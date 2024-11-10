@@ -18,7 +18,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       # Enable code checkout
-      contents: read
+      contents: write
       # Enable repository_dispatch triggers
       actions: write
     steps:
