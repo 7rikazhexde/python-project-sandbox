@@ -42,6 +42,10 @@ jobs:
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
+      - name: Debug inputs
+        run: |
+          echo "Update type selected: ${{ github.event.inputs.update_type }}"
+
       - name: Get current version
         id: current_version
         run: echo "version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
@@ -49,8 +53,12 @@ jobs:
       - name: Update version
         id: update_version
         run: |
+          echo "Current version before update: $(poetry version -s)"
+          echo "Update type: ${{ github.event.inputs.update_type }}"
           poetry version ${{ github.event.inputs.update_type }}
-          echo "new_version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
+          NEW_VERSION=$(poetry version -s)
+          echo "Version after update: $NEW_VERSION"
+          echo "new_version=$NEW_VERSION" >> "$GITHUB_OUTPUT"
 
       - name: Create and switch to new branch
         run: |
@@ -79,16 +87,23 @@ jobs:
             2. Re-run this workflow to create the release
           base: main
 
-      - name: Check if branch is main and version tag exists
+      - name: Checkout main branch for release
+        run: |
+          git fetch origin main
+          git checkout main
+        if: success()
+
+      - name: Check if version tag exists
         id: check_release
         run: |
-          CURRENT_BRANCH=$(git rev-parse --abbrev-ref HEAD)
-          echo "IS_MAIN=$([[ "$CURRENT_BRANCH" == "main" ]] && echo 'true' || echo 'false')" >> "$GITHUB_OUTPUT"
-          echo "TAG_EXISTS=$(git tag -l "v${{ steps.update_version.outputs.new_version }}" | wc -l)" >> "$GITHUB_OUTPUT"
+          TAG_EXISTS=$(git tag -l "v${{ steps.update_version.outputs.new_version }}" | wc -l)
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
+          echo "Tag v${{ steps.update_version.outputs.new_version }} exists: $TAG_EXISTS"
+          echo "tag_exists=$TAG_EXISTS" >> "$GITHUB_OUTPUT"
 
       - name: Generate changelog
         id: changelog
-        if: steps.check_release.outputs.IS_MAIN == 'true' && steps.check_release.outputs.TAG_EXISTS == '0'
+        if: steps.check_release.outputs.tag_exists == '0'
         run: |
           # タグの存在確認
           if git rev-parse "v${{ steps.current_version.outputs.version }}" >/dev/null 2>&1; then
@@ -111,7 +126,7 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
       - name: Create Release
-        if: steps.check_release.outputs.IS_MAIN == 'true' && steps.check_release.outputs.TAG_EXISTS == '0'
+        if: steps.check_release.outputs.tag_exists == '0'
         uses: softprops/action-gh-release@v2.0.9
         with:
           tag_name: v${{ steps.update_version.outputs.new_version }}
@@ -127,10 +142,9 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Output Next Steps
-        if: steps.check_release.outputs.IS_MAIN != 'true'
+      - name: Output workflow status
         run: |
-          echo "PR has been created. Please:"
-          echo "1. Review and merge the PR"
-          echo "2. Wait for all CI checks to pass"
-          echo "3. Re-run this workflow to create the release"
+          echo "Current version: ${{ steps.current_version.outputs.version }}"
+          echo "New version: ${{ steps.update_version.outputs.new_version }}"
+          echo "Tag exists: ${{ steps.check_release.outputs.tag_exists }}"
+          echo "Current branch: $(git rev-parse --abbrev-ref HEAD)"
