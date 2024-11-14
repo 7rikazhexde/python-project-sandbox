@@ -1,16 +1,26 @@
 name: Update Requirements after Dependabot Merge
 
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - プルリクエストマージ時
+#    - Dependabotによる実行であること
+# 2. 環境のセットアップ（Ubuntu、Python、Poetry）
+# 3. requirements.txtとrequirements-dev.txtの作成
+# 4. 変更のコミットとプッシュ
+
 on:
   pull_request:
     types: [closed]
 
 jobs:
   update-requirements:
-    #if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
+    if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
+      # Enable file clone, commit, and push
       contents: write
-      pull-requests: write
+      # Enable reading of pull request information
+      pull-requests: read
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -28,28 +38,10 @@ jobs:
         run: |
           poetry export -f requirements.txt -o requirements.txt --without-hashes
           poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
-      - name: Create Pull Request
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Commit and push changes
         run: |
-          # Create new branch
-          BRANCH_NAME="update-requirements-$(date +%Y%m%d-%H%M%S)"
-          git checkout -b "${BRANCH_NAME}"
-
-          # Configure git
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-
-          # Commit changes
           git add requirements.txt requirements-dev.txt
-          git commit -m ":wrench: Update requirements files after dependency update" || echo "No changes to commit"
-
-          # Push new branch
-          git push origin "${BRANCH_NAME}"
-
-          # Create PR using GitHub CLI
-          gh pr create \
-            --title "Update requirements files" \
-            --body "Automated PR to update requirements files after Dependabot merge" \
-            --base "main" \
-            --head "${BRANCH_NAME}"
+          git commit -m ":wrench:Update requirements files after dependency update [skip ci]" || echo "No changes to commit"
+          git push
