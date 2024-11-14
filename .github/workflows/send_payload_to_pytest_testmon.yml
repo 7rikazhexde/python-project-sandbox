@@ -33,7 +33,7 @@ jobs:
           event_type: 'test_pytest-testmon_deploy_multi_os'
           ghpages_branch: 'ghpages'  # 省略可能
           os_list: '[ubuntu-latest,macos-13,windows-latest]'
-          version_list: '[3.11,3.12,3.13]'
+          version_list: '[3.12,3.13]'
           custom_param: 'custom_param_test_val'  # 省略可能
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
