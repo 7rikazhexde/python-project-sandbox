@@ -7,11 +7,12 @@ on:
     paths:
       - 'project_a/**'
       - 'tests/**'
-      - '.github/workflows/matrix.json'
       - 'poetry.lock'
       - '.github/workflows/test_pytest-testmon_deploy_multi_os'
       - '.github/workflows/test_pytest-cov-report_deploy_multi_os.yml'
       - '.github/workflows/test_pytest-html-report_deploy_multi_os.yml'
+      - '.github/workflows/matrix.json'
+      - '.github/workflows/send_payload_to_pytest_testmon.yml'
 
 jobs:
   test-and-send-dispatch:
