@@ -1,8 +1,11 @@
 name: Update Requirements after Dependabot Merge
 
+#on:
+#  pull_request:
+#    types: [closed]
+
 on:
-  pull_request:
-    types: [closed]
+  workflow_dispatch:
 
 jobs:
   update-requirements:
