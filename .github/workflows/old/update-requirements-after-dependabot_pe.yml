@@ -1,0 +1,48 @@
+name: Manual Update Requirements
+
+on:
+  workflow_dispatch:
+  # Dependabot用のトリガー設定
+  # pull_request:
+  #   types: [closed]
+
+jobs:
+  update-requirements:
+    # Dependabotチェックは一時的にコメントアウト
+    # if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_FOR_PUSHES }}
+      - name: Set up Python
+        uses: actions/setup-python@v5.3.0
+        with:
+          python-version: '3.13'
+      - name: Install Poetry
+        run: pip install poetry
+      - name: Install dependencies
+        run: poetry install
+      - name: Update requirements files
+        run: |
+          poetry export -f requirements.txt -o requirements.txt --without-hashes
+          poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
+          # Export後にタイムスタンプを追加
+          echo -e "\n# Updated on $(date)" >> requirements.txt
+          echo -e "\n# Updated on $(date)" >> requirements-dev.txt
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.PAT_FOR_PUSHES }}
+          commit-message: ":wrench: Update requirements files after dependency update [skip ci]"
+          title: "Update requirements files after dependency update"
+          body: |
+            Requirements files have been automatically updated.
+
+            Changes:
+            - Updated requirements.txt
+            - Updated requirements-dev.txt
+          branch: update-requirements
+          branch-suffix: timestamp
+          delete-branch: true
