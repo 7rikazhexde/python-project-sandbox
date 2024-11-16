@@ -27,11 +27,13 @@ jobs:
         run: |
           echo "os: ${{ steps.json2vars.outputs.os }}"
           echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Selected OS: ${{ fromJson(steps.json2vars.outputs.os)[0] }}"
+          echo "Selected Python version: ${{ fromJson(steps.json2vars.outputs.versions_python)[0] }}"
 
   update:
     needs: set_variables
     #runs-on: ubuntu-latest
-    runs-on: ${{ fromJson(needs.set_variables.outputs.os) }}
+    runs-on: ${{ fromJson(needs.set_variables.outputs.os)[0] }}
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -41,7 +43,7 @@ jobs:
         uses: actions/setup-python@v5.3.0
         with:
           #python-version: '3.13'
-          python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+          python-version: ${{ fromJson(needs.set_variables.outputs.versions_python)[0] }}
       - name: Install poetry
         run: pip install poetry
       - name: Cache dependencies
