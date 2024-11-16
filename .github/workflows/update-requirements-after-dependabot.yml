@@ -9,8 +9,11 @@ jobs:
   update-requirements:
     #if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
-    permissions:
-      contents: write
+    #permissions:
+    #  # Enable file clone, commit, and push
+    #  contents: write
+    #  # Enable reading of pull request information
+    #  pull-requests: read
     steps:
       - uses: actions/checkout@v4.2.2
         with:
