@@ -1,0 +1,10 @@
+{
+    "os": [
+        "ubuntu-latest"
+    ],
+    "versions": {
+        "python": [
+            "3.13"
+        ]
+    }
+}

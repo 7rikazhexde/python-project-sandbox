@@ -6,8 +6,32 @@ on:
   workflow_dispatch:
 
 jobs:
-  update:
+  set_variables:
     runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set variables from JSON
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@main
+        with:
+          json-file: .github/workflows/ci_matrix.json
+
+      - name: Debug output values
+        run: |
+          echo "os: ${{ steps.json2vars.outputs.os }}"
+          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
+
+  update:
+    needs: set_variables
+    #runs-on: ubuntu-latest
+    runs-on: ${{ fromJson(needs.set_variables.outputs.os) }}
     steps:
       - uses: actions/checkout@v4.2.2
         with:
@@ -16,7 +40,8 @@ jobs:
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
         with:
-          python-version: '3.13'
+          #python-version: '3.13'
+          python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
       - name: Install poetry
         run: pip install poetry
       - name: Cache dependencies
