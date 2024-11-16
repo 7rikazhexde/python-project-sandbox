@@ -26,6 +26,11 @@ jobs:
         run: pip install poetry
       - name: Install dependencies
         run: poetry install
+      # テスト用に意図的に変更を作成
+      - name: Create test change
+        run: |
+          echo "# Updated on $(date)" >> requirements.txt
+          echo "# Updated on $(date)" >> requirements-dev.txt
       - name: Update requirements files
         run: |
           poetry export -f requirements.txt -o requirements.txt --without-hashes
