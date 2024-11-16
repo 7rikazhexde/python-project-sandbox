@@ -1,56 +1,43 @@
-name: Manual Update Requirements
+name: Update Requirements after Dependabot Merge
+
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - プルリクエストマージ時
+#    - Dependabotによる実行であること
+# 2. 環境のセットアップ（Ubuntu、Python、Poetry）
+# 3. requirements.txtとrequirements-dev.txtの作成
+# 4. 変更のコミットとプッシュ
 
 on:
   workflow_dispatch:
-  # pull_request:
-  #   types: [closed]
+  #pull_request:
+  #  types: [closed]
 
 jobs:
   update-requirements:
     #if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
-    #permissions:
-    #  # Enable file clone, commit, and push
-    #  contents: write
-    #  # Enable reading of pull request information
-    #  pull-requests: read
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
-          ref: main
-
+          token: ${{ secrets.PAT_FOR_PUSHES }}
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
         with:
           python-version: '3.13'
-
       - name: Install Poetry
         run: pip install poetry
-
       - name: Install dependencies
         run: poetry install
-
-      - name: Update requirements files and push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Update requirements files
         run: |
-          # requirements-dev.txtの更新
-          poetry export -f requirements.txt -o "requirements-dev.txt" --without-hashes --with dev
-          echo -e "\n# Updated on $(date)" >> "requirements-dev.txt"
-
-          # Gitの設定
-          git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          poetry export -f requirements.txt -o requirements.txt --without-hashes
+          poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
+      - name: Commit and push changes
+        run: |
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-
-          # 変更の確認とコミット
-          if git diff --quiet "requirements-dev.txt"; then
-            echo "No changes to requirements-dev.txt"
-            exit 0
-          fi
-
-          # 変更があった場合のみコミットとプッシュ
-          git add "requirements-dev.txt"
-          git commit -m ":wrench: Update requirements-dev.txt after dependency update [skip ci]"
-          git push origin main
+          git add requirements.txt requirements-dev.txt
+          git commit -m ":wrench:Update requirements files after dependency update [skip ci]" || echo "No changes to commit"
+          git push
