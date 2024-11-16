@@ -7,15 +7,16 @@ on:
 
 jobs:
   update-requirements:
-    # if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
+    #if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+          ref: main
 
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
@@ -28,35 +29,25 @@ jobs:
       - name: Install dependencies
         run: poetry install
 
-      - name: Update requirements files
+      - name: Update requirements files and push
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          poetry export -f requirements.txt -o "requirements.txt" --without-hashes
+          # requirements-dev.txtの更新
           poetry export -f requirements.txt -o "requirements-dev.txt" --without-hashes --with dev
-          echo -e "\n# Updated on $(date)" >> "requirements.txt"
           echo -e "\n# Updated on $(date)" >> "requirements-dev.txt"
 
-      - name: Create Branch and Push
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          branch_name="update-requirements-$(date +%s)"
+          # Gitの設定
           git config --local user.email "41898282+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git checkout -b "${branch_name}"
-          git add "requirements.txt" "requirements-dev.txt"
-          git commit -m ":wrench: Update requirements files"
-          git push origin "${branch_name}"
 
-      - name: Create Pull Request
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh pr create \
-            --title "Update requirements files after dependency update" \
-            --body "Requirements files have been automatically updated.
+          # 変更の確認とコミット
+          if git diff --quiet "requirements-dev.txt"; then
+            echo "No changes to requirements-dev.txt"
+            exit 0
+          fi
 
-            Changes:
-            - Updated requirements.txt
-            - Updated requirements-dev.txt" \
-            --head "${branch_name}" \
-            --base main
+          # 変更があった場合のみコミットとプッシュ
+          git add "requirements-dev.txt"
+          git commit -m ":wrench: Update requirements-dev.txt after dependency update [skip ci]"
+          git push origin main
