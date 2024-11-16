@@ -1,31 +1,23 @@
-name: Update Requirements after Dependabot Merge
-
-# ワークフローの処理の流れ:
-# 1. トリガー条件:
-#    - プルリクエストマージ時
-#    - Dependabotによる実行であること
-# 2. 環境のセットアップ（Ubuntu、Python、Poetry）
-# 3. requirements.txtとrequirements-dev.txtの作成
-# 4. 変更のコミットとプッシュ
+name: Manual Update Requirements
 
 on:
-  pull_request:
-    types: [closed]
+  workflow_dispatch:
+  # Dependabot用のトリガー設定
+  # pull_request:
+  #   types: [closed]
 
 jobs:
   update-requirements:
-    if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
+    # Dependabotチェックは一時的にコメントアウト
+    # if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     permissions:
-      # Enable file clone, commit, and push
       contents: write
-      # Enable reading of pull request information
-      pull-requests: read
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
         with:
@@ -38,10 +30,18 @@ jobs:
         run: |
           poetry export -f requirements.txt -o requirements.txt --without-hashes
           poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
-      - name: Commit and push changes
-        run: |
-          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add requirements.txt requirements-dev.txt
-          git commit -m ":wrench:Update requirements files after dependency update [skip ci]" || echo "No changes to commit"
-          git push
+      - name: Create Pull Request
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: ":wrench: Update requirements files after dependency update"
+          title: "Update requirements files after dependency update"
+          body: |
+            Requirements files have been automatically updated.
+
+            Changes:
+            - Updated requirements.txt
+            - Updated requirements-dev.txt
+          branch: update-requirements
+          branch-suffix: timestamp
+          delete-branch: true
