@@ -26,20 +26,18 @@ jobs:
         run: pip install poetry
       - name: Install dependencies
         run: poetry install
-      # テスト用に意図的に変更を作成
-      - name: Create test change
-        run: |
-          echo "# Updated on $(date)" >> requirements.txt
-          echo "# Updated on $(date)" >> requirements-dev.txt
       - name: Update requirements files
         run: |
           poetry export -f requirements.txt -o requirements.txt --without-hashes
           poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
+          # Export後にタイムスタンプを追加
+          echo -e "\n# Updated on $(date)" >> requirements.txt
+          echo -e "\n# Updated on $(date)" >> requirements-dev.txt
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: ":wrench: Update requirements files after dependency update"
+          commit-message: ":wrench: Update requirements files after dependency update [skip ci]"
           title: "Update requirements files after dependency update"
           body: |
             Requirements files have been automatically updated.
