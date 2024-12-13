@@ -4,16 +4,15 @@ on:
   push:
     branches:
       - "main"
-    paths:
-      - "project_a/**"
-      - "tests/**"
-      - "poetry.lock"
-      - ".github/workflows/test-pytest-cov-report.yml"
-      - ".github/workflows/matrix.json"
+    #paths:
+    #  - "project_a/**"
+    #  - "tests/**"
+    #  - "poetry.lock"
+    #  - ".github/workflows/test-pytest-cov-report.yml"
+    #  - ".github/workflows/matrix.json"
 
 jobs:
   set_variables:
-    if: ( !startsWith(github.event.head_commit.message, 'Bump version'))
     runs-on: ubuntu-latest
     outputs:
       os: ${{ steps.json2vars.outputs.os }}
