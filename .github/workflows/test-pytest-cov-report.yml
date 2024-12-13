@@ -141,10 +141,11 @@ jobs:
           # アーティファクトの移動とコミット
           for artifact_dir in coverage-results-*; do
             if [ -d "$artifact_dir" ]; then
-              # パスの構築 (例: coverage-results-ubuntu-latest-python-3.9 → pytest-cov-report/ubuntu-latest/python/3.9)
-              IFS='-' read -ra PARTS <<< "$artifact_dir"
-              os="${PARTS[2]}"
-              python_version="${PARTS[4]}"
+              # パスの構築
+              os=$(echo "$artifact_dir" | sed -E 's/coverage-results-([^-]+(-[^-]+)?)-python-.*/\1/')
+              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
+
+              # 最終的なパスを構築
               coverage_path="pytest-cov-report/${os}/python/${python_version}"
 
               # ディレクトリ作成と移動
@@ -157,7 +158,7 @@ jobs:
           done
 
           if [ "${changes_made}" = true ]; then
-            git commit -m "Update pytest-cov reports"
+            git commit -m "Update pytest-html reports on GitHub Pages"
             git push origin "${ghpages_branch}"
             echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
           else

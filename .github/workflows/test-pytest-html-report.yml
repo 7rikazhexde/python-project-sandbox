@@ -141,10 +141,11 @@ jobs:
           # アーティファクトの移動とコミット
           for artifact_dir in test-results-*; do
             if [ -d "$artifact_dir" ]; then
-              # パスの構築 (例: test-results-ubuntu-latest-python-3.9 → pytest-html-report/ubuntu-latest/python/3.9)
-              IFS='-' read -ra PARTS <<< "$artifact_dir"
-              os="${PARTS[2]}"
-              python_version="${PARTS[4]}"
+              # パスの構築
+              os=$(echo "$artifact_dir" | sed -E 's/test-results-([^-]+(-[^-]+)?)-python-.*/\1/')
+              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
+
+              # 最終的なパスを構築
               html_path="pytest-html-report/${os}/python/${python_version}"
 
               if [ -f "${artifact_dir}/report_page.html" ]; then
@@ -164,7 +165,7 @@ jobs:
           done
 
           if [ "${changes_made}" = true ]; then
-            git commit -m "Update pytest-html reports"
+            git commit -m "Update pytest-html reports on GitHub Pages"
             git push origin "${ghpages_branch}"
             echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
           else
