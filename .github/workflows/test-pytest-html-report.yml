@@ -1,15 +1,15 @@
-name: pytest-html Report and Deploy Multi-OS v2
+name: pytest-html Report and Deploy Multi-OS
 
 on:
   push:
     branches:
       - "main"
-    paths:
-      - "project_a/**"
-      - "tests/**"
-      - "poetry.lock"
-      - ".github/workflows/test-pytest-html-report.yml"
-      - ".github/workflows/matrix.json"
+    #paths:
+    #  - "project_a/**"
+    #  - "tests/**"
+    #  - "poetry.lock"
+    #  - ".github/workflows/test-pytest-html-report.yml"
+    #  - ".github/workflows/matrix.json"
 
 jobs:
   set_variables:
