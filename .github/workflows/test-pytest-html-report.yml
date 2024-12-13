@@ -1,4 +1,4 @@
-name: pytest-html Report and Deploy Multi-OS
+name: pytest-html Report and Deploy Multi-OS v2
 
 on:
   push:

@@ -1,4 +1,4 @@
-name: pytest-cov Report and Deploy Multi-OS
+name: pytest-cov Report and Deploy Multi-OS v2
 
 on:
   push:
