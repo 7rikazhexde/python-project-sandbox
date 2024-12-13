@@ -1,12 +1,10 @@
 # Pytest Report
 
-[![pytest-testmon Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-testmon_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-testmon_deploy_multi_os.yml)
-
-This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and [pytest-cov](https://pypi.org/project/pytest-cov/) reports to GitHub Pages based on the [execution results](./testmon-data/) from [pytest-testmon](https://pypi.org/project/pytest-testmon/).
+This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and [pytest-cov](https://pypi.org/project/pytest-cov/) reports to GitHub Pages.
 
 ## pytest-html
 
-[![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml)
+[![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test-pytest-html-report.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test-pytest-html-report.yml)
 
 | Python Version | ubuntu-latest | macos-latest | windows-latest |
 |----------------|---------------|----------|----------------|
@@ -16,7 +14,7 @@ This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and
 
 ## pytest-cov
 
-[![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml)
+[![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test-pytest-cov-report.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test-pytest-cov-report.yml)
 
 | Python Version | ubuntu-latest | macos-latest | windows-latest |
 |----------------|---------------|----------|----------------|
