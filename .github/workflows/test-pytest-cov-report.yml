@@ -13,7 +13,6 @@ on:
 
 jobs:
   set_variables:
-    if: ( !startsWith(github.event.head_commit.message, 'Bump version'))
     runs-on: ubuntu-latest
     outputs:
       os: ${{ steps.json2vars.outputs.os }}
