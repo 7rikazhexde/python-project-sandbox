@@ -206,27 +206,44 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Send LINE Notify (Updated)
+      # メッセージ送信 (変更があった場合)
+      - name: Send Discord Notification (Updated)
         if: steps.check_and_deploy.outputs.deploy_status == 'updated'
         env:
-          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          message="pytest-html report deployment completed. Changes were made.
+          message="pytest-cov report deployment completed. Changes were made.\n\nCheck URLs:\n${{ steps.generate_url_list.outputs.url_list }}"
 
-          Check URLs:
-          ${{ steps.generate_url_list.outputs.url_list }}"
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{
+              \"content\": \"${message}\",
+              \"embeds\": [
+                {
+                  \"title\": \"Deployment Status: Updated\",
+                  \"description\": \"${message}\",
+                  \"color\": 65280
+                }
+              ]
+            }" \
+            "$DISCORD_WEBHOOK_URL"
 
-          curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer ${LINE_NOTIFY_TOKEN}" \
-            -F "message=${message}"
-
-      - name: Send LINE Notify (No Changes)
+      # メッセージ送信 (変更がない場合)
+      - name: Send Discord Notification (No Changes)
         if: steps.check_and_deploy.outputs.deploy_status == 'unchanged'
         env:
-          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          message="pytest-html report check completed. No changes were necessary."
+          message="pytest-cov report check completed. No changes were necessary."
 
-          curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer ${LINE_NOTIFY_TOKEN}" \
-            -F "message=${message}"
+          curl -X POST -H "Content-Type: application/json" \
+            -d "{
+              \"content\": \"${message}\",
+              \"embeds\": [
+                {
+                  \"title\": \"Deployment Status: No Changes\",
+                  \"description\": \"${message}\",
+                  \"color\": 16776960
+                }
+              ]
+            }" \
+            "$DISCORD_WEBHOOK_URL"
