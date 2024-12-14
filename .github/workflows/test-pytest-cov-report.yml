@@ -218,8 +218,8 @@ jobs:
           **Name:** ${{ github.workflow }}
           **Run:** [View Details]($workflow_url)
 
-          ### Coverage Reports
-          $formatted_urls"
+          **Coverage Reports**
+          ${formatted_urls}"
 
           # JSON生成（改行を保持）
           timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
