@@ -216,14 +216,14 @@ jobs:
           workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           # URLリストの整形
-          formatted_urls="$(echo "${{ steps.generate_url_list.outputs.url_list }}" | sed 's/^/• /')"
+          formatted_urls="${{ steps.generate_url_list.outputs.url_list }}"
 
           # メッセージの作成
           message="**Deployment Status: Updated ✅**
 
-          **Workflow Information**
-          • Workflow: \`${{ github.workflow }}\`
-          • Details: ${workflow_url}
+          ### Workflow Information
+          **Name:** ${{ github.workflow }}
+          **Run:** [View Details]($workflow_url)
 
           **HTML Test Reports**
           ${formatted_urls}"
@@ -259,9 +259,9 @@ jobs:
 
           message="**Deployment Status: No Changes ℹ️**
 
-          **Workflow Information**
-          • Workflow: \`${{ github.workflow }}\`
-          • Details: ${workflow_url}
+          ### Workflow Information
+          **Name:** ${{ github.workflow }}
+          **Run:** [View Details]($workflow_url)
 
           No changes were detected in the HTML test reports."
           timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
