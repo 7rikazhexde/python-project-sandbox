@@ -212,7 +212,7 @@ jobs:
           formatted_urls="${{ steps.generate_url_list.outputs.url_list }}"
 
           # メッセージの作成
-          message="## Deployment Status: Updated ✅
+          message="### Deployment Status: Updated ✅
 
           ### Workflow Information
           **Name:** ${{ github.workflow }}
@@ -252,7 +252,7 @@ jobs:
         run: |
           workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          message="## Deployment Status: No Changes ℹ️
+          message="### Deployment Status: No Changes ℹ️
 
           ### Workflow Information
           **Name:** ${{ github.workflow }}
