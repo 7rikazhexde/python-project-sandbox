@@ -214,31 +214,37 @@ jobs:
         run: |
           # ワークフローの詳細ページURL
           workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          # ワークフロー名
-          workflow_name="${{ github.workflow }}"
-          # メッセージ内容
-          message="Deployment completed. Changes were made.\n\nCheck more details at: $workflow_url"
 
-          # JSON生成
+          # URLリストの整形
+          formatted_urls="$(echo "${{ steps.generate_url_list.outputs.url_list }}" | sed 's/^/• /')"
+
+          # メッセージの作成
+          message="**Deployment Status: Updated ✅**
+
+          **Workflow Information**
+          • Workflow: \`${{ github.workflow }}\`
+          • Details: ${workflow_url}
+
+          **HTML Test Reports**
+          ${formatted_urls}"
+
+          timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           json_payload=$(jq -n \
-            --arg title "$workflow_name - Deployment Status: Updated" \
+            --arg title "${{ github.workflow }} - Deploy Status" \
             --arg description "$message" \
             --argjson color 65280 \
+            --arg timestamp "$timestamp" \
             '{
               "embeds": [
                 {
                   "title": $title,
                   "description": $description,
-                  "color": $color
+                  "color": $color,
+                  "timestamp": $timestamp
                 }
               ]
             }')
 
-          # デバッグ用: JSON確認
-          echo "Generated JSON Payload:"
-          echo "$json_payload"
-
-          # Discord Webhook送信
           curl -X POST -H "Content-Type: application/json" \
             -d "$json_payload" \
             "$DISCORD_WEBHOOK_URL"
@@ -249,33 +255,32 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          # ワークフローの詳細ページURL
           workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-          # ワークフロー名
-          workflow_name="${{ github.workflow }}"
-          # メッセージ内容
-          message="Deployment check completed. No changes were necessary.\n\nCheck more details at: $workflow_url"
 
-          # JSON生成
+          message="**Deployment Status: No Changes ℹ️**
+
+          **Workflow Information**
+          • Workflow: \`${{ github.workflow }}\`
+          • Details: ${workflow_url}
+
+          No changes were detected in the HTML test reports."
+          timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           json_payload=$(jq -n \
-            --arg title "$workflow_name - Deployment Status: No Changes" \
+            --arg title "${{ github.workflow }} - Deploy Status" \
             --arg description "$message" \
             --argjson color 16711680 \
+            --arg timestamp "$timestamp" \
             '{
               "embeds": [
                 {
                   "title": $title,
                   "description": $description,
-                  "color": $color
+                  "color": $color,
+                  "timestamp": $timestamp
                 }
               ]
             }')
 
-          # デバッグ用: JSON確認
-          echo "Generated JSON Payload:"
-          echo "$json_payload"
-
-          # Discord Webhook送信
           curl -X POST -H "Content-Type: application/json" \
             -d "$json_payload" \
             "$DISCORD_WEBHOOK_URL"
