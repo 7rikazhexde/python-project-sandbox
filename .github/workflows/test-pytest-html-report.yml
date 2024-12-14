@@ -212,19 +212,35 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          message="pytest-cov report deployment completed. Changes were made.\n\nCheck URLs:\n${{ steps.generate_url_list.outputs.url_list }}"
+          # ワークフローの詳細ページURL
+          workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # ワークフロー名
+          workflow_name="${{ github.workflow }}"
+          # メッセージ内容
+          message="Deployment completed. Changes were made.\n\nCheck more details at: $workflow_url"
 
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{
-              \"content\": \"${message}\",
-              \"embeds\": [
+          # JSON生成
+          json_payload=$(jq -n \
+            --arg title "$workflow_name - Deployment Status: Updated" \
+            --arg description "$message" \
+            --argjson color 65280 \
+            '{
+              "embeds": [
                 {
-                  \"title\": \"Deployment Status: Updated\",
-                  \"description\": \"${message}\",
-                  \"color\": 65280
+                  "title": $title,
+                  "description": $description,
+                  "color": $color
                 }
               ]
-            }" \
+            }')
+
+          # デバッグ用: JSON確認
+          echo "Generated JSON Payload:"
+          echo "$json_payload"
+
+          # Discord Webhook送信
+          curl -X POST -H "Content-Type: application/json" \
+            -d "$json_payload" \
             "$DISCORD_WEBHOOK_URL"
 
       # メッセージ送信 (変更がない場合)
@@ -233,17 +249,33 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          message="pytest-cov report check completed. No changes were necessary."
+          # ワークフローの詳細ページURL
+          workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          # ワークフロー名
+          workflow_name="${{ github.workflow }}"
+          # メッセージ内容
+          message="Deployment check completed. No changes were necessary.\n\nCheck more details at: $workflow_url"
 
-          curl -X POST -H "Content-Type: application/json" \
-            -d "{
-              \"content\": \"${message}\",
-              \"embeds\": [
+          # JSON生成
+          json_payload=$(jq -n \
+            --arg title "$workflow_name - Deployment Status: No Changes" \
+            --arg description "$message" \
+            --argjson color 16711680 \
+            '{
+              "embeds": [
                 {
-                  \"title\": \"Deployment Status: No Changes\",
-                  \"description\": \"${message}\",
-                  \"color\": 16776960
+                  "title": $title,
+                  "description": $description,
+                  "color": $color
                 }
               ]
-            }" \
+            }')
+
+          # デバッグ用: JSON確認
+          echo "Generated JSON Payload:"
+          echo "$json_payload"
+
+          # Discord Webhook送信
+          curl -X POST -H "Content-Type: application/json" \
+            -d "$json_payload" \
             "$DISCORD_WEBHOOK_URL"
