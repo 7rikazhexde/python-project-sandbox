@@ -83,7 +83,7 @@ jobs:
           mkdir -p "${coverage_path}"
           poetry run pytest --cov=project_a --cov-report="html:${coverage_path}"
       - name: Upload pytest-cov results
-        uses: actions/upload-artifact@v4.4.3
+        uses: actions/upload-artifact@v4.5.0
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
