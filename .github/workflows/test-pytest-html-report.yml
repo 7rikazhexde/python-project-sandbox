@@ -83,7 +83,7 @@ jobs:
           mkdir -p "${report_path}"
           poetry run pytest --html="${report_path}/report_page.html" --css=css/style.css
       - name: Upload pytest-html results
-        uses: actions/upload-artifact@v4.5.0
+        uses: actions/upload-artifact@v4.6.0
         with:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: test_results/${{ matrix.os }}/python/${{ matrix.python-version }}
