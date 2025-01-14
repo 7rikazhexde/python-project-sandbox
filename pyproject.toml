@@ -1,6 +1,6 @@
 [project]
 name = "python-project-sandbox"
-version = "1.2.1"
+version = "1.2.2"
 description = "An experimental project to test out various tools."
 authors = [
     {name = "7rikaz", email = "33836132+7rikazhexde@users.noreply.github.com"}
