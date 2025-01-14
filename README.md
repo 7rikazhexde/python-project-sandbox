@@ -10,6 +10,16 @@ An experimental project to test out various tools.
   - [Tabale of contents](#tabale-of-contents)
   - [Pytest Coverages Summary](#pytest-coverages-summary)
   - [Pytest Reports](#pytest-reports)
+  - [Install](#install)
+    - [For Poetry](#for-poetry)
+      - [Production environment](#production-environment)
+      - [Development Environment](#development-environment)
+    - [For venv using pyptoject.toml / project](#for-venv-using-pyptojecttoml--project)
+      - [Production environment](#production-environment-1)
+      - [Development Environment](#development-environment-1)
+    - [For venv](#for-venv)
+      - [Production environment](#production-environment-2)
+      - [Development Environment](#development-environment-2)
   - [pre-commit](#pre-commit)
     - [Overview](#overview)
     - [Usage](#usage)
@@ -24,6 +34,50 @@ This repository generates test coverage results using [Pytest Coverage Comment](
 ## [Pytest Reports](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report)
 
 This repository deploys [pytest-html](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-html) and [pytest-cov](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-cov) reports to GitHub Pages based on the [execution results](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages/testmon-data) from [pytest-testmon](https://pypi.org/project/pytest-testmon/).
+
+## Install
+
+### For Poetry
+
+#### Production environment
+
+```bash
+poetry install --only main
+```
+
+#### Development Environment
+
+```bash
+poetry install --with dev
+```
+
+### For venv using pyptoject.toml / project
+
+#### Production environment
+
+```bash
+pip install .
+```
+
+#### Development Environment
+
+```bash
+pip install ".[dev]"
+```
+
+### For venv
+
+#### Production environment
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Development Environment
+
+```bash
+pip install -r requirements.txt && pip install -r requirements-dev.txt
+```
 
 ## pre-commit
 
