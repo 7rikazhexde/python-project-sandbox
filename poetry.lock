@@ -1974,13 +1974,13 @@ cli = ["click (>=5.0)"]
 
 [[package]]
 name = "pytoniq-core"
-version = "0.1.40"
+version = "0.1.41"
 description = "TON Blockchain SDK"
 optional = false
 python-versions = ">=3.9"
 files = [
-    {file = "pytoniq_core-0.1.40-py3-none-any.whl", hash = "sha256:b111066f132e26c4b308c5160c699296a97a020fd7dd45c44b6007cb92e8009b"},
-    {file = "pytoniq_core-0.1.40.tar.gz", hash = "sha256:2981b6743cb43470de2d0ac4cfdf628a4c05426c124960cfacd5da202af19381"},
+    {file = "pytoniq_core-0.1.41-py3-none-any.whl", hash = "sha256:7973d49464fd2d362bc67f453d997b0f837cbeabb8b7b43c02c99833e8e769af"},
+    {file = "pytoniq_core-0.1.41.tar.gz", hash = "sha256:9bffec63aef943aa55a454d4977fb42bbd5c4ce32a4fb1e431349deab47cb4a3"},
 ]
 
 [package.dependencies]
@@ -2496,4 +2496,4 @@ type = ["pytest-mypy"]
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.11"
-content-hash = "deda998c29fb4519d0d96daead5b3700702d333c449bc52256b99c693707d8b4"
+content-hash = "a02ee251e005acfcf7348aa5617595c6d65013ae6b34f11a4f2fec8a880417ad"
