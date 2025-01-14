@@ -31,7 +31,6 @@ repos:
 
   # https://python-poetry.org/docs/pre-commit-hooks/#usage
   - repo: https://github.com/python-poetry/poetry
-    # Cannot be executed with local designation (as of 24.8.3)
     rev: 2.0.0
     hooks:
       - id: poetry-check
@@ -39,24 +38,37 @@ repos:
       - id: poetry-lock
         verbose: true
 
-  - repo: local
+  # https://github.com/python-poetry/poetry-plugin-export?tab=readme-ov-file#usage
+  - repo: https://github.com/python-poetry/poetry-plugin-export.git
+    rev: 1.9.0
     hooks:
       - id: poetry-export
-        name: Export requirements.txt
-        entry: poetry export -f requirements.txt -o requirements.txt --without-hashes
-        language: python
-        pass_filenames: false
-        additional_dependencies:
-          - "poetry"
-          - "poetry-plugin-export"
-      - id: poetry-export-dev
-        name: Export dev requirements.txt
-        entry: poetry export --with dev -f requirements.txt -o requirements-dev.txt --without-hashes
-        language: python
-        pass_filenames: false
-        additional_dependencies:
-          - "poetry"
-          - "poetry-plugin-export"
+        args: ["-f", "requirements.txt", "-o", "requirements.txt", "--without-hashes"]
+        verbose: true
+        files: ^pyproject\.toml$
+      - id: poetry-export
+        args: ["--with", "dev", "-f", "requirements.txt", "-o", "requirements-dev.txt", "--without-hashes"]
+        verbose: true
+        files: ^pyproject\.toml$
+
+  #- repo: local
+  #  hooks:
+  #    - id: poetry-export
+  #      name: Export requirements.txt
+  #      entry: poetry export -f requirements.txt -o requirements.txt --without-hashes
+  #      language: python
+  #      pass_filenames: false
+  #      additional_dependencies:
+  #        - "poetry"
+  #        - "poetry-plugin-export"
+  #    - id: poetry-export-dev
+  #      name: Export dev requirements.txt
+  #      entry: poetry export --with dev -f requirements.txt -o requirements-dev.txt --without-hashes
+  #      language: python
+  #      pass_filenames: false
+  #      additional_dependencies:
+  #        - "poetry"
+  #        - "poetry-plugin-export"
 
   # Reference: https://github.com/DavidAnson/markdownlint-cli2#overview
   # > markdownlint-cli is a traditional command-line interface for markdownlint.

@@ -283,7 +283,7 @@ def calculate_staking_rewards(df: pd.DataFrame, adjust_val: float) -> pd.DataFra
                     "Counter": config_values["DEFAULT_COUNTER_VAL"],
                     "Fee": 0,
                     "FeeCcy": "TON",
-                    "Comment": f"Seqno Segment:{df.iloc[i-1]['Seqno']} - {df.iloc[i]['Seqno']}",
+                    "Comment": f"Seqno Segment:{df.iloc[i - 1]['Seqno']} - {df.iloc[i]['Seqno']}",
                 }
             )
 

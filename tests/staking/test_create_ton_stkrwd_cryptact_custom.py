@@ -170,9 +170,9 @@ def test_create_cryptact_custom_data(sample_transaction: Dict[str, Any]) -> None
 
     print(f"UTC Result: {result_utc}")
     expected_utc_str = f"'{datetime.datetime.fromtimestamp(sample_transaction['now'], pytz.UTC).strftime('%Y/%m/%d %H:%M:%S')}"
-    assert (
-        result_utc[0] == expected_utc_str
-    ), f"Expected {expected_utc_str}, but got {result_utc[0]}"
+    assert result_utc[0] == expected_utc_str, (
+        f"Expected {expected_utc_str}, but got {result_utc[0]}"
+    )
 
 
 def test_create_cryptact_custom_data_invalid(
