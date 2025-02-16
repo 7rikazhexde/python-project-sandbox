@@ -89,15 +89,20 @@ jobs:
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+      # poetry.lockの更新を行うステップ
+      - name: Update poetry.lock if needed
+        run: |
+          if ! poetry install 2>/dev/null; then
+            echo "Updating poetry.lock file..."
+            poetry lock
+            poetry install
+          fi
+      # 依存関係のインストール
       - name: Install dependencies
         run: poetry install
       - name: Run test
         shell: bash
         id: pytest
-        # Mac / Linux
-        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
-        # Windowss
-        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
         run: |
           poetry run task test_ci_xml
           coverage_percentage=$(poetry run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
