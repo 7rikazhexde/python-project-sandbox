@@ -90,12 +90,10 @@ jobs:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
       - name: Install dependencies
+        shell: bash
         run: |
-          if ! poetry install; then
-            echo "Initial install failed. Regenerating poetry.lock..."
-            poetry lock
-            poetry install
-          fi
+          poetry lock
+          poetry install
       - name: Run test
         shell: bash
         id: pytest
