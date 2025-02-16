@@ -92,6 +92,7 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
+          rm -f poetry.lock
           poetry lock
           poetry install
       - name: Run test
