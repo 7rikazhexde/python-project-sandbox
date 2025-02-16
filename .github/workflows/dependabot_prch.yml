@@ -89,18 +89,13 @@ jobs:
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-      # poetry.lockの更新を行うステップ
-      - name: Update poetry.lock if needed
+      - name: Install dependencies
         run: |
           if ! poetry install; then
-            echo "Initial install failed. Updating poetry.lock file..."
-            rm -f poetry.lock
-            poetry lock --no-update
+            echo "Initial install failed. Regenerating poetry.lock..."
+            poetry lock
             poetry install
           fi
-      # 依存関係のインストール
-      - name: Install dependencies
-        run: poetry install
       - name: Run test
         shell: bash
         id: pytest
