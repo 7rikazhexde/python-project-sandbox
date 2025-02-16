@@ -92,9 +92,10 @@ jobs:
       # poetry.lockの更新を行うステップ
       - name: Update poetry.lock if needed
         run: |
-          if ! poetry install 2>/dev/null; then
-            echo "Updating poetry.lock file..."
-            poetry lock
+          if ! poetry install; then
+            echo "Initial install failed. Updating poetry.lock file..."
+            rm -f poetry.lock
+            poetry lock --no-update
             poetry install
           fi
       # 依存関係のインストール
