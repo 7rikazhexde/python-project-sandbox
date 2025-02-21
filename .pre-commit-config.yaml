@@ -39,17 +39,17 @@ repos:
         verbose: true
 
   # https://github.com/python-poetry/poetry-plugin-export?tab=readme-ov-file#usage
-  - repo: https://github.com/python-poetry/poetry-plugin-export.git
-    rev: 1.9.0
-    hooks:
-      - id: poetry-export
-        args: ["-f", "requirements.txt", "-o", "requirements.txt", "--without-hashes"]
-        verbose: true
-        files: ^pyproject\.toml$
-      - id: poetry-export
-        args: ["--with", "dev", "-f", "requirements.txt", "-o", "requirements-dev.txt", "--without-hashes"]
-        verbose: true
-        files: ^pyproject\.toml$
+  #- repo: https://github.com/python-poetry/poetry-plugin-export.git
+  #  rev: 1.9.0
+  #  hooks:
+  #    - id: poetry-export
+  #      args: ["-f", "requirements.txt", "-o", "requirements.txt", "--without-hashes"]
+  #      verbose: true
+  #      files: ^pyproject\.toml$
+  #    - id: poetry-export
+  #      args: ["--with", "dev", "-f", "requirements.txt", "-o", "requirements-dev.txt", "--without-hashes"]
+  #      verbose: true
+  #      files: ^pyproject\.toml$
 
   #- repo: local
   #  hooks:
