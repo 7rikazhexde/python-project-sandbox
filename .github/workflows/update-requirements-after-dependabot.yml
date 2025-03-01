@@ -14,10 +14,11 @@ name: Update Requirements after Dependabot Merge
 on:
   pull_request:
     types: [closed]
+  workflow_dispatch:
 
 jobs:
   update-requirements:
-    if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
+    #if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
       # リポジトリをクローン
@@ -56,19 +57,26 @@ jobs:
 
       # Gist への requirements.txt のアップロード
       # Gist の ID は "e98bb6078bc1d99f94c26f6c739724f2" であり、これを使用して Gist の内容を更新
+      # Gist へのアップロード（curl を使用）
       - name: Upload requirements.txt to Gist
         env:
-          GH_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
+          GIST_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}  # パーソナルアクセストークン（gist 権限付き）
         run: |
-          gh gist edit e98bb6078bc1d99f94c26f6c739724f2 -f requirements.txt  # requirements.txtを指定のGistにアップロード
+          curl -X PATCH \
+            -H "Authorization: token $GIST_TOKEN" \
+            -d "{\"files\": {\"requirements.txt\": {\"content\": \"$(cat requirements.txt)\"}}}" \
+            https://api.github.com/gists/e98bb6078bc1d99f94c26f6c739724f2
 
       # Gist への requirements-dev.txt のアップロード
       # Gist の ID は "4d9c1e43c07c990b344fce63faffeef2" であり、これを使用して Gist の内容を更新
       - name: Upload requirements-dev.txt to Gist
         env:
-          GH_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
+          GIST_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
         run: |
-          gh gist edit 4d9c1e43c07c990b344fce63faffeef2 -f requirements-dev.txt  # requirements-dev.txtを指定のGistにアップロード
+          curl -X PATCH \
+            -H "Authorization: token $GIST_TOKEN" \
+            -d "{\"files\": {\"requirements-dev.txt\": {\"content\": \"$(cat requirements-dev.txt)\"}}}" \
+            https://api.github.com/gists/4d9c1e43c07c990b344fce63faffeef2
 
       # 変更をリポジトリにコミットしてプッシュ
       - name: Commit and push changes to main repository
