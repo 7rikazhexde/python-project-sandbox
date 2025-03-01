@@ -47,9 +47,9 @@ jobs:
           upload_to_gist() {
             local file="$1"
             local gist_id="$2"
-            # 変数の宣言と代入を分離
             local json_payload
-            json_payload=$(jq -n --arg content "$(cat "$file")" '{"files": {($file): {"content": $content}}}' "$file")
+            # jqにfileとcontentを渡してJSONを構築
+            json_payload=$(jq -n --arg fname "$file" --arg content "$(cat "$file")" '{"files": {($fname): {"content": $content}}}')
             curl -X PATCH \
               -H "Authorization: token $GIST_TOKEN" \
               -H "Content-Type: application/json" \
