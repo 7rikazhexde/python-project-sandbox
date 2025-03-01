@@ -139,12 +139,12 @@ build-backend = "poetry.core.masonry.api"
 
 # Taskipyタスク定義
 [tool.taskipy.tasks]
-test_coverage_verbose = "pytest -s -vv --cov=. --cov-branch --cov-report term-missing --cov-report html"
-test_html_report = "pytest --html=htmlcov/report_page.html"
-test_ci_xml = "python scripts/run_tests.py --report xml"
-test_ci_term = "python scripts/run_tests.py --report term"
-test_testmon = "pytest --testmon"
-test_coverage = "pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html"
+testcoverageverbose = "pytest -s -vv --cov=. --cov-branch --cov-report term-missing --cov-report html"
+testhtmlreport = "pytest --html=htmlcov/report_page.html"
+testcixml = "python scripts/run_tests.py --report xml"
+testciterm = "python scripts/run_tests.py --report term"
+testtestmon = "pytest --testmon"
+testcoverage = "pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html"
 
 # Ruffの設定
 [tool.ruff]
