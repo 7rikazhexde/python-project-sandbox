@@ -57,7 +57,7 @@
 # Poetry は警告を出しますが、これは意図的な重複であり、両ツールの互換性のために維持する。
 [tool.poetry]
 name = "python-project-sandbox"        # Dependabot requirement
-version = "1.2.2"                      # Dependabot requirement
+version = "1.2.3"                      # Dependabot requirement
 description = "An experimental project to test out various tools."    # Dependabot requirement
 authors = ["7rikaz <33836132+7rikazhexde@users.noreply.github.com>"]  # Dependabot requirement
 packages = [
