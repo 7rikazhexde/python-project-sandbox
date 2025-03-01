@@ -64,7 +64,7 @@ jobs:
         run: |
           curl -X PATCH \
             -H "Authorization: token $GIST_TOKEN" \
-            -d "{\"files\": {\"requirements.txt\": {\"content\": \"$(<requirements.txt jq -R . | tr -d '\n')\"}}}" \
+            -d "{\"files\": {\"requirements.txt\": {\"content\": \"$(<requirements.txt)\"}}}" \
             https://api.github.com/gists/e98bb6078bc1d99f94c26f6c739724f2
 
 
@@ -76,7 +76,7 @@ jobs:
         run: |
           curl -X PATCH \
             -H "Authorization: token $GIST_TOKEN" \
-            -d "{\"files\": {\"requirements-dev.txt\": {\"content\": \"$(cat requirements-dev.txt jq -R . | tr -d '\n')\"}}}" \
+            -d "{\"files\": {\"requirements-dev.txt\": {\"content\": \"$(<requirements-dev.txt)\"}}}" \
             https://api.github.com/gists/4d9c1e43c07c990b344fce63faffeef2
 
 
