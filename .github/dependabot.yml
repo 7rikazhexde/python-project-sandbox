@@ -9,6 +9,9 @@ updates:
         patterns:
           - "*"
     open-pull-requests-limit: 10
+    ignore:
+      - dependency-name: "requirements.txt"
+      - dependency-name: "requirements-dev.txt"
 
   - package-ecosystem: "github-actions"
     directory: "/"
