@@ -1,16 +1,5 @@
 name: Update Requirements after Dependabot Merge
 
-# ワークフローの処理の流れ:
-# 1. トリガー条件:
-#    - プルリクエストがマージされたとき
-#    - Dependabot によるマージであること
-# 2. 環境のセットアップ（Ubuntu、Python、Poetry）
-# 3. poetry.lock ファイルの更新
-# 4. 依存関係のインストール（更新された lock ファイルを使用）
-# 5. requirements.txt と requirements-dev.txt の生成
-# 6. Gist にファイル（requirements.txt と requirements-dev.txt）をアップロード
-# 7. 変更のコミットとプッシュ（poetry.lock を含む）
-
 on:
   pull_request:
     types: [closed]
@@ -18,78 +7,66 @@ on:
 
 jobs:
   update-requirements:
-    #if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
+    if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
     runs-on: ubuntu-latest
     steps:
-      # リポジトリをクローン
       - uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_FOR_PUSHES }}
 
-      # Python環境のセットアップ
       - name: Set up Python
         uses: actions/setup-python@v5
         with:
           python-version: '3.13'
 
-      # Poetryのインストール
       - name: Install Poetry
         run: pip install poetry
 
-      # Poetryにエクスポートプラグインを追加
       - name: Add plugin
         run: poetry self add poetry-plugin-export
 
-      # lockファイルの更新
       - name: Update lock file
-        run: poetry lock
+        run: poetry lock --no-update
 
-      # 依存関係をインストール
       - name: Install dependencies
         run: poetry install
 
-      # requirements.txt と requirements-dev.txt を生成
       - name: Generate requirements files
         run: |
           poetry export -f requirements.txt -o requirements.txt --without-hashes
           poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
 
-      # Gist への requirements.txt のアップロード
-      # Gist の ID は "e98bb6078bc1d99f94c26f6c739724f2" であり、これを使用して Gist の内容を更新
-      # Gist へのアップロード（curl を使用）
-      - name: Upload requirements.txt to Gist
-        env:
-          GIST_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}  # パーソナルアクセストークン（gist 権限付き）
-        run: |
-          curl -X PATCH \
-            -H "Authorization: token $GIST_TOKEN" \
-            -d "{\"files\": {\"requirements.txt\": {\"content\": \"$(<requirements.txt)\"}}}" \
-            https://api.github.com/gists/e98bb6078bc1d99f94c26f6c739724f2
+      - name: Install jq
+        run: sudo apt-get update && sudo apt-get install -y jq
 
-
-      # Gist への requirements-dev.txt のアップロード
-      # Gist の ID は "4d9c1e43c07c990b344fce63faffeef2" であり、これを使用して Gist の内容を更新
-      - name: Upload requirements-dev.txt to Gist
+      - name: Upload requirements files to Gist
         env:
           GIST_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
         run: |
-          curl -X PATCH \
-            -H "Authorization: token $GIST_TOKEN" \
-            -d "{\"files\": {\"requirements-dev.txt\": {\"content\": \"$(<requirements-dev.txt)\"}}}" \
-            https://api.github.com/gists/4d9c1e43c07c990b344fce63faffeef2
+          upload_to_gist() {
+            local file="$1"
+            local gist_id="$2"
+            # 変数の宣言と代入を分離
+            local json_payload
+            json_payload=$(jq -n --arg content "$(cat "$file")" '{"files": {($file): {"content": $content}}}' "$file")
+            curl -X PATCH \
+              -H "Authorization: token $GIST_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$json_payload" \
+              "https://api.github.com/gists/$gist_id" || echo "Failed to upload $file to Gist"
+          }
+          upload_to_gist "requirements.txt" "e98bb6078bc1d99f94c26f6c739724f2"
+          upload_to_gist "requirements-dev.txt" "4d9c1e43c07c990b344fce63faffeef2"
 
+      #- name: Commit and push changes to main repository
+      #  run: |
+      #    git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+      #    git config --local user.name "github-actions[bot]"
+      #    git add pyproject.toml poetry.lock
+      #    git commit -m ":wrench: Update lock file after dependency update [skip ci]" || echo "No changes to commit"
+      #    git push
 
-      # 変更をリポジトリにコミットしてプッシュ
-      - name: Commit and push changes to main repository
-        run: |
-          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "github-actions[bot]"
-          git add pyproject.toml poetry.lock
-          git commit -m ":wrench: Update lock file after dependency update [skip ci]" || echo "No changes to commit"
-          git push
-
-      # ローカルの requirements ファイルを削除
       - name: Clean up local requirements files
         run: |
           rm requirements.txt requirements-dev.txt
