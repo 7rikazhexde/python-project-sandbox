@@ -9,8 +9,6 @@ updates:
         patterns:
           - "*"
     open-pull-requests-limit: 10
-    files:
-      - "pyproject.toml"
 
   - package-ecosystem: "github-actions"
     directory: "/"
