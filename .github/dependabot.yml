@@ -10,9 +10,8 @@ updates:
           - "*"
     open-pull-requests-limit: 10
     ignore:
-      - dependency-name: "*"
-        update-types: ["version-update:semver-patch", "version-update:semver-minor", "version-update:semver-major"]
-        paths: ["requirements.txt", "requirements-dev.txt"]
+      - dependency-name: "requirements.txt"
+      - dependency-name: "requirements-dev.txt"
 
   - package-ecosystem: "github-actions"
     directory: "/"
