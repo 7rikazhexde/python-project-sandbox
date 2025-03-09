@@ -256,13 +256,12 @@ jobs:
             git commit -m "Update update-matrix.json with latest versions"
             git push origin HEAD:update-matrix-json-${{ github.run_id }}
 
-            # プルリクエストを作成
+            # プルリクエストを作成（ラベル指定を削除）
             gh pr create \
               --title "Update update-matrix.json with latest versions" \
               --body "This PR updates the versions in update-matrix.json based on the dynamic update workflow." \
               --base main \
-              --head update-matrix-json-${{ github.run_id }} \
-              --label "automated-pr"
+              --head update-matrix-json-${{ github.run_id }}
           fi
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
