@@ -26,7 +26,7 @@ jobs:
         id: json2vars
         uses: 7rikazhexde/json2vars-setter@dev_issue_114
         with:
-          json-file: .github/workflows/update-matrix.json
+          json-file: .github/tests/update-matrix.json
           update-matrix: 'true'
           python-strategy: 'stable'
           nodejs-strategy: 'latest'
@@ -49,13 +49,13 @@ jobs:
       - name: Display matrix.json content
         run: |
           echo "update-matrix.json content after update:"
-          cat .github/workflows/update-matrix.json
+          cat .github/tests/update-matrix.json
 
       - name: Upload matrix.json as artifact
         uses: actions/upload-artifact@v4
         with:
           name: update-matrix-json
-          path: .github/workflows/update-matrix.json
+          path: .github/tests/update-matrix.json
 
   test_python:
     needs: set_variables
@@ -239,45 +239,30 @@ jobs:
         uses: actions/download-artifact@v4
         with:
           name: update-matrix-json
-          path: .github/workflows/
+          path: .github/tests/
         continue-on-error: true
-
-      - name: Setup GitHub CLI
-        run: |
-          type -p curl >/dev/null || (apt update && apt install curl -y)
-          curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
-          && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
-          && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
-          && sudo apt update \
-          && sudo apt install gh -y
 
       - name: Create PR with updated matrix.json
         run: |
-          if [ -f ".github/workflows/update-matrix.json" ]; then
-            # ファイルを別のディレクトリにコピー (非ワークフローの場所)
-            mkdir -p temp_update
-            cp .github/workflows/update-matrix.json temp_update/update-matrix.json
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
 
-            git config --local user.email "github-actions@github.com"
-            git config --local user.name "GitHub Actions"
-
-            # 現在の日時をブランチ名に含める
-            BRANCH_NAME="update-matrix-$(date +%Y%m%d-%H%M%S)"
-
-            # 新しいブランチを作成して切り替え
-            git checkout -b "$BRANCH_NAME"
-
-            # ファイルをワークフロー以外の場所にステージング
-            git add temp_update/update-matrix.json
-
-            # 変更があるかチェックし、あればコミット
-            git diff --staged --quiet || (
-              git commit -m "Add updated matrix.json file" &&
-              git push origin "$BRANCH_NAME" &&
-              gh auth login --with-token <<< "${{ github.token }}" &&
-              gh pr create --title "Update matrix.json with latest versions" --body "自動生成されたPRです。最新の言語バージョン情報を更新しています。マージ後、temp_update/update-matrix.json を .github/workflows/update-matrix.json にコピーしてください。" --base main --head "$BRANCH_NAME"
-            )
-            echo "Updated matrix.json has been pushed to branch $BRANCH_NAME in temp_update/ directory and PR created"
+          # 変更があるか確認
+          if git diff --quiet .github/tests/update-matrix.json; then
+            echo "No changes detected in update-matrix.json. Skipping PR creation."
           else
-            echo "No update-matrix.json file found, skipping PR creation"
+            echo "Changes detected in update-matrix.json. Creating PR..."
+            git add .github/tests/update-matrix.json
+            git commit -m "Update update-matrix.json with latest versions"
+            git push origin HEAD:update-matrix-json-${{ github.run_id }}
+
+            # プルリクエストを作成
+            gh pr create \
+              --title "Update update-matrix.json with latest versions" \
+              --body "This PR updates the versions in update-matrix.json based on the dynamic update workflow." \
+              --base main \
+              --head update-matrix-json-${{ github.run_id }} \
+              --label "automated-pr"
           fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
