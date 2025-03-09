@@ -137,7 +137,7 @@ jobs:
       - name: Run simple Go test
         run: |
           echo "Running Go test on ${{ matrix.os }} with Go ${{ matrix.go-version }}"
-          go run .github/tests/go_test.go
+          go run .github/tests/go_sample.go
 
   test_rust:
     needs: set_variables
