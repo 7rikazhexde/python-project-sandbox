@@ -1,0 +1,162 @@
+name: Test Cache Version (Template-Only Mode)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      timestamp: ${{ steps.timestamp.outputs.value }}
+    steps:
+      - name: Get timestamp
+        id: timestamp
+        run: echo "value=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+  # 既存のキャッシュファイルを使用してテンプレートのみモードをテスト
+  set_variables:
+    needs: [setup]
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+      versions_nodejs: ${{ steps.json2vars.outputs.versions_nodejs }}
+      versions_ruby: ${{ steps.json2vars.outputs.versions_ruby }}
+      versions_go: ${{ steps.json2vars.outputs.versions_go }}
+      versions_rust: ${{ steps.json2vars.outputs.versions_rust }}
+      ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      # 出力用のテンプレートファイルを初期化（既存のmatrix.jsonをコピー）
+      - name: Prepare template file
+        run: |
+          # ディレクトリが存在することを確認
+          mkdir -p .github/json2vars-setter/
+
+          # 既存のmatrix.jsonを出力ファイルとしてコピー
+          cp .github/json2vars-setter/matrix.json .github/json2vars-setter/template_only_${{ needs.setup.outputs.timestamp }}.json
+
+          echo "Template file prepared:"
+          ls -la .github/json2vars-setter/template_only_${{ needs.setup.outputs.timestamp }}.json
+
+      # テンプレートのみモードでマトリックスを生成（APIコールなし）
+      - name: Generate template without API calls (template-only mode)
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        with:
+          json-file: .github/json2vars-setter/template_only_${{ needs.setup.outputs.timestamp }}.json
+          use-cache: 'true'
+          template-only: 'true'
+          cache-languages: 'python,nodejs'  # 特定の言語のみを対象
+          output-count: '3'
+          keep-existing: 'true'
+          sort-order: 'desc'
+          cache-file: .github/json2vars-setter/cache/version_cache.json
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug output values
+        run: |
+          echo "OS: ${{ steps.json2vars.outputs.os }}"
+          echo "Python versions: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Node.js versions: ${{ steps.json2vars.outputs.versions_nodejs }}"
+          echo "Ruby versions: ${{ steps.json2vars.outputs.versions_ruby }}"
+          echo "Go versions: ${{ steps.json2vars.outputs.versions_go }}"
+          echo "Rust versions: ${{ steps.json2vars.outputs.versions_rust }}"
+          echo "GitHub Pages branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+
+      - name: Display template content
+        run: |
+          echo "Template-only output file content:"
+          cat .github/json2vars-setter/template_only_${{ needs.setup.outputs.timestamp }}.json
+
+      - name: Upload files as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: template-only-files
+          path: |
+            .github/json2vars-setter/template_only_${{ needs.setup.outputs.timestamp }}.json
+            .github/json2vars-setter/matrix.json
+            .github/json2vars-setter/cache/version_cache.json
+          if-no-files-found: warn
+
+  summary:
+    needs: [setup, set_variables]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: template-only-files
+          path: artifacts/
+        continue-on-error: true
+
+      - name: Summarize test results
+        run: |
+          {
+            echo "## Cache Version Test Results (Template-Only Mode)"
+            echo ""
+            echo "### テスト設定"
+            echo "- Template-only mode: true (APIコールなし)"
+            echo "- Cache file: 既存のバージョン情報を持つキャッシュ"
+            echo ""
+            echo "### メインテンプレートテスト"
+            echo "- 言語: python, nodejs"
+            echo "- 出力数: 3"
+            echo "- 既存維持: true"
+            echo "- ソート順序: desc (新しいバージョンが先)"
+            echo ""
+            echo "### Python バージョン (メインテンプレート)"
+            echo "\`\`\`"
+            echo "${{ needs.set_variables.outputs.versions_python }}"
+            echo "\`\`\`"
+            echo ""
+            echo "### Node.js バージョン (メインテンプレート)"
+            echo "\`\`\`"
+            echo "${{ needs.set_variables.outputs.versions_nodejs }}"
+            echo "\`\`\`"
+            echo ""
+            echo "### テスト状況"
+            echo "- テンプレートのみ生成: 完了"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Create PR with updated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # ディレクトリが存在することを確認
+          mkdir -p .github/json2vars-setter/
+
+          # アーティファクトからファイルをコピー
+          if [ -d artifacts ]; then
+            echo "Copying template files..."
+            cp -r artifacts/* .github/json2vars-setter/
+          fi
+
+          # 変更があるか確認
+          if git status --porcelain | grep -q ".github/"; then
+            echo "Changes detected in template files. Creating PR..."
+            git add .github/json2vars-setter/
+            git commit -m "Update files from template-only mode test [skip ci]"
+            git push origin HEAD:cache-version-template-only-${{ needs.setup.outputs.timestamp }}
+
+            gh pr create \
+              --title "Update files from template-only mode test [skip ci]" \
+              --body "This PR updates the test files from the template-only cache version workflow." \
+              --base main \
+              --head cache-version-template-only-${{ needs.setup.outputs.timestamp }}
+          else
+            echo "No changes detected in template files. Skipping PR creation."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
