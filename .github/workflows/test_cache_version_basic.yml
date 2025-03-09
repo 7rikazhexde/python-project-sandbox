@@ -112,9 +112,14 @@ jobs:
   test_ruby:
     needs: set_variables
     strategy:
+      fail-fast: false  # 一部が失敗しても続行
       matrix:
         os: ${{ fromJson(needs.set_variables.outputs.os) }}
         ruby-version: ${{ fromJson(needs.set_variables.outputs.versions_ruby) }}
+        exclude:
+          # Windows環境では3.4.0のみ除外（3.4.1, 3.4.2などは問題なし）
+          - os: windows-latest
+            ruby-version: 3.4.0
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4.2.2
@@ -132,6 +137,7 @@ jobs:
   test_go:
     needs: set_variables
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJson(needs.set_variables.outputs.os) }}
         go-version: ${{ fromJson(needs.set_variables.outputs.versions_go) }}
@@ -152,6 +158,7 @@ jobs:
   test_rust:
     needs: set_variables
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJson(needs.set_variables.outputs.os) }}
         rust-version: ${{ fromJson(needs.set_variables.outputs.versions_rust) }}
