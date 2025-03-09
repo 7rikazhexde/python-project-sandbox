@@ -31,6 +31,7 @@ jobs:
           cache-languages: 'all'
           cache-max-age: '1'
           cache-count: '3'
+          output-count: '3'
           keep-existing: 'true'
           sort-order: 'desc'
         env:
