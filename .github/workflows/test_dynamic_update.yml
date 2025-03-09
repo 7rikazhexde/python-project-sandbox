@@ -1,6 +1,5 @@
 name: Test Dynamic Update
 
-# 手動実行のみを可能にする
 on:
   workflow_dispatch:
 
@@ -26,6 +25,7 @@ jobs:
           nodejs-strategy: 'latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          PYTHONPATH: /home/runner/work/_actions/7rikazhexde/json2vars-setter/dev_issue_114
 
       - name: Debug output values
         run: |
@@ -37,7 +37,7 @@ jobs:
       - name: Display matrix.json content
         run: |
           echo "update-matrix.json content after update:"
-          cat update-matrix.json
+          cat .github/workflows/update-matrix.json
 
   test:
     needs: set_variables
