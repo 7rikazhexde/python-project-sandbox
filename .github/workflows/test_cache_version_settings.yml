@@ -1,0 +1,350 @@
+name: Test Cache Version (Advanced Settings)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  setup:
+    runs-on: ubuntu-latest
+    outputs:
+      timestamp: ${{ steps.timestamp.outputs.value }}
+    steps:
+      - name: Get timestamp
+        id: timestamp
+        run: echo "value=$(date +%s)" >> "$GITHUB_OUTPUT"
+
+  set_variables:
+    needs: setup
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+      versions_nodejs: ${{ steps.json2vars.outputs.versions_nodejs }}
+      versions_ruby: ${{ steps.json2vars.outputs.versions_ruby }}
+      versions_go: ${{ steps.json2vars.outputs.versions_go }}
+      versions_rust: ${{ steps.json2vars.outputs.versions_rust }}
+      ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      # 事前にマトリックスJSONファイルを作成
+      - name: Create custom matrix template
+        run: |
+          mkdir -p .github/json2vars-setter
+          cat > .github/json2vars-setter/matrix.json << 'EOF'
+          {
+              "os": ["ubuntu-latest", "macos-latest"],
+              "versions": {
+                  "python": ["3.9.0"],
+                  "nodejs": ["16.0.0"],
+                  "ruby": ["2.7.0"],
+                  "go": ["1.17.0"],
+                  "rust": ["1.55.0"]
+              },
+              "ghpages_branch": "custom-branch"
+          }
+          EOF
+          echo "Custom matrix template created:"
+          cat .github/json2vars-setter/matrix.json
+
+      # 高度な設定でキャッシュを更新
+      - name: Set variables with advanced settings
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        with:
+          # カスタムファイルパス設定
+          json-file: .github/json2vars-setter/advanced_matrix_${{ needs.setup.outputs.timestamp }}.json
+          cache-file: .github/json2vars-setter/cache/advanced_cache_${{ needs.setup.outputs.timestamp }}.json
+
+          # キャッシュ設定
+          use-cache: 'true'
+          cache-languages: 'python,nodejs,ruby'  # 3言語のみ対象
+          force-cache-update: 'true'
+
+          # バージョン数設定（異なる組み合わせ）
+          cache-count: '6'
+          output-count: '2'
+
+          # カスタム設定
+          keep-existing: 'true'
+          sort-order: 'asc'  # 昇順（古いバージョンから）
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug output values
+        run: |
+          echo "OS: ${{ steps.json2vars.outputs.os }}"
+          echo "Python versions: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Node.js versions: ${{ steps.json2vars.outputs.versions_nodejs }}"
+          echo "Ruby versions: ${{ steps.json2vars.outputs.versions_ruby }}"
+          echo "Go versions: ${{ steps.json2vars.outputs.versions_go }}"
+          echo "Rust versions: ${{ steps.json2vars.outputs.versions_rust }}"
+          echo "GitHub Pages branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+
+      - name: Display matrix.json content
+        run: |
+          echo "Matrix json content after update:"
+          cat .github/json2vars-setter/advanced_matrix_${{ needs.setup.outputs.timestamp }}.json
+
+      - name: Display cache file content
+        run: |
+          echo "Cache file content:"
+          cat .github/json2vars-setter/cache/advanced_cache_${{ needs.setup.outputs.timestamp }}.json || echo "Cache file not found"
+
+      - name: Upload all files as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: advanced-settings-files
+          path: .github/json2vars-setter/
+          if-no-files-found: warn
+
+  test_settings:
+    needs: [setup, set_variables]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: advanced-settings-files
+          path: advanced-files/
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Verify custom settings and structure
+        run: |
+          echo "=== Testing Advanced Settings ==="
+
+          # マトリックスファイルパスの確認
+          MATRIX_FILE="advanced-files/advanced_matrix_${{ needs.setup.outputs.timestamp }}.json"
+          if [ -f "$MATRIX_FILE" ]; then
+            echo "✅ Custom matrix file exists at: $MATRIX_FILE"
+          else
+            echo "❌ Custom matrix file not found"
+            exit 1
+          fi
+
+          # キャッシュファイルパスの確認
+          CACHE_FILE="advanced-files/cache/advanced_cache_${{ needs.setup.outputs.timestamp }}.json"
+          if [ -f "$CACHE_FILE" ]; then
+            echo "✅ Custom cache file exists at: $CACHE_FILE"
+          else
+            echo "❌ Custom cache file not found"
+            exit 1
+          fi
+
+          # オプションの検証
+
+          # 1. OS配列の確認
+          OS_COUNT=$(jq '.os | length' "$MATRIX_FILE")
+          if [ "$OS_COUNT" -ge 1 ]; then
+            echo "✅ OS array included (count: $OS_COUNT)"
+          else
+            echo "❌ OS array missing, found: $OS_COUNT items"
+          fi
+
+          # 2. ghpages_branch の確認
+          if jq -e '.ghpages_branch' "$MATRIX_FILE" > /dev/null; then
+            BRANCH=$(jq -r '.ghpages_branch' "$MATRIX_FILE")
+            echo "✅ ghpages_branch included: $BRANCH"
+          else
+            echo "❌ ghpages_branch missing"
+          fi
+
+          # 3. ソート順序の確認 - 昇順（asc）
+          # Python バージョンを取得して先頭と末尾を比較
+          FIRST_VERSION=$(jq -r '.versions.python[0]' "$MATRIX_FILE")
+          LAST_VERSION=$(jq -r '.versions.python[1]' "$MATRIX_FILE")
+          if [ "$(printf '%s\n' "$FIRST_VERSION" "$LAST_VERSION" | sort -V | head -n1)" = "$FIRST_VERSION" ]; then
+            echo "✅ Sort order is ascending: $FIRST_VERSION → $LAST_VERSION"
+          else
+            echo "❌ Sort order is NOT ascending: $FIRST_VERSION → $LAST_VERSION"
+          fi
+
+          # 4. バージョン数の確認 - output-count: 2
+          for lang in python nodejs ruby; do
+            COUNT=$(jq ".versions.$lang | length" "$MATRIX_FILE")
+            if [ "$COUNT" -eq 2 ]; then
+              echo "✅ $lang has exactly 2 versions in matrix (correct)"
+            else
+              echo "❌ $lang has $COUNT versions in matrix (expected 2)"
+            fi
+          done
+
+          # 5. Keep-existing の確認
+          if jq -e '.versions.go' "$MATRIX_FILE" > /dev/null; then
+            GO_VERSION=$(jq -r '.versions.go[0]' "$MATRIX_FILE")
+            echo "✅ Go version included: $GO_VERSION"
+          else
+            echo "❓ Go version not included (may be expected if not in original file)"
+          fi
+
+          if jq -e '.versions.rust' "$MATRIX_FILE" > /dev/null; then
+            RUST_VERSION=$(jq -r '.versions.rust[0]' "$MATRIX_FILE")
+            echo "✅ Rust version included: $RUST_VERSION"
+          else
+            echo "❓ Rust version not included (may be expected if not in original file)"
+          fi
+
+          # 6. キャッシュファイルのバージョン数の確認 - cache-count: 6
+          for lang in python nodejs ruby; do
+            COUNT=$(jq ".languages.$lang.recent_releases | length" "$CACHE_FILE")
+            if [ "$COUNT" -ge 6 ]; then
+              echo "✅ $lang has at least 6 versions in cache: $COUNT"
+            else
+              echo "❌ $lang has only $COUNT versions in cache (expected at least 6)"
+            fi
+          done
+
+  test_language:
+    needs: [set_variables]
+    runs-on: ubuntu-latest
+    strategy:
+      fail-fast: false
+      matrix:
+        language: ['python', 'nodejs', 'ruby']
+        include:
+          - language: 'python'
+            versions: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+            command: 'python --version'
+          - language: 'nodejs'
+            versions: ${{ fromJson(needs.set_variables.outputs.versions_nodejs) }}
+            command: 'node --version'
+          - language: 'ruby'
+            versions: ${{ fromJson(needs.set_variables.outputs.versions_ruby) }}
+            command: 'ruby --version'
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Set up Python
+        if: matrix.language == 'python'
+        uses: actions/setup-python@v5.4.0
+        with:
+          python-version: ${{ matrix.versions[0] }}
+
+      - name: Set up Node.js
+        if: matrix.language == 'nodejs'
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.versions[0] }}
+
+      - name: Set up Ruby
+        if: matrix.language == 'ruby'
+        uses: actions/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.versions[0] }}
+
+      - name: Check version
+        run: ${{ matrix.command }}
+
+      - name: Verify ascending order
+        run: |
+          echo "Versions for ${{ matrix.language }}: ${{ toJSON(matrix.versions) }}"
+          # バージョンが昇順であることを確認
+          VERSION_ARRAY='${{ toJSON(matrix.versions) }}'
+          SORTED_ARRAY=$(echo $VERSION_ARRAY | jq 'sort_by(. | split(".") | map(if test("^\\d+$") then tonumber else . end))')
+          if [ "$VERSION_ARRAY" = "$SORTED_ARRAY" ]; then
+            echo "✅ Versions are in ascending order"
+          else
+            echo "❌ Versions are NOT in ascending order"
+            echo "Original: $VERSION_ARRAY"
+            echo "Sorted:   $SORTED_ARRAY"
+            exit 1
+          fi
+
+  summary:
+    needs: [setup, set_variables, test_settings, test_language]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Summarize test results
+        run: |
+          {
+            echo "## Cache Version Test Results (Advanced Settings)"
+            echo ""
+            echo "### Test Configuration"
+            echo "- Custom files:"
+            echo "  - Matrix file: .github/json2vars-setter/advanced_matrix_${{ needs.setup.outputs.timestamp }}.json"
+            echo "  - Cache file: .github/json2vars-setter/cache/advanced_cache_${{ needs.setup.outputs.timestamp }}.json"
+            echo "- Standard matrix.json with custom settings"
+            echo ""
+            echo "### Cache Settings"
+            echo "- Languages: python, nodejs, ruby only (Go and Rust preserved from template)"
+            echo "- Cache count: 6 versions"
+            echo "- Output count: 2 versions"
+            echo "- Keep existing: true"
+            echo "- Sort order: asc (oldest first)"
+            echo ""
+            echo "### Python Versions (ascending order)"
+            echo "\`\`\`"
+            echo "${{ needs.set_variables.outputs.versions_python }}"
+            echo "\`\`\`"
+            echo ""
+            echo "### Node.js Versions (ascending order)"
+            echo "\`\`\`"
+            echo "${{ needs.set_variables.outputs.versions_nodejs }}"
+            echo "\`\`\`"
+            echo ""
+            echo "### Ruby Versions (ascending order)"
+            echo "\`\`\`"
+            echo "${{ needs.set_variables.outputs.versions_ruby }}"
+            echo "\`\`\`"
+            echo ""
+            echo "### Test Status"
+            echo "- Custom settings verification: Completed"
+            echo "- Language version tests: Completed"
+          } >> "${GITHUB_STEP_SUMMARY}"
+
+      - name: Download updated files
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+        continue-on-error: true
+
+      - name: Create PR with updated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Ensure directories exist
+          mkdir -p .github/json2vars-setter/cache
+
+          # Copy files from artifacts
+          if [ -d artifacts/advanced-settings-files ]; then
+            echo "Copying files from artifacts..."
+            cp -r artifacts/advanced-settings-files/. .github/json2vars-setter/
+            echo "Files copied successfully"
+          fi
+
+          # Debug: list files in .github directory
+          echo "Files in .github directory:"
+          find .github -type f -name "*.json" | sort
+
+          # Check if there are changes
+          if git status --porcelain | grep -q ".github/"; then
+            echo "Changes detected in cache files. Creating PR..."
+            git add .github/json2vars-setter/
+            git commit -m "Update cache files with advanced settings [skip ci]"
+            git push origin HEAD:cache-version-settings-${{ needs.setup.outputs.timestamp }}
+
+            gh pr create \
+              --title "Update files from advanced settings test [skip ci]" \
+              --body "This PR updates the cache files based on the advanced settings cache version workflow." \
+              --base main \
+              --head cache-version-settings-${{ needs.setup.outputs.timestamp }}
+          else
+            echo "No changes detected in cache files. Skipping PR creation."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
