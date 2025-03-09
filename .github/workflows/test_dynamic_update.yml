@@ -1,0 +1,84 @@
+name: Test Dynamic Update
+
+# 手動実行のみを可能にする
+on:
+  workflow_dispatch:
+
+jobs:
+  set_variables:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+      versions_nodejs: ${{ steps.json2vars.outputs.versions_nodejs }}
+      ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Set variables with dynamic update
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        with:
+          json-file: update-matrix.json
+          update-matrix: 'true'
+          python-strategy: 'stable'
+          nodejs-strategy: 'latest'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug output values
+        run: |
+          echo "OS: ${{ steps.json2vars.outputs.os }}"
+          echo "Python versions: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Node.js versions: ${{ steps.json2vars.outputs.versions_nodejs }}"
+          echo "GitHub Pages branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+
+      - name: Display matrix.json content
+        run: |
+          echo "update-matrix.json content after update:"
+          cat update-matrix.json
+
+  test:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.4.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Check Python version
+        run: python --version
+
+      - name: Run simple test
+        run: |
+          echo "Running test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+          python -c "print('Dynamic Update test successful!')"
+
+  summary:
+    needs: [set_variables]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Summarize test results
+        run: |
+          {
+            echo "## Dynamic Update Test Results"
+            echo ""
+            echo "### Dynamic Update Configuration"
+            echo "- Python strategy: stable"
+            echo "- Node.js strategy: latest"
+            echo ""
+            echo "### Updated Versions"
+            echo "- Python: ${needs_set_variables_outputs_versions_python}"
+            echo "- Node.js: ${needs_set_variables_outputs_versions_nodejs}"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          needs_set_variables_outputs_versions_python: "${{ needs.set_variables.outputs.versions_python }}"
+          needs_set_variables_outputs_versions_nodejs: "${{ needs.set_variables.outputs.versions_nodejs }}"
