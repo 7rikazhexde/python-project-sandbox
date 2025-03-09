@@ -25,7 +25,6 @@ jobs:
           nodejs-strategy: 'latest'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          PYTHONPATH: /home/runner/work/_actions/7rikazhexde/json2vars-setter/dev_issue_114
 
       - name: Debug output values
         run: |
