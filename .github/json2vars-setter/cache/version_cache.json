@@ -1,13 +1,13 @@
 {
     "metadata": {
-        "last_updated": "2025-03-09T12:13:55.103910",
+        "last_updated": "2025-03-09T13:43:36.817900",
         "version": "1.1",
-        "version_count": 3
+        "version_count": 5
     },
     "languages": {
         "python": {
             "latest": "3.13.2",
-            "stable": "3.13.2",
+            "stable": "3.12.9",
             "recent_releases": [
                 {
                     "version": "3.13.2",
@@ -47,9 +47,35 @@
                         "tarball_url": "https://api.github.com/repos/python/cpython/tarball/refs/tags/v3.13.0",
                         "zipball_url": "https://api.github.com/repos/python/cpython/zipball/refs/tags/v3.13.0"
                     }
+                },
+                {
+                    "version": "3.12.9",
+                    "release_date": null,
+                    "prerelease": false,
+                    "additional_info": {
+                        "tag_name": "v3.12.9",
+                        "commit": {
+                            "sha": "fdb81425a9ad683f8c24bf5cbedc9b96baf00cd2"
+                        },
+                        "tarball_url": "https://api.github.com/repos/python/cpython/tarball/refs/tags/v3.12.9",
+                        "zipball_url": "https://api.github.com/repos/python/cpython/zipball/refs/tags/v3.12.9"
+                    }
+                },
+                {
+                    "version": "3.12.8",
+                    "release_date": null,
+                    "prerelease": false,
+                    "additional_info": {
+                        "tag_name": "v3.12.8",
+                        "commit": {
+                            "sha": "2dc476bcb9142cd25d7e1d52392b73a3dcdf1756"
+                        },
+                        "tarball_url": "https://api.github.com/repos/python/cpython/tarball/refs/tags/v3.12.8",
+                        "zipball_url": "https://api.github.com/repos/python/cpython/zipball/refs/tags/v3.12.8"
+                    }
                 }
             ],
-            "last_updated": "2025-03-09T12:13:53.972476"
+            "last_updated": "2025-03-09T13:43:36.259286"
         },
         "nodejs": {
             "latest": "23.9.0",
@@ -96,9 +122,37 @@
                         "tarball_url": "https://api.github.com/repos/nodejs/node/tarball/refs/tags/v23.7.0",
                         "zipball_url": "https://api.github.com/repos/nodejs/node/zipball/refs/tags/v23.7.0"
                     }
+                },
+                {
+                    "version": "23.6.1",
+                    "release_date": null,
+                    "prerelease": false,
+                    "additional_info": {
+                        "tag_name": "v23.6.1",
+                        "commit": {
+                            "sha": "25a01ea40d60a3cec56263fef109d00d638208c0"
+                        },
+                        "is_lts": false,
+                        "tarball_url": "https://api.github.com/repos/nodejs/node/tarball/refs/tags/v23.6.1",
+                        "zipball_url": "https://api.github.com/repos/nodejs/node/zipball/refs/tags/v23.6.1"
+                    }
+                },
+                {
+                    "version": "23.6.0",
+                    "release_date": null,
+                    "prerelease": false,
+                    "additional_info": {
+                        "tag_name": "v23.6.0",
+                        "commit": {
+                            "sha": "9fa6aeb4a6e54330f6c055a6dcfac265b150f902"
+                        },
+                        "is_lts": false,
+                        "tarball_url": "https://api.github.com/repos/nodejs/node/tarball/refs/tags/v23.6.0",
+                        "zipball_url": "https://api.github.com/repos/nodejs/node/zipball/refs/tags/v23.6.0"
+                    }
                 }
             ],
-            "last_updated": "2025-03-09T12:13:54.462330"
+            "last_updated": "2025-03-09T13:43:36.817890"
         },
         "ruby": {
             "latest": "3.4.2",
