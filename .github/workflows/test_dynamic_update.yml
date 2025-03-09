@@ -10,6 +10,9 @@ jobs:
       os: ${{ steps.json2vars.outputs.os }}
       versions_python: ${{ steps.json2vars.outputs.versions_python }}
       versions_nodejs: ${{ steps.json2vars.outputs.versions_nodejs }}
+      versions_ruby: ${{ steps.json2vars.outputs.versions_ruby }}
+      versions_go: ${{ steps.json2vars.outputs.versions_go }}
+      versions_rust: ${{ steps.json2vars.outputs.versions_rust }}
       ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
     steps:
       - name: Checkout repository
@@ -23,6 +26,9 @@ jobs:
           update-matrix: 'true'
           python-strategy: 'stable'
           nodejs-strategy: 'latest'
+          ruby-strategy: 'both'
+          go-strategy: 'both'
+          rust-strategy: 'stable'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
@@ -31,6 +37,9 @@ jobs:
           echo "OS: ${{ steps.json2vars.outputs.os }}"
           echo "Python versions: ${{ steps.json2vars.outputs.versions_python }}"
           echo "Node.js versions: ${{ steps.json2vars.outputs.versions_nodejs }}"
+          echo "Ruby versions: ${{ steps.json2vars.outputs.versions_ruby }}"
+          echo "Go versions: ${{ steps.json2vars.outputs.versions_go }}"
+          echo "Rust versions: ${{ steps.json2vars.outputs.versions_rust }}"
           echo "GitHub Pages branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
 
       - name: Display matrix.json content
@@ -84,8 +93,78 @@ jobs:
           echo "Running Node.js test on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}"
           node -e "console.log('Node.js Dynamic Update test successful!')"
 
+  test_ruby:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        ruby-version: ${{ fromJson(needs.set_variables.outputs.versions_ruby) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+
+      - name: Check Ruby version
+        run: ruby --version
+
+      - name: Run simple Ruby test
+        run: |
+          echo "Running Ruby test on ${{ matrix.os }} with Ruby ${{ matrix.ruby-version }}"
+          ruby -e "puts 'Ruby Dynamic Update test successful!'"
+
+  test_go:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        go-version: ${{ fromJson(needs.set_variables.outputs.versions_go) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+
+      - name: Check Go version
+        run: go version
+
+      - name: Run simple Go test
+        run: |
+          echo "Running Go test on ${{ matrix.os }} with Go ${{ matrix.go-version }}"
+          go run -e="package main; import \"fmt\"; func main() { fmt.Println(\"Go Dynamic Update test successful!\") }"
+
+  test_rust:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        rust-version: ${{ fromJson(needs.set_variables.outputs.versions_rust) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust-version }}
+
+      - name: Check Rust version
+        run: rustc --version
+
+      - name: Run simple Rust test
+        run: |
+          echo "Running Rust test on ${{ matrix.os }} with Rust ${{ matrix.rust-version }}"
+          echo 'fn main() { println!("Rust Dynamic Update test successful!"); }' > test.rs
+          rustc test.rs && ./test
+
   summary:
-    needs: [set_variables, test_python, test_nodejs]
+    needs: [set_variables, test_python, test_nodejs, test_ruby, test_go, test_rust]
     runs-on: ubuntu-latest
     steps:
       - name: Summarize test results
@@ -96,15 +175,27 @@ jobs:
             echo "### Dynamic Update Configuration"
             echo "- Python strategy: stable"
             echo "- Node.js strategy: latest"
+            echo "- Ruby strategy: both"
+            echo "- Go strategy: both"
+            echo "- Rust strategy: stable"
             echo ""
             echo "### Updated Versions"
             echo "- Python: ${needs_set_variables_outputs_versions_python}"
             echo "- Node.js: ${needs_set_variables_outputs_versions_nodejs}"
+            echo "- Ruby: ${needs_set_variables_outputs_versions_ruby}"
+            echo "- Go: ${needs_set_variables_outputs_versions_go}"
+            echo "- Rust: ${needs_set_variables_outputs_versions_rust}"
             echo ""
             echo "### Test Status"
             echo "- Python tests: Completed"
             echo "- Node.js tests: Completed"
+            echo "- Ruby tests: Completed"
+            echo "- Go tests: Completed"
+            echo "- Rust tests: Completed"
           } >> "${GITHUB_STEP_SUMMARY}"
         env:
           needs_set_variables_outputs_versions_python: "${{ needs.set_variables.outputs.versions_python }}"
           needs_set_variables_outputs_versions_nodejs: "${{ needs.set_variables.outputs.versions_nodejs }}"
+          needs_set_variables_outputs_versions_ruby: "${{ needs.set_variables.outputs.versions_ruby }}"
+          needs_set_variables_outputs_versions_go: "${{ needs.set_variables.outputs.versions_go }}"
+          needs_set_variables_outputs_versions_rust: "${{ needs.set_variables.outputs.versions_rust }}"
