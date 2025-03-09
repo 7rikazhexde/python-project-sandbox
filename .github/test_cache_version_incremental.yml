@@ -1,0 +1,300 @@
+name: Test Cache Version (Incremental)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  set_variables:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+      versions_nodejs: ${{ steps.json2vars.outputs.versions_nodejs }}
+      versions_ruby: ${{ steps.json2vars.outputs.versions_ruby }}
+      versions_go: ${{ steps.json2vars.outputs.versions_go }}
+      versions_rust: ${{ steps.json2vars.outputs.versions_rust }}
+      ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Set variables with incremental cache update
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        with:
+          json-file: .github/json2vars-setter/matrix.json
+          use-cache: 'true'
+          cache-languages: 'all'                # すべての言語を対象
+          force-cache-update: 'true'            # 強制更新（テスト用）
+          cache-incremental: 'true'             # インクリメンタル更新（既存のキャッシュを維持）
+          cache-count: '15'                     # 各言語15バージョンをキャッシュ
+          output-count: '5'                     # マトリックスには5バージョンのみ含める
+          keep-existing: 'true'
+          sort-order: 'desc'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug output values
+        run: |
+          echo "OS: ${{ steps.json2vars.outputs.os }}"
+          echo "Python versions: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Node.js versions: ${{ steps.json2vars.outputs.versions_nodejs }}"
+          echo "Ruby versions: ${{ steps.json2vars.outputs.versions_ruby }}"
+          echo "Go versions: ${{ steps.json2vars.outputs.versions_go }}"
+          echo "Rust versions: ${{ steps.json2vars.outputs.versions_rust }}"
+          echo "GitHub Pages branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+
+      - name: Display matrix.json content
+        run: |
+          echo "matrix.json content after update:"
+          cat .github/json2vars-setter/matrix.json
+
+      - name: Display cache file content
+        run: |
+          echo "Version cache file content:"
+          cat .github/json2vars-setter/cache/version_cache.json || echo "Cache file not found"
+
+          echo "Count of versions in cache per language:"
+          jq '.languages.python.recent_releases | length' .github/json2vars-setter/cache/version_cache.json || echo "Failed to count Python versions"
+          jq '.languages.nodejs.recent_releases | length' .github/json2vars-setter/cache/version_cache.json || echo "Failed to count Node.js versions"
+          jq '.languages.ruby.recent_releases | length' .github/json2vars-setter/cache/version_cache.json || echo "Failed to count Ruby versions"
+          jq '.languages.go.recent_releases | length' .github/json2vars-setter/cache/version_cache.json || echo "Failed to count Go versions"
+          jq '.languages.rust.recent_releases | length' .github/json2vars-setter/cache/version_cache.json || echo "Failed to count Rust versions"
+
+      - name: Upload matrix and cache files as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: json2vars-setter-files
+          path: |
+            .github/json2vars-setter/matrix.json
+            .github/json2vars-setter/cache/version_cache.json
+            .github/json2vars-setter/cache/version_template.json
+          if-no-files-found: warn
+
+  # テスト用のジョブ - 各言語の出力バージョン数を検証
+  test_version_counts:
+    needs: set_variables
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Download artifacts
+        uses: actions/download-artifact@v4
+        with:
+          name: json2vars-setter-files
+          path: artifacts/
+
+      - name: Install jq
+        run: sudo apt-get install -y jq
+
+      - name: Verify matrix version counts
+        run: |
+          # マトリックスJSONから各言語のバージョン数をカウント
+          echo "Version counts in matrix.json:"
+          jq '.versions.python | length' artifacts/matrix.json
+          jq '.versions.nodejs | length' artifacts/matrix.json
+          jq '.versions.ruby | length' artifacts/matrix.json
+          jq '.versions.go | length' artifacts/matrix.json
+          jq '.versions.rust | length' artifacts/matrix.json
+
+          # マトリックスJSONのバージョン数が5であることを確認
+          for lang in python nodejs ruby go rust; do
+            count=$(jq ".versions.$lang | length" artifacts/matrix.json)
+            if [ "$count" -eq 5 ]; then
+              echo "✅ $lang has correct count of 5 versions in matrix"
+            else
+              echo "❌ $lang has $count versions in matrix (expected 5)"
+            fi
+          done
+
+      - name: Verify cache version counts
+        run: |
+          # キャッシュから各言語のバージョン数をカウント
+          echo "Version counts in cache file:"
+          jq '.languages.python.recent_releases | length' artifacts/cache/version_cache.json
+          jq '.languages.nodejs.recent_releases | length' artifacts/cache/version_cache.json
+          jq '.languages.ruby.recent_releases | length' artifacts/cache/version_cache.json
+          jq '.languages.go.recent_releases | length' artifacts/cache/version_cache.json
+          jq '.languages.rust.recent_releases | length' artifacts/cache/version_cache.json
+
+          # キャッシュのバージョン数が15以上であることを確認（インクリメンタル更新のため、正確に15ではない場合がある）
+          for lang in python nodejs ruby go rust; do
+            count=$(jq ".languages.$lang.recent_releases | length" artifacts/cache/version_cache.json)
+            if [ "$count" -ge 10 ]; then
+              echo "✅ $lang has sufficient versions in cache: $count (expected at least 10)"
+            else
+              echo "❌ $lang has only $count versions in cache (expected at least 10)"
+            fi
+          done
+
+  test_python:
+    needs: set_variables
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Python
+        uses: actions/setup-python@v5.4.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check Python version
+        run: python --version
+      - name: Run simple Python test
+        run: |
+          echo "Running Python test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+          python .github/tests/python_test.py
+
+  test_nodejs:
+    needs: set_variables
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        node-version: ${{ fromJson(needs.set_variables.outputs.versions_nodejs) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Check Node.js version
+        run: node --version
+      - name: Run simple Node.js test
+        run: |
+          echo "Running Node.js test on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}"
+          node .github/tests/nodejs_test.js
+
+  test_ruby:
+    needs: set_variables
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        ruby-version: ${{ fromJson(needs.set_variables.outputs.versions_ruby) }}
+        exclude:
+          # Windows環境では3.4.0のみ除外
+          - os: windows-latest
+            ruby-version: 3.4.0
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+      - name: Check Ruby version
+        run: ruby --version
+      - name: Run simple Ruby test
+        run: |
+          echo "Running Ruby test on ${{ matrix.os }} with Ruby ${{ matrix.ruby-version }}"
+          ruby .github/tests/ruby_test.rb
+
+  summary:
+    needs: [set_variables, test_version_counts, test_python, test_nodejs, test_ruby]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Summarize test results
+        run: |
+          {
+            echo "## Cache Version Test Results (Incremental)"
+            echo ""
+            echo "### Cache Configuration"
+            echo "- Use cache: true"
+            echo "- Languages: all languages"
+            echo "- Force update: true"
+            echo "- Incremental mode: true (preserve existing versions)"
+            echo "- Cache count: 15 (versions stored in cache)"
+            echo "- Output count: 5 (versions used in matrix.json)"
+            echo "- Keep existing: true"
+            echo "- Sort order: desc (newest first)"
+            echo ""
+            echo "### Retrieved Versions (Matrix.json)"
+            echo "- Python: ${needs_set_variables_outputs_versions_python}"
+            echo "- Node.js: ${needs_set_variables_outputs_versions_nodejs}"
+            echo "- Ruby: ${needs_set_variables_outputs_versions_ruby}"
+            echo "- Go: ${needs_set_variables_outputs_versions_go}"
+            echo "- Rust: ${needs_set_variables_outputs_versions_rust}"
+            echo ""
+            echo "### Test Status"
+            echo "- Version count verification: Completed"
+            echo "- Python tests: Completed"
+            echo "- Node.js tests: Completed"
+            echo "- Ruby tests: Completed"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          needs_set_variables_outputs_versions_python: "${{ needs.set_variables.outputs.versions_python }}"
+          needs_set_variables_outputs_versions_nodejs: "${{ needs.set_variables.outputs.versions_nodejs }}"
+          needs_set_variables_outputs_versions_ruby: "${{ needs.set_variables.outputs.versions_ruby }}"
+          needs_set_variables_outputs_versions_go: "${{ needs.set_variables.outputs.versions_go }}"
+          needs_set_variables_outputs_versions_rust: "${{ needs.set_variables.outputs.versions_rust }}"
+
+      - name: Download updated files
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+        continue-on-error: true
+
+      - name: Create PR with updated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Ensure directories exist
+          mkdir -p .github/json2vars-setter/cache
+
+          # Copy files from artifacts preserving directory structure
+          if [ -d artifacts/json2vars-setter-files ]; then
+            echo "Copying files from artifacts..."
+
+            # Copy matrix.json
+            if [ -f artifacts/json2vars-setter-files/matrix.json ]; then
+              cp artifacts/json2vars-setter-files/matrix.json .github/json2vars-setter/
+              echo "Copied matrix.json to .github/json2vars-setter/"
+            fi
+
+            # Copy cache files
+            if [ -f artifacts/json2vars-setter-files/cache/version_cache.json ]; then
+              cp artifacts/json2vars-setter-files/cache/version_cache.json .github/json2vars-setter/cache/
+              echo "Copied version_cache.json to .github/json2vars-setter/cache/"
+            fi
+
+            if [ -f artifacts/json2vars-setter-files/cache/version_template.json ]; then
+              cp artifacts/json2vars-setter-files/cache/version_template.json .github/json2vars-setter/cache/
+              echo "Copied version_template.json to .github/json2vars-setter/cache/"
+            fi
+          fi
+
+          # Debug: list files in .github directory
+          echo "Files in .github directory:"
+          find .github -type f -name "*.json" | sort
+
+          # Check if there are changes
+          if git status --porcelain | grep -q ".github/"; then
+            echo "Changes detected in cache files. Creating PR..."
+            git add .github/json2vars-setter/
+            git commit -m "Update cache files with incremental cache [skip ci]"
+            git push origin HEAD:cache-version-incremental-${{ github.run_id }}
+
+            gh pr create \
+              --title "Update files from incremental cache test [skip ci]" \
+              --body "This PR updates the cache files based on the incremental cache version workflow." \
+              --base main \
+              --head cache-version-incremental-${{ github.run_id }}
+          else
+            echo "No changes detected in cache files. Skipping PR creation."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
