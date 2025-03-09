@@ -1,6 +1,8 @@
 {
     "os": [
-        "ubuntu-latest"
+        "ubuntu-latest",
+        "windows-latest",
+        "macos-latest"
     ],
     "versions": {
         "python": [

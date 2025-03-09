@@ -47,6 +47,12 @@ jobs:
           echo "update-matrix.json content after update:"
           cat .github/workflows/update-matrix.json
 
+      - name: Upload matrix.json as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: update-matrix-json
+          path: .github/workflows/update-matrix.json
+
   test_python:
     needs: set_variables
     strategy:
@@ -189,6 +195,9 @@ jobs:
     needs: [set_variables, test_python, test_nodejs, test_ruby, test_go, test_rust]
     runs-on: ubuntu-latest
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
       - name: Summarize test results
         run: |
           {
@@ -221,3 +230,23 @@ jobs:
           needs_set_variables_outputs_versions_ruby: "${{ needs.set_variables.outputs.versions_ruby }}"
           needs_set_variables_outputs_versions_go: "${{ needs.set_variables.outputs.versions_go }}"
           needs_set_variables_outputs_versions_rust: "${{ needs.set_variables.outputs.versions_rust }}"
+
+      - name: Download update-matrix.json
+        uses: actions/download-artifact@v4
+        with:
+          name: update-matrix-json
+          path: .github/workflows/
+        continue-on-error: true
+
+      - name: Commit updated matrix.json
+        run: |
+          if [ -f ".github/workflows/update-matrix.json" ]; then
+            git config --local user.email "github-actions@github.com"
+            git config --local user.name "GitHub Actions"
+            git add .github/workflows/update-matrix.json
+            git diff --staged --quiet || git commit -m "Update matrix.json with latest language versions [skip ci]"
+            git push
+            echo "Updated matrix.json has been committed to the repository"
+          else
+            echo "No update-matrix.json file found, skipping commit"
+          fi
