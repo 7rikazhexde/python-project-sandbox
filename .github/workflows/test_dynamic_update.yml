@@ -68,7 +68,7 @@ jobs:
       - name: Run simple test
         run: |
           echo "Running Python test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
-          python -c "print('Python Dynamic Update test successful!')"
+          python .github/tests/python_test.py
 
   test_nodejs:
     needs: set_variables
@@ -91,7 +91,7 @@ jobs:
       - name: Run simple Node.js test
         run: |
           echo "Running Node.js test on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}"
-          node -e "console.log('Node.js Dynamic Update test successful!')"
+          node .github/tests/nodejs_test.js
 
   test_ruby:
     needs: set_variables
@@ -114,7 +114,7 @@ jobs:
       - name: Run simple Ruby test
         run: |
           echo "Running Ruby test on ${{ matrix.os }} with Ruby ${{ matrix.ruby-version }}"
-          ruby -e "puts 'Ruby Dynamic Update test successful!'"
+          ruby .github/tests/ruby_test.rb
 
   test_go:
     needs: set_variables
@@ -137,7 +137,7 @@ jobs:
       - name: Run simple Go test
         run: |
           echo "Running Go test on ${{ matrix.os }} with Go ${{ matrix.go-version }}"
-          go run -e="package main; import \"fmt\"; func main() { fmt.Println(\"Go Dynamic Update test successful!\") }"
+          go run .github/tests/go_test.go
 
   test_rust:
     needs: set_variables
@@ -160,8 +160,8 @@ jobs:
       - name: Run simple Rust test
         run: |
           echo "Running Rust test on ${{ matrix.os }} with Rust ${{ matrix.rust-version }}"
-          echo 'fn main() { println!("Rust Dynamic Update test successful!"); }' > test.rs
-          rustc test.rs && ./test
+          rustc .github/tests/rust_test.rs -o rust_test
+          ./rust_test
 
   summary:
     needs: [set_variables, test_python, test_nodejs, test_ruby, test_go, test_rust]
