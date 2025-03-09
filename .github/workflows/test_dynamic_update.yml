@@ -123,7 +123,7 @@ jobs:
       - name: Run simple test
         run: |
           echo "Running Python test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
-          python .github/test/python_test.py
+          python .github/tests/python_test.py
 
   test_nodejs:
     needs: set_variables
