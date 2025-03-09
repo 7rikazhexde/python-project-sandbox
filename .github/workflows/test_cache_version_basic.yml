@@ -36,6 +36,19 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Check GitHub API Rate Limits
+        run: |
+          echo "=== GitHub API Rate Limits with Token ==="
+          # トークンありの場合のレート制限を確認
+          curl -s -H "Authorization: token $GITHUB_TOKEN" https://api.github.com/rate_limit | jq '.rate'
+
+          echo ""
+          echo "=== GitHub API Rate Limits without Token ==="
+          # トークンなしの場合のレート制限を確認
+          curl -s https://api.github.com/rate_limit | jq '.rate'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Debug output values
         run: |
           echo "OS: ${{ steps.json2vars.outputs.os }}"
@@ -56,18 +69,15 @@ jobs:
           echo "Version cache file content:"
           cat .github/json2vars-setter/cache/version_cache.json || echo "Cache file not found"
 
-      - name: Upload matrix.json as artifact
+      - name: Upload matrix and cache files as artifacts
         uses: actions/upload-artifact@v4
         with:
-          name: matrix-json
-          path: .github/json2vars-setter/matrix.json
-
-      - name: Upload cache file as artifact
-        uses: actions/upload-artifact@v4
-        with:
-          name: version-cache-json
-          path: .github/json2vars-setter/cache/version_cache.json
-          if-no-files-found: ignore
+          name: json2vars-setter-files
+          path: |
+            .github/json2vars-setter/matrix.json
+            .github/json2vars-setter/cache/version_cache.json
+            .github/json2vars-setter/cache/version_template.json
+          if-no-files-found: warn
 
   test_python:
     needs: set_variables
@@ -232,22 +242,32 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Ensure directories exist
-          mkdir -p .github/json2vars-setter
           mkdir -p .github/json2vars-setter/cache
 
           # Copy artifacts back
-          if [ -f artifacts/matrix-json/matrix.json ]; then
-            cp artifacts/matrix-json/matrix.json .github/json2vars-setter/
+          if [ -d artifacts/json2vars-setter-files ]; then
+            # ファイル構造を維持したままコピー
+            find artifacts/json2vars-setter-files -type f -name "*.json" | while read -r file; do
+              # パスから'artifacts/json2vars-setter-files/'部分を削除してファイルの相対パスを取得
+              relative_path=${file#artifacts/json2vars-setter-files/}
+              # ファイルのディレクトリ部分を取得
+              dir_path=$(dirname "$relative_path")
+              # ディレクトリが存在しない場合は作成
+              mkdir -p "$dir_path"
+              # ファイルをコピー
+              cp "$file" "$relative_path"
+              echo "Copied: $file to $relative_path"
+            done
           fi
 
-          if [ -f artifacts/version-cache-json/version_cache.json ]; then
-            cp artifacts/version-cache-json/version_cache.json .github/json2vars-setter/cache/
-          fi
+          # デバッグ: コピーされたファイルを確認
+          echo "Files in .github/json2vars-setter:"
+          find .github/json2vars-setter -type f | sort
 
           # Check if there are changes
           if git status --porcelain | grep -q ".github/"; then
             echo "Changes detected in cache files. Creating PR..."
-            git add .github/
+            git add .github/json2vars-setter/
             git commit -m "Update cache files with latest versions [skip ci]"
             git push origin HEAD:cache-version-basic-${{ github.run_id }}
 
