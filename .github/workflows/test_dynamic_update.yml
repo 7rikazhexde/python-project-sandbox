@@ -28,11 +28,11 @@ jobs:
         with:
           json-file: .github/tests/update-matrix.json
           update-matrix: 'true'
-          python-strategy: 'stable'
-          nodejs-strategy: 'latest'
+          python-strategy: 'both'
+          nodejs-strategy: 'both'
           ruby-strategy: 'both'
           go-strategy: 'both'
-          rust-strategy: 'stable'
+          rust-strategy: 'both'
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
