@@ -102,29 +102,6 @@ jobs:
         # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
         run: poetry run task testcixml
 
-  #test_python:
-  #  needs: set_variables
-  #  strategy:
-  #    matrix:
-  #      os: ${{ fromJson(needs.set_variables.outputs.os) }}
-  #      python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
-  #  runs-on: ${{ matrix.os }}
-  #  steps:
-  #    - uses: actions/checkout@v4.2.2
-  #
-  #    - name: Set up Python
-  #      uses: actions/setup-python@v5.4.0
-  #      with:
-  #        python-version: ${{ matrix.python-version }}
-  #
-  #    - name: Check Python version
-  #      run: python --version
-  #
-  #    - name: Run simple test
-  #      run: |
-  #        echo "Running Python test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
-  #        python .github/tests/python_test.py
-
   test_nodejs:
     needs: set_variables
     strategy:
@@ -277,22 +254,30 @@ jobs:
       - name: Create PR with updated matrix.json
         run: |
           if [ -f ".github/workflows/update-matrix.json" ]; then
+            # ファイルを別のディレクトリにコピー (非ワークフローの場所)
+            mkdir -p temp_update
+            cp .github/workflows/update-matrix.json temp_update/update-matrix.json
+
             git config --local user.email "github-actions@github.com"
             git config --local user.name "GitHub Actions"
+
             # 現在の日時をブランチ名に含める
             BRANCH_NAME="update-matrix-$(date +%Y%m%d-%H%M%S)"
+
             # 新しいブランチを作成して切り替え
             git checkout -b "$BRANCH_NAME"
-            # 変更をステージング
-            git add .github/workflows/update-matrix.json
+
+            # ファイルをワークフロー以外の場所にステージング
+            git add temp_update/update-matrix.json
+
             # 変更があるかチェックし、あればコミット
             git diff --staged --quiet || (
-              git commit -m "Update matrix.json with latest language versions" &&
+              git commit -m "Add updated matrix.json file" &&
               git push origin "$BRANCH_NAME" &&
               gh auth login --with-token <<< "${{ github.token }}" &&
-              gh pr create --title "Update matrix.json with latest versions" --body "自動生成されたPRです。最新の言語バージョン情報を update-matrix.json に更新しています。" --base main --head "$BRANCH_NAME"
+              gh pr create --title "Update matrix.json with latest versions" --body "自動生成されたPRです。最新の言語バージョン情報を更新しています。マージ後、temp_update/update-matrix.json を .github/workflows/update-matrix.json にコピーしてください。" --base main --head "$BRANCH_NAME"
             )
-            echo "Updated matrix.json has been pushed to branch $BRANCH_NAME and PR created"
+            echo "Updated matrix.json has been pushed to branch $BRANCH_NAME in temp_update/ directory and PR created"
           else
             echo "No update-matrix.json file found, skipping PR creation"
           fi
