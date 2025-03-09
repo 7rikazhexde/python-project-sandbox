@@ -30,7 +30,7 @@ jobs:
           use-cache: 'true'
           cache-languages: 'all'
           cache-max-age: '1'
-          cache-count: '10'
+          cache-count: '3'
           keep-existing: 'true'
           sort-order: 'desc'
         env:
@@ -244,25 +244,32 @@ jobs:
           # Ensure directories exist
           mkdir -p .github/json2vars-setter/cache
 
-          # Copy artifacts back
+          # Copy artifacts back - パスの問題を修正
           if [ -d artifacts/json2vars-setter-files ]; then
-            # ファイル構造を維持したままコピー
-            find artifacts/json2vars-setter-files -type f -name "*.json" | while read -r file; do
-              # パスから'artifacts/json2vars-setter-files/'部分を削除してファイルの相対パスを取得
-              relative_path=${file#artifacts/json2vars-setter-files/}
-              # ファイルのディレクトリ部分を取得
-              dir_path=$(dirname "$relative_path")
-              # ディレクトリが存在しない場合は作成
-              mkdir -p "$dir_path"
-              # ファイルをコピー
-              cp "$file" "$relative_path"
-              echo "Copied: $file to $relative_path"
-            done
+            echo "Copying files from artifacts..."
+
+            # matrix.jsonのコピー
+            if [ -f artifacts/json2vars-setter-files/matrix.json ]; then
+              cp artifacts/json2vars-setter-files/matrix.json .github/json2vars-setter/
+              echo "Copied matrix.json to .github/json2vars-setter/"
+            fi
+
+            # version_cache.jsonのコピー
+            if [ -f artifacts/json2vars-setter-files/cache/version_cache.json ]; then
+              cp artifacts/json2vars-setter-files/cache/version_cache.json .github/json2vars-setter/cache/
+              echo "Copied version_cache.json to .github/json2vars-setter/cache/"
+            fi
+
+            # version_template.jsonのコピー（存在する場合）
+            if [ -f artifacts/json2vars-setter-files/cache/version_template.json ]; then
+              cp artifacts/json2vars-setter-files/cache/version_template.json .github/json2vars-setter/cache/
+              echo "Copied version_template.json to .github/json2vars-setter/cache/"
+            fi
           fi
 
-          # デバッグ: コピーされたファイルを確認
-          echo "Files in .github/json2vars-setter:"
-          find .github/json2vars-setter -type f | sort
+          # デバッグ: コピーされたファイルを確認（絶対パスで表示）
+          echo "Files in .github directory:"
+          find .github -type f -name "*.json" | sort
 
           # Check if there are changes
           if git status --porcelain | grep -q ".github/"; then
