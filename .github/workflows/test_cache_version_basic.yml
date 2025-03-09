@@ -1,0 +1,254 @@
+name: Test Cache Version (Basic)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  set_variables:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+      versions_nodejs: ${{ steps.json2vars.outputs.versions_nodejs }}
+      versions_ruby: ${{ steps.json2vars.outputs.versions_ruby }}
+      versions_go: ${{ steps.json2vars.outputs.versions_go }}
+      versions_rust: ${{ steps.json2vars.outputs.versions_rust }}
+      ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Set variables with cache update
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        with:
+          json-file: .github/tests/cache-matrix-basic.json
+          use-cache: 'true'
+          cache-languages: 'all'
+          cache-max-age: '1'
+          cache-count: '10'
+          keep-existing: 'true'
+          sort-order: 'desc'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug output values
+        run: |
+          echo "OS: ${{ steps.json2vars.outputs.os }}"
+          echo "Python versions: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Node.js versions: ${{ steps.json2vars.outputs.versions_nodejs }}"
+          echo "Ruby versions: ${{ steps.json2vars.outputs.versions_ruby }}"
+          echo "Go versions: ${{ steps.json2vars.outputs.versions_go }}"
+          echo "Rust versions: ${{ steps.json2vars.outputs.versions_rust }}"
+          echo "GitHub Pages branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+
+      - name: Display cache-matrix-basic.json content
+        run: |
+          echo "cache-matrix-basic.json content after update:"
+          cat .github/tests/cache-matrix-basic.json
+
+      - name: Display cache file content
+        run: |
+          echo "Version cache file content:"
+          cat .github/workflows/cache/version_cache.json || echo "Cache file not found"
+
+      - name: Upload matrix.json as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: cache-matrix-basic-json
+          path: .github/tests/cache-matrix-basic.json
+
+      - name: Upload cache file as artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: version-cache-json
+          path: .github/workflows/cache/version_cache.json
+          if-no-files-found: ignore
+
+  test_python:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Python
+        uses: actions/setup-python@v5.4.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check Python version
+        run: python --version
+      - name: Run simple Python test
+        run: |
+          echo "Running Python test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+          python .github/tests/python_test.py
+
+  test_nodejs:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        node-version: ${{ fromJson(needs.set_variables.outputs.versions_nodejs) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Check Node.js version
+        run: node --version
+      - name: Run simple Node.js test
+        run: |
+          echo "Running Node.js test on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}"
+          node .github/tests/nodejs_test.js
+
+  test_ruby:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        ruby-version: ${{ fromJson(needs.set_variables.outputs.versions_ruby) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Ruby
+        uses: ruby/setup-ruby@v1
+        with:
+          ruby-version: ${{ matrix.ruby-version }}
+      - name: Check Ruby version
+        run: ruby --version
+      - name: Run simple Ruby test
+        run: |
+          echo "Running Ruby test on ${{ matrix.os }} with Ruby ${{ matrix.ruby-version }}"
+          ruby .github/tests/ruby_test.rb
+
+  test_go:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        go-version: ${{ fromJson(needs.set_variables.outputs.versions_go) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Go
+        uses: actions/setup-go@v5
+        with:
+          go-version: ${{ matrix.go-version }}
+      - name: Check Go version
+        run: go version
+      - name: Run simple Go test
+        run: |
+          echo "Running Go test on ${{ matrix.os }} with Go ${{ matrix.go-version }}"
+          go run .github/tests/go_sample.go
+
+  test_rust:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        rust-version: ${{ fromJson(needs.set_variables.outputs.versions_rust) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Rust
+        uses: dtolnay/rust-toolchain@master
+        with:
+          toolchain: ${{ matrix.rust-version }}
+      - name: Check Rust version
+        run: rustc --version
+      - name: Run simple Rust test
+        run: |
+          echo "Running Rust test on ${{ matrix.os }} with Rust ${{ matrix.rust-version }}"
+          rustc .github/tests/rust_test.rs -o rust_test
+          ./rust_test
+
+  summary:
+    needs: [set_variables, test_python, test_nodejs, test_ruby, test_go, test_rust]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Summarize test results
+        run: |
+          {
+            echo "## Cache Version Test Results (Basic)"
+            echo ""
+            echo "### Cache Configuration"
+            echo "- Use cache: true"
+            echo "- Languages: all"
+            echo "- Max age: 1 day"
+            echo "- Version count: 10"
+            echo "- Keep existing: true"
+            echo "- Sort order: desc (newest first)"
+            echo ""
+            echo "### Retrieved Versions"
+            echo "- Python: ${needs_set_variables_outputs_versions_python}"
+            echo "- Node.js: ${needs_set_variables_outputs_versions_nodejs}"
+            echo "- Ruby: ${needs_set_variables_outputs_versions_ruby}"
+            echo "- Go: ${needs_set_variables_outputs_versions_go}"
+            echo "- Rust: ${needs_set_variables_outputs_versions_rust}"
+            echo ""
+            echo "### Test Status"
+            echo "- Python tests: Completed"
+            echo "- Node.js tests: Completed"
+            echo "- Ruby tests: Completed"
+            echo "- Go tests: Completed"
+            echo "- Rust tests: Completed"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          needs_set_variables_outputs_versions_python: "${{ needs.set_variables.outputs.versions_python }}"
+          needs_set_variables_outputs_versions_nodejs: "${{ needs.set_variables.outputs.versions_nodejs }}"
+          needs_set_variables_outputs_versions_ruby: "${{ needs.set_variables.outputs.versions_ruby }}"
+          needs_set_variables_outputs_versions_go: "${{ needs.set_variables.outputs.versions_go }}"
+          needs_set_variables_outputs_versions_rust: "${{ needs.set_variables.outputs.versions_rust }}"
+
+      - name: Download updated matrix and cache files
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+        continue-on-error: true
+
+      - name: Create PR with updated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Ensure directories exist
+          mkdir -p .github/tests
+          mkdir -p .github/workflows/cache
+
+          # Copy artifacts back
+          if [ -f artifacts/cache-matrix-basic-json/cache-matrix-basic.json ]; then
+            cp artifacts/cache-matrix-basic-json/cache-matrix-basic.json .github/tests/
+          fi
+
+          if [ -f artifacts/version-cache-json/version_cache.json ]; then
+            cp artifacts/version-cache-json/version_cache.json .github/workflows/cache/
+          fi
+
+          # Check if there are changes
+          if git status --porcelain | grep -q ".github/"; then
+            echo "Changes detected in cache files. Creating PR..."
+            git add .github/
+            git commit -m "Update cache files with latest versions [skip ci]"
+            git push origin HEAD:cache-version-basic-${{ github.run_id }}
+
+            gh pr create \
+              --title "Update cache files from basic cache test [skip ci]" \
+              --body "This PR updates the cache files based on the basic cache version workflow." \
+              --base main \
+              --head cache-version-basic-${{ github.run_id }}
+          else
+            echo "No changes detected in cache files. Skipping PR creation."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
