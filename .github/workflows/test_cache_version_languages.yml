@@ -1,0 +1,205 @@
+name: Test Cache Version (Language-Specific)
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  set_variables:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+      versions_nodejs: ${{ steps.json2vars.outputs.versions_nodejs }}
+      versions_ruby: ${{ steps.json2vars.outputs.versions_ruby }}
+      versions_go: ${{ steps.json2vars.outputs.versions_go }}
+      versions_rust: ${{ steps.json2vars.outputs.versions_rust }}
+      ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Set variables with language-specific cache update
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        with:
+          json-file: .github/json2vars-setter/matrix.json
+          use-cache: 'true'
+          cache-languages: 'python,nodejs'  # 特定の言語のみを対象
+          force-cache-update: 'true'        # キャッシュを強制的に更新
+          cache-count: '5'                  # 各言語5バージョンをキャッシュ
+          output-count: '3'                 # マトリックスには3バージョンのみ含める
+          keep-existing: 'true'             # 他の言語は既存のデータを維持
+          sort-order: 'desc'
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Debug output values
+        run: |
+          echo "OS: ${{ steps.json2vars.outputs.os }}"
+          echo "Python versions: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Node.js versions: ${{ steps.json2vars.outputs.versions_nodejs }}"
+          echo "Ruby versions: ${{ steps.json2vars.outputs.versions_ruby }}"
+          echo "Go versions: ${{ steps.json2vars.outputs.versions_go }}"
+          echo "Rust versions: ${{ steps.json2vars.outputs.versions_rust }}"
+          echo "GitHub Pages branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+
+      - name: Display matrix.json content
+        run: |
+          echo "matrix.json content after update:"
+          cat .github/json2vars-setter/matrix.json
+
+      - name: Display cache files
+        run: |
+          echo "Version cache file content:"
+          cat .github/json2vars-setter/cache/version_cache.json || echo "Cache file not found"
+
+          echo "Version template file content (if exists):"
+          cat .github/json2vars-setter/cache/version_template.json || echo "Template file not found"
+
+      - name: Upload matrix and cache files as artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: json2vars-setter-files
+          path: |
+            .github/json2vars-setter/matrix.json
+            .github/json2vars-setter/cache/version_cache.json
+            .github/json2vars-setter/cache/version_template.json
+          if-no-files-found: warn
+
+  test_python:
+    needs: set_variables
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Python
+        uses: actions/setup-python@v5.4.0
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Check Python version
+        run: python --version
+      - name: Run simple Python test
+        run: |
+          echo "Running Python test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+          python .github/tests/python_test.py
+
+  test_nodejs:
+    needs: set_variables
+    strategy:
+      fail-fast: false
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        node-version: ${{ fromJson(needs.set_variables.outputs.versions_nodejs) }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: ${{ matrix.node-version }}
+      - name: Check Node.js version
+        run: node --version
+      - name: Run simple Node.js test
+        run: |
+          echo "Running Node.js test on ${{ matrix.os }} with Node.js ${{ matrix.node-version }}"
+          node .github/tests/nodejs_test.js
+
+  summary:
+    needs: [set_variables, test_python, test_nodejs]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Summarize test results
+        run: |
+          {
+            echo "## Cache Version Test Results (Language-Specific)"
+            echo ""
+            echo "### Cache Configuration"
+            echo "- Use cache: true"
+            echo "- Languages: python, nodejs only"
+            echo "- Force update: true"
+            echo "- Cache count: 5 (versions stored in cache)"
+            echo "- Output count: 3 (versions used in matrix.json)"
+            echo "- Keep existing: true"
+            echo "- Sort order: desc (newest first)"
+            echo ""
+            echo "### Retrieved Versions"
+            echo "- Python: ${needs_set_variables_outputs_versions_python}"
+            echo "- Node.js: ${needs_set_variables_outputs_versions_nodejs}"
+            echo ""
+            echo "### Test Status"
+            echo "- Python tests: Completed"
+            echo "- Node.js tests: Completed"
+            echo "- Ruby tests: Skipped (not included in cache update)"
+          } >> "${GITHUB_STEP_SUMMARY}"
+        env:
+          needs_set_variables_outputs_versions_python: "${{ needs.set_variables.outputs.versions_python }}"
+          needs_set_variables_outputs_versions_nodejs: "${{ needs.set_variables.outputs.versions_nodejs }}"
+
+      - name: Download updated files
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts/
+        continue-on-error: true
+
+      - name: Create PR with updated files
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+
+          # Ensure directories exist
+          mkdir -p .github/json2vars-setter/cache
+
+          # Copy files from artifacts preserving directory structure
+          if [ -d artifacts/json2vars-setter-files ]; then
+            echo "Copying files from artifacts..."
+
+            # Copy matrix.json
+            if [ -f artifacts/json2vars-setter-files/matrix.json ]; then
+              cp artifacts/json2vars-setter-files/matrix.json .github/json2vars-setter/
+              echo "Copied matrix.json to .github/json2vars-setter/"
+            fi
+
+            # Copy cache files
+            if [ -f artifacts/json2vars-setter-files/cache/version_cache.json ]; then
+              cp artifacts/json2vars-setter-files/cache/version_cache.json .github/json2vars-setter/cache/
+              echo "Copied version_cache.json to .github/json2vars-setter/cache/"
+            fi
+
+            if [ -f artifacts/json2vars-setter-files/cache/version_template.json ]; then
+              cp artifacts/json2vars-setter-files/cache/version_template.json .github/json2vars-setter/cache/
+              echo "Copied version_template.json to .github/json2vars-setter/cache/"
+            fi
+          fi
+
+          # Debug: list files in .github directory
+          echo "Files in .github directory:"
+          find .github -type f -name "*.json" | sort
+
+          # Check if there are changes
+          if git status --porcelain | grep -q ".github/"; then
+            echo "Changes detected in cache files. Creating PR..."
+            git add .github/json2vars-setter/
+            git commit -m "Update cache files with language-specific cache [skip ci]"
+            git push origin HEAD:cache-version-languages-${{ github.run_id }}
+
+            gh pr create \
+              --title "Update files from language-specific cache test [skip ci]" \
+              --body "This PR updates the cache files based on the language-specific cache version workflow." \
+              --base main \
+              --head cache-version-languages-${{ github.run_id }}
+          else
+            echo "No changes detected in cache files. Skipping PR creation."
+          fi
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
