@@ -57,51 +57,6 @@ jobs:
           name: update-matrix-json
           path: .github/workflows/update-matrix.json
 
-  #test_python:
-  #  needs: set_variables
-  #  strategy:
-  #    matrix:
-  #      os: ${{ fromJson(needs.set_variables.outputs.os) }}
-  #      python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
-  #  runs-on: ${{ matrix.os }}
-  #  env:
-  #    TZ: 'Asia/Tokyo'
-  #  steps:
-  #    - uses: actions/checkout@v4.2.2
-  #    - name: Set up Python
-  #      uses: actions/setup-python@v5.4.0
-  #      with:
-  #        python-version: ${{matrix.python-version}}
-  #    - name: Set timezone
-  #      uses: szenius/set-timezone@v2.0
-  #      with:
-  #        timezoneLinux: "Asia/Tokyo"
-  #        timezoneMacos: "Asia/Tokyo"
-  #        timezoneWindows: "Tokyo Standard Time"
-  #    - name: Check timezone
-  #      shell: bash
-  #      run: |
-  #        echo "System date: $(date)"
-  #        echo "TZ environment variable: ${TZ}"
-  #        python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
-  #    - name: Install poetry
-  #      run: pip install poetry
-  #    - name: Cache dependencies
-  #      uses: actions/cache@v4.2.2
-  #      with:
-  #        path: ~/.cache/pypoetry
-  #        key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-  #    - name: Install dependencies
-  #      run: poetry install
-  #    - name: Run test
-  #      id: pytest
-  #      #continue-on-error: true
-  #      # Mac / Linux
-  #      # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
-  #      # Windowss
-  #      # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
-  #      run: poetry run task testcixml
-
   test_python:
     needs: set_variables
     strategy:
@@ -109,21 +64,66 @@ jobs:
         os: ${{ fromJson(needs.set_variables.outputs.os) }}
         python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
     runs-on: ${{ matrix.os }}
+    env:
+      TZ: 'Asia/Tokyo'
     steps:
       - uses: actions/checkout@v4.2.2
-
       - name: Set up Python
         uses: actions/setup-python@v5.4.0
         with:
-          python-version: ${{ matrix.python-version }}
-
-      - name: Check Python version
-        run: python --version
-
-      - name: Run simple test
+          python-version: ${{matrix.python-version}}
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+      - name: Check timezone
+        shell: bash
         run: |
-          echo "Running Python test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
-          python .github/tests/python_test.py
+          echo "System date: $(date)"
+          echo "TZ environment variable: ${TZ}"
+          python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
+      - name: Install poetry
+        run: pip install poetry
+      - name: Cache dependencies
+        uses: actions/cache@v4.2.2
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+      - name: Install dependencies
+        run: poetry install
+      - name: Run test
+        id: pytest
+        #continue-on-error: true
+        # Mac / Linux
+        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
+        # Windowss
+        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
+        run: poetry run task testcixml
+
+  #test_python:
+  #  needs: set_variables
+  #  strategy:
+  #    matrix:
+  #      os: ${{ fromJson(needs.set_variables.outputs.os) }}
+  #      python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+  #  runs-on: ${{ matrix.os }}
+  #  steps:
+  #    - uses: actions/checkout@v4.2.2
+  #
+  #    - name: Set up Python
+  #      uses: actions/setup-python@v5.4.0
+  #      with:
+  #        python-version: ${{ matrix.python-version }}
+  #
+  #    - name: Check Python version
+  #      run: python --version
+  #
+  #    - name: Run simple test
+  #      run: |
+  #        echo "Running Python test on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+  #        python .github/tests/python_test.py
 
   test_nodejs:
     needs: set_variables
