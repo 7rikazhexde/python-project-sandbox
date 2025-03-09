@@ -26,7 +26,7 @@ jobs:
         id: json2vars
         uses: 7rikazhexde/json2vars-setter@dev_issue_114
         with:
-          json-file: .github/tests/cache-matrix-basic.json
+          json-file: .github/json2vars-setter/matrix.json
           use-cache: 'true'
           cache-languages: 'all'
           cache-max-age: '1'
@@ -46,32 +46,33 @@ jobs:
           echo "Rust versions: ${{ steps.json2vars.outputs.versions_rust }}"
           echo "GitHub Pages branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
 
-      - name: Display cache-matrix-basic.json content
+      - name: Display matrix.json content
         run: |
-          echo "cache-matrix-basic.json content after update:"
-          cat .github/tests/cache-matrix-basic.json
+          echo "matrix.json content after update:"
+          cat .github/json2vars-setter/matrix.json
 
       - name: Display cache file content
         run: |
           echo "Version cache file content:"
-          cat .github/workflows/cache/version_cache.json || echo "Cache file not found"
+          cat .github/json2vars-setter/cache/version_cache.json || echo "Cache file not found"
 
       - name: Upload matrix.json as artifact
         uses: actions/upload-artifact@v4
         with:
-          name: cache-matrix-basic-json
-          path: .github/tests/cache-matrix-basic.json
+          name: matrix-json
+          path: .github/json2vars-setter/matrix.json
 
       - name: Upload cache file as artifact
         uses: actions/upload-artifact@v4
         with:
           name: version-cache-json
-          path: .github/workflows/cache/version_cache.json
+          path: .github/json2vars-setter/cache/version_cache.json
           if-no-files-found: ignore
 
   test_python:
     needs: set_variables
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJson(needs.set_variables.outputs.os) }}
         python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
@@ -92,6 +93,7 @@ jobs:
   test_nodejs:
     needs: set_variables
     strategy:
+      fail-fast: false
       matrix:
         os: ${{ fromJson(needs.set_variables.outputs.os) }}
         node-version: ${{ fromJson(needs.set_variables.outputs.versions_nodejs) }}
@@ -218,7 +220,7 @@ jobs:
           needs_set_variables_outputs_versions_go: "${{ needs.set_variables.outputs.versions_go }}"
           needs_set_variables_outputs_versions_rust: "${{ needs.set_variables.outputs.versions_rust }}"
 
-      - name: Download updated matrix and cache files
+      - name: Download updated files
         uses: actions/download-artifact@v4
         with:
           path: artifacts/
@@ -230,16 +232,16 @@ jobs:
           git config user.email "github-actions[bot]@users.noreply.github.com"
 
           # Ensure directories exist
-          mkdir -p .github/tests
-          mkdir -p .github/workflows/cache
+          mkdir -p .github/json2vars-setter
+          mkdir -p .github/json2vars-setter/cache
 
           # Copy artifacts back
-          if [ -f artifacts/cache-matrix-basic-json/cache-matrix-basic.json ]; then
-            cp artifacts/cache-matrix-basic-json/cache-matrix-basic.json .github/tests/
+          if [ -f artifacts/matrix-json/matrix.json ]; then
+            cp artifacts/matrix-json/matrix.json .github/json2vars-setter/
           fi
 
           if [ -f artifacts/version-cache-json/version_cache.json ]; then
-            cp artifacts/version-cache-json/version_cache.json .github/workflows/cache/
+            cp artifacts/version-cache-json/version_cache.json .github/json2vars-setter/cache/
           fi
 
           # Check if there are changes
