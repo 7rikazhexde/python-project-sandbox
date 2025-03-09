@@ -1,0 +1,22 @@
+{
+    "os": [
+        "ubuntu-latest",
+        "windows-latest",
+        "macos-latest"
+    ],
+    "versions": {
+        "python": [
+            "3.12.7",
+            "3.12.8"
+        ],
+        "nodejs": [
+            "22.14.0",
+            "23.5.0"
+        ],
+        "ruby": [
+            "3.3.5",
+            "3.3.6"
+        ]
+    },
+    "ghpages_branch": "ghpages"
+}
