@@ -55,7 +55,7 @@ jobs:
       # 高度な設定でキャッシュを更新
       - name: Set variables with advanced settings
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        uses: 7rikazhexde/json2vars-setter@main
         with:
           # カスタムファイルパス設定
           json-file: .github/json2vars-setter/advanced_matrix_${{ needs.setup.outputs.timestamp }}.json

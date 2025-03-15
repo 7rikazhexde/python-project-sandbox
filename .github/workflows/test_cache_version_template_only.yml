@@ -48,7 +48,7 @@ jobs:
       # テンプレートのみモードでマトリックスを生成（APIコールなし）
       - name: Generate template without API calls (template-only mode)
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        uses: 7rikazhexde/json2vars-setter@main
         with:
           json-file: .github/json2vars-setter/template_only_${{ needs.setup.outputs.timestamp }}.json
           use-cache: 'true'
