@@ -24,7 +24,8 @@ jobs:
 
       - name: Set variables with dynamic update
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@main
+        #uses: 7rikazhexde/json2vars-setter@main
+        uses: 7rikazhexde/json2vars-setter@refactor/dev3-1
         with:
           json-file: .github/tests/update-matrix.json
           update-matrix: 'true'
