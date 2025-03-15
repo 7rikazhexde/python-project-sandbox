@@ -24,7 +24,7 @@ jobs:
 
       - name: Set variables with incremental cache update
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@dev_issue_114
+        uses: 7rikazhexde/json2vars-setter@main
         with:
           json-file: .github/json2vars-setter/matrix.json
           use-cache: 'true'
