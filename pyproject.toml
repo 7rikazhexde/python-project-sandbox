@@ -115,7 +115,7 @@ httpx = "^0.28.1"
 python-dotenv = "^1.0.1"
 freezegun = "^1.5.1"
 tomlkit = "^0.13.2"
-types-pytz = "^2025.1.0.20250204"
+types-pytz = "^2025.1.0.20250318"
 
 # Poetry開発依存関係
 [tool.poetry.group.dev.dependencies]
