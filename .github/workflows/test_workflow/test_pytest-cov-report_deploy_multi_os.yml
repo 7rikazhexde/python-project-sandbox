@@ -277,27 +277,81 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      - name: Send LINE Notify (Updated)
+      # メッセージ送信 (変更があった場合)
+      - name: Send Discord Notification (Updated)
         if: steps.check_and_deploy.outputs.deploy_status == 'updated'
         env:
-          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          message="pytest-cov report deployment completed. Changes were made.
+          # ワークフローの詳細ページURL
+          workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          Check URLs:
-          ${{ steps.generate_url_list.outputs.url_list }}"
+          # URLリストの整形
+          formatted_urls="${{ steps.generate_url_list.outputs.url_list }}"
 
-          curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer ${LINE_NOTIFY_TOKEN}" \
-            -F "message=${message}"
+          # メッセージの作成
+          message="### Deployment Status: Updated ✅
 
-      - name: Send LINE Notify (No Changes)
+          ### Workflow Information
+          **Name:** ${{ github.workflow }}
+          **Run:** [View Details]($workflow_url)
+
+          **HTML Test Reports**
+          ${formatted_urls}"
+
+          timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          json_payload=$(jq -n \
+            --arg title "${{ github.workflow }} - Deploy Status" \
+            --arg description "$message" \
+            --argjson color 65280 \
+            --arg timestamp "$timestamp" \
+            '{
+              "embeds": [
+                {
+                  "title": $title,
+                  "description": $description,
+                  "color": $color,
+                  "timestamp": $timestamp
+                }
+              ]
+            }')
+
+          curl -X POST -H "Content-Type: application/json" \
+            -d "$json_payload" \
+            "$DISCORD_WEBHOOK_URL"
+
+      # メッセージ送信 (変更がない場合)
+      - name: Send Discord Notification (No Changes)
         if: steps.check_and_deploy.outputs.deploy_status == 'unchanged'
         env:
-          LINE_NOTIFY_TOKEN: ${{ secrets.LINE_ACCESS_TOKEN }}
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
-          message="pytest-cov report check completed. No changes were necessary."
+          workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          curl -X POST https://notify-api.line.me/api/notify \
-            -H "Authorization: Bearer ${LINE_NOTIFY_TOKEN}" \
-            -F "message=${message}"
+          message="## Deployment Status: No Changes ℹ️
+
+          ### Workflow Information
+          **Name:** ${{ github.workflow }}
+          **Run:** [View Details]($workflow_url)
+
+          No changes were detected in the HTML test reports."
+          timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+          json_payload=$(jq -n \
+            --arg title "${{ github.workflow }} - Deploy Status" \
+            --arg description "$message" \
+            --argjson color 16711680 \
+            --arg timestamp "$timestamp" \
+            '{
+              "embeds": [
+                {
+                  "title": $title,
+                  "description": $description,
+                  "color": $color,
+                  "timestamp": $timestamp
+                }
+              ]
+            }')
+
+          curl -X POST -H "Content-Type: application/json" \
+            -d "$json_payload" \
+            "$DISCORD_WEBHOOK_URL"
