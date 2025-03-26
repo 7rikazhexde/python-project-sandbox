@@ -105,7 +105,7 @@ mdformat = "^0.7.19"
 numpy = "2.2.4"
 pandas = "^2.2.2"
 requests = "^2.32.3"
-dash = "^2.18.1"
+dash = "^3.0.1"
 aiohttp = "^3.11.14"
 types-requests = "^2.32.0.20250306"
 dash-bootstrap-components = "^1.6.0"
@@ -115,7 +115,7 @@ httpx = "^0.28.1"
 python-dotenv = "^1.1.0"
 freezegun = "^1.5.1"
 tomlkit = "^0.13.2"
-types-pytz = "^2025.1.0.20250318"
+types-pytz = "^2025.2.0.20250326"
 
 # Poetry開発依存関係
 [tool.poetry.group.dev.dependencies]
