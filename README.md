@@ -17,7 +17,7 @@
 ## Pytest Result Summary (os: ubuntu-latest / python-version: 3.13.2)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 9.045s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 8.541s :stopwatch: |
 
 
 ## Coverage Report (os: ubuntu-latest / python-version: 3.12.9)
@@ -26,7 +26,7 @@
 ## Pytest Result Summary (os: ubuntu-latest / python-version: 3.12.9)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 9.018s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 6.447s :stopwatch: |
 
 
 ## Coverage Report (os: ubuntu-latest / python-version: 3.11.9)
@@ -35,7 +35,7 @@
 ## Pytest Result Summary (os: ubuntu-latest / python-version: 3.11.9)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 8.534s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 7.637s :stopwatch: |
 
 
 ## Coverage Report (os: windows-latest / python-version: 3.13.2)
@@ -44,7 +44,7 @@
 ## Pytest Result Summary (os: windows-latest / python-version: 3.13.2)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 18.479s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 20.762s :stopwatch: |
 
 
 ## Coverage Report (os: windows-latest / python-version: 3.12.9)
@@ -53,7 +53,7 @@
 ## Pytest Result Summary (os: windows-latest / python-version: 3.12.9)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 16.863s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 20.476s :stopwatch: |
 
 
 ## Coverage Report (os: windows-latest / python-version: 3.11.9)
@@ -62,7 +62,7 @@
 ## Pytest Result Summary (os: windows-latest / python-version: 3.11.9)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 16.440s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 16.973s :stopwatch: |
 
 
 ## Coverage Report (os: macos-latest / python-version: 3.13.2)
@@ -71,7 +71,7 @@
 ## Pytest Result Summary (os: macos-latest / python-version: 3.13.2)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 6.436s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 6.385s :stopwatch: |
 
 
 ## Coverage Report (os: macos-latest / python-version: 3.12.9)
@@ -80,7 +80,7 @@
 ## Pytest Result Summary (os: macos-latest / python-version: 3.12.9)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 14.803s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 6.968s :stopwatch: |
 
 
 ## Coverage Report (os: macos-latest / python-version: 3.11.9)
@@ -89,6 +89,6 @@
 ## Pytest Result Summary (os: macos-latest / python-version: 3.11.9)
 | Tests | Skipped | Failures | Errors | Time |
 | ----- | ------- | -------- | -------- | ------------------ |
-| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 10.492s :stopwatch: |
+| 105 | 0 :zzz: | 0 :x: | 0 :fire: | 5.685s :stopwatch: |
 
 
