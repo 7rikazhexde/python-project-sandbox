@@ -31,7 +31,7 @@ repos:
 
   # https://python-poetry.org/docs/pre-commit-hooks/#usage
   - repo: https://github.com/python-poetry/poetry
-    rev: 2.1.1
+    rev: 2.1.2
     hooks:
       - id: poetry-check
         verbose: true
@@ -79,7 +79,7 @@ repos:
         args: ["--config", ".markdownlint.json", "README.md"]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.11.2
+    rev: v0.11.3
     hooks:
       - id: ruff
         args: ["--fix","project_a"]
