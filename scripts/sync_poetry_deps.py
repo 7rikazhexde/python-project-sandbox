@@ -14,6 +14,11 @@ def convert_poetry_version_to_pep621(version_str: str) -> str:
     elif version_str.startswith("~"):
         version = version_str[1:]
         return f">={version}"
+    # バージョン指定子がない場合（例: "0.11.5"）
+    elif version_str and not any(
+        op in version_str for op in [">=", "<=", "==", ">", "<", "!="]
+    ):
+        return f"=={version_str}"
 
     # そのまま返す（既に>=, ==, <=などを使用している場合）
     return version_str
@@ -46,16 +51,18 @@ def sync_dependencies() -> None:
         if "optional-dependencies" not in pyproject["project"]:
             pyproject["project"]["optional-dependencies"] = tomlkit.table()
 
-        # 新しいdevセクションを作成（配列形式で一行ずつ追加する）
-        pyproject["project"]["optional-dependencies"]["dev"] = tomlkit.array()
-        dev_array = pyproject["project"]["optional-dependencies"]["dev"]
+        # 新しいdevセクションを作成
+        dev_array = tomlkit.array()
+        dev_array.multiline(True)  # 複数行フォーマットを有効化
 
         # 各依存関係を配列の要素として追加
         for package, version in dev_deps.items():
             pep621_version = convert_poetry_version_to_pep621(str(version))
             entry = f"{package}{pep621_version}"
             dev_array.append(entry)
-            dev_array.multiline(True)  # 複数行フォーマットを有効化
+
+        # devセクションを設定
+        pyproject["project"]["optional-dependencies"]["dev"] = dev_array
 
         print("開発依存関係を[project.optional-dependencies]に同期しました。")
     else:
