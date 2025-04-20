@@ -2594,4 +2594,4 @@ dev = ["mypy", "pre-commit", "pytest", "pytest-asyncio", "pytest-cov", "pytest-h
 [metadata]
 lock-version = "2.1"
 python-versions = ">=3.11,<4.0"
-content-hash = "1d715282034af79fa5cbb6e2719da576963a3c2e07197a95ec4862b1e810cf3f"
+content-hash = "42c0a6b98a836cde4fa3d12978b00e8325463d167f5c62c29453f73f8ce8c579"
