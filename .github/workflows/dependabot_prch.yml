@@ -98,7 +98,6 @@ jobs:
       - name: Install dependencies
         run: poetry install
       - name: Run test
-        shell: bash
         id: pytest
         run: |
           poetry run task testcixml
