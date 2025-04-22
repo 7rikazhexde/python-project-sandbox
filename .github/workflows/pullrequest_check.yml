@@ -93,7 +93,7 @@ jobs:
         run: poetry install
       - name: Run test
         id: pytest
-        shell: bash
+        #shell: bash
         # Mac / Linux
         # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
         # Windowss
