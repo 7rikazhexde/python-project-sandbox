@@ -89,12 +89,14 @@ jobs:
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+      #- name: Install dependencies
+      #  shell: bash
+      #  run: |
+      #    rm -f poetry.lock
+      #    poetry lock
+      #    poetry install
       - name: Install dependencies
-        shell: bash
-        run: |
-          rm -f poetry.lock
-          poetry lock
-          poetry install
+        run: poetry install
       - name: Run test
         shell: bash
         id: pytest
