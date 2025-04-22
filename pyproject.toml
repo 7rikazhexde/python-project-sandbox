@@ -12,8 +12,6 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "numpy==2.2.4",
-    "pandas>=2.2.2",
     "requests>=2.32.3",
     "dash>=3.0.3",
     "aiohttp>=3.11.16",
@@ -25,7 +23,8 @@ dependencies = [
     "python-dotenv>=1.0.1",
     "freezegun>=1.5.1",
     "tomlkit>=0.13.2",
-    "types-pytz>=2024.2.0.20240913"
+    "types-pytz>=2024.2.0.20240913",
+    "pandas (>=2.2.3,<3.0.0)"
 ]
 
 # 開発用の追加依存関係
