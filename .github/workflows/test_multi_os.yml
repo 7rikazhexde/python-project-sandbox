@@ -87,20 +87,29 @@ jobs:
           python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
       - name: Install poetry
         run: pip install poetry
+      # Windows環境用の設定追加
+      - name: Configure Poetry for Windows
+        if: runner.os == 'Windows'
+        run: |
+          poetry config virtualenvs.prefer-active-python true
       - name: Cache dependencies
         uses: actions/cache@v4.2.3
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+      # Poetry lockファイルの更新
+      - name: Update poetry lock file
+        if: runner.os == 'Windows'
+        run: poetry lock --no-update
       - name: Install dependencies
         run: poetry install
+      # Pythonバージョン確認
+      - name: Display Python & NumPy version
+        run: |
+          poetry run python -c "import sys; print(f'Python version: {sys.version}')"
+          poetry run python -c "import numpy; print(f'NumPy version: {numpy.__version__}')"
       - name: Run test
         id: pytest
-        #continue-on-error: true
-        # Mac / Linux
-        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
-        # Windowss
-        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
         run: poetry run task testcixml
       - name: Pytest coverage comment
         id: coverageComment
