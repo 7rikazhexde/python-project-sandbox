@@ -227,7 +227,7 @@ jobs:
 
       - name: Set up Python
         if: matrix.language == 'python'
-        uses: actions/setup-python@v5.5.0
+        uses: actions/setup-python@v5.6.0
         with:
           python-version: ${{ matrix.versions[0] }}
 
