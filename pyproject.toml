@@ -24,7 +24,8 @@ dependencies = [
     "freezegun>=1.5.1",
     "tomlkit>=0.13.2",
     "types-pytz>=2024.2.0.20240913",
-    "pandas (>=2.2.3,<3.0.0)"
+    "pandas (>=2.2.3,<3.0.0)",
+    "numpy (>=2.2.5,<3.0.0)"
 ]
 
 # 開発用の追加依存関係
@@ -41,7 +42,7 @@ dev = [
     "pytest-asyncio>=0.26.0",
     "pytest-testmon>=2.1.3",
     "shellcheck-py>=0.10.0.1",
-    "ruff>=0.11.6",
+    "ruff>=0.11.7",
 ]
 
 ## プロジェクトのURLリンク
@@ -113,7 +114,6 @@ packages = [
 #freezegun = "^1.5.1"
 #tomlkit = "^0.13.2"
 #types-pytz = "^2025.2.0.20250326"
-#
 
 # Poetry開発依存関係
 [tool.poetry.group.dev.dependencies]
