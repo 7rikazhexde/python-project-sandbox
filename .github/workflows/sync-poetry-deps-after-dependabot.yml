@@ -1,0 +1,86 @@
+name: Sync Poetry dependencies after Dependabot Merge
+
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - プルリクエストがマージされたとき、かつ、Dependabot によるマージであること
+# 2. 環境のセットアップ（Ubuntu、Python、Poetry）
+# 3. リポジトリのチェックアウト
+# 4. sync_poetry_deps.pyスクリプトを実行して依存関係を同期
+# 5. 変更があった場合コミットしてpush
+
+on:
+  pull_request:
+    types: [closed]
+
+jobs:
+  set_variables:
+    if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set variables from JSON
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@main
+        with:
+          json-file: .github/json2vars-setter/ci_matrix.json
+
+      - name: Debug output values
+        run: |
+          echo "os: ${{ steps.json2vars.outputs.os }}"
+          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Selected OS: ${{ fromJson(steps.json2vars.outputs.os)[0] }}"
+          echo "Selected Python version: ${{ fromJson(steps.json2vars.outputs.versions_python)[0] }}"
+
+  sync-dependencies:
+    needs: set_variables
+    runs-on: ${{ fromJson(needs.set_variables.outputs.os)[0] }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_FOR_PUSHES }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: ${{ fromJson(needs.set_variables.outputs.versions_python)[0] }}
+
+      - name: Install poetry
+        run: pip install poetry
+
+      - name: Cache dependencies
+        uses: actions/cache@v4.2.3
+        with:
+          path: ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Run sync_poetry_deps.py
+        id: sync_deps
+        run: |
+          poetry run python scripts/sync_poetry_deps.py
+          if git diff --name-only | grep -q "pyproject.toml"; then
+            echo "has_changes=true" >> "$GITHUB_OUTPUT"
+            echo "PEP 621 dependencies have been synchronized from Poetry dependencies."
+          else
+            echo "has_changes=false" >> "$GITHUB_OUTPUT"
+            echo "No changes needed to pyproject.toml."
+          fi
+
+      - name: Commit and push changes
+        if: steps.sync_deps.outputs.has_changes == 'true'
+        run: |
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+          git add pyproject.toml
+          git commit -m ":arrow_up: Sync PEP621 dependencies with Poetry dependencies [skip ci]"
+          git push
