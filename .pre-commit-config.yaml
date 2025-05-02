@@ -93,8 +93,15 @@ repos:
         args: [--config-file=pyproject.toml]
 
   # Repository local hooks
-  #- repo: local
-  #  hooks:
+  - repo: local
+    hooks:
+      - id: sync-poetry-deps
+        name: Sync Poetry dependencies to PEP 621
+        entry: poetry run python scripts/sync_poetry_deps.py
+        language: system
+        files: pyproject.toml
+        pass_filenames: false
+
     #-   id: isort
     #    name: isort
     #    stages: [commit]
