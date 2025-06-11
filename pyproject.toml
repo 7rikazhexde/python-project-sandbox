@@ -12,9 +12,9 @@ license = "MIT"
 readme = "README.md"
 requires-python = ">=3.11,<4.0"
 dependencies = [
-    "requests>=2.32.3",
+    "requests>=2.32.4",
     "dash>=3.0.3",
-    "aiohttp>=3.12.11",
+    "aiohttp>=3.12.12",
     "types-requests>=2.32.0.20250602",
     "dash-bootstrap-components>=1.6.0",
     "pytoniq-core>=0.1.42",
