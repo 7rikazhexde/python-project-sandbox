@@ -93,8 +93,8 @@ jobs:
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
       - name: Update poetry lock file
         run: poetry lock -vvv
-      - name: Sync dependencies
-        run: poetry sync -vvv
+      - name: install dependencies
+        run: poetry install -vvv
       - name: Run test
         id: pytest
         shell: bash
