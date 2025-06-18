@@ -95,9 +95,9 @@ jobs:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
       - name: Update poetry lock file
-        run: poetry lock -vvv
+        run: poetry lock
       - name: install dependencies
-        run: poetry install -vvv
+        run: poetry install
       - name: Run test
         id: pytest
         #continue-on-error: true
