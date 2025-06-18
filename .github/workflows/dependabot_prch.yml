@@ -90,11 +90,7 @@ jobs:
         uses: actions/cache@v4.2.3
         with:
           path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-1.8.3-${{ hashFiles('**/poetry.lock') }}
-          restore-keys: |
-            ${{ runner.os }}-poetry-${{ matrix.python-version }}-
-      - name: Debug cache
-        run: ls -la ~/.cache/pypoetry
+          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
       - name: Update poetry lock file
         run: poetry lock --no-update -vvv
       - name: Sync dependencies
