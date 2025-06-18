@@ -95,7 +95,7 @@ jobs:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
       - name: Update poetry lock file
-        run: poetry lock --no-update -vvv
+        run: poetry lock -vvv
       - name: Sync dependencies
         run: poetry sync -vvv
       - name: Run test
