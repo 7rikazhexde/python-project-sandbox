@@ -87,12 +87,16 @@ jobs:
           python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
       - name: Install poetry
         run: pip install poetry
+      - name: Check poetry version
+        run: poetry --version
       - name: Cache dependencies
         uses: actions/cache@v4.2.3
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-      - name: Install dependencies
+      - name: Update poetry lock file
+        run: poetry lock
+      - name: install dependencies
         run: poetry install
       - name: Run test
         id: pytest
