@@ -86,7 +86,7 @@ jobs:
           echo "TZ environment variable: ${TZ}"
           python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
       - name: Install poetry
-        run: pip install poetry
+        uses: snok/install-poetry@v1.4.1
       - name: Check poetry version
         run: poetry --version
       - name: Cache dependencies
