@@ -126,7 +126,10 @@ jobs:
 
       - name: Update poetry lock file
         shell: bash
-        run: poetry lock
+        run: |
+          rm -f poetry.lock
+          poetry lock
+
       - name: Run test
         id: pytest
         #continue-on-error: true
