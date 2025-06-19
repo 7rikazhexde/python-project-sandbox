@@ -103,8 +103,10 @@ jobs:
       - name: Reset virtual environment
         shell: bash
         run: |
+          rm -rf .venv || true
           poetry env remove --all || true
           poetry env use python
+          poetry env info
 
       - name: Cache dependencies
         uses: actions/cache@v4.2.3
@@ -114,12 +116,14 @@ jobs:
             .venv
           key: ${{ runner.os }}-poetry-${{ matrix.python-version }}-${{ hashFiles('**/poetry.lock') }}
           restore-keys: |
-            ${{ runner.os }}-poetry-
+            ${{ runner.os }}-poetry-${{ matrix.python-version }}-
+
+      - name: install dependencies
+        run: poetry install
+
       - name: Update poetry lock file
         shell: bash
         run: poetry lock
-      - name: install dependencies
-        run: poetry install
       - name: Run test
         id: pytest
         # Mac / Linux
