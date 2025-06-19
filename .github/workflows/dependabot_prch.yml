@@ -118,6 +118,7 @@ jobs:
 
       - name: Run test
         id: pytest
+        shell: bash
         run: |
           poetry run task testcixml
           coverage_percentage=$(poetry run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
