@@ -7,7 +7,8 @@ on:
     paths:
       - "project_a/**"
       - "tests/**"
-      - "poetry.lock"
+      - "uv.lock"                                                    # poetry.lock → uv.lock
+      - "justfile"                                                   # justfile を追加
       - ".github/workflows/test-pytest-cov-report.yml"
       - ".github/workflows/matrix.json"
 
@@ -49,44 +50,159 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4.2.2
-      - name: Set up Python
-        uses: actions/setup-python@v5.6.0
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{matrix.python-version}}
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python with uv
+        run: |
+          uv python install "${{ matrix.python-version }}"
+          uv python pin "${{ matrix.python-version }}"
+
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
         with:
           timezoneLinux: "Asia/Tokyo"
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
-      - name: Check timezone
+
+      - name: Check timezone and Python version
         shell: bash
         run: |
           echo "System date: $(date)"
           echo "TZ environment variable: ${TZ}"
-          python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
-      - name: Install poetry
-        run: pip install poetry
-      - name: Cache dependencies
+          uv run python -c "import datetime, platform, sys; print(f'Python version: {sys.version}'); print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
+
+      - name: Install just task runner
+        shell: bash
+        env:
+          RUNNER_OS: ${{ runner.os }}
+        run: |
+          case "${RUNNER_OS}" in
+            "Linux")
+              curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
+              echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+              ;;
+            "macOS")
+              brew install just
+              ;;
+            "Windows")
+              choco install just
+              ;;
+          esac
+
+      - name: Verify installations
+        shell: bash
+        run: |
+          echo "🔧 Tool versions:"
+          uv --version
+          just --version || echo "just not yet available in PATH"
+          uv run python --version
+          if [ -f "uv.lock" ]; then
+            echo "📦 uv.lock hash: $(sha256sum uv.lock | cut -d' ' -f1 2>/dev/null || echo 'N/A')"
+          else
+            echo "📦 uv.lock: not found"
+          fi
+
+      - name: Cache uv dependencies
         uses: actions/cache@v4.2.3
         with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          path: |
+            ~/.cache/uv
+            .venv
+          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.python-version }}-
+            uv-${{ runner.os }}-
+
       - name: Install dependencies
-        run: poetry install
+        shell: bash
+        run: |
+          echo "📥 Installing dependencies with uv..."
+          uv sync --extra dev
+
+          echo "🔍 Installed coverage packages:"
+          uv pip list | grep -E "(pytest|coverage)" || echo "Coverage packages not found in list"
+
       - name: Run tests with pytest-cov
         id: pytest-cov
         shell: bash
         run: |
+          echo "📊 Running tests with coverage report generation..."
+
+          # カバレッジレポート保存パスの設定
           coverage_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
           mkdir -p "${coverage_path}"
-          poetry run pytest --cov=project_a --cov-report="html:${coverage_path}"
+
+          echo "📂 Coverage report will be saved to: ${coverage_path}"
+
+          # justが利用可能かチェックしてカバレッジレポート生成
+          if command -v just &> /dev/null && just --list | grep -q "testcov"; then
+            echo "🚀 Using just for coverage report generation..."
+
+            # justでカバレッジテストを実行
+            just testcov
+
+            # 生成されたHTMLカバレッジレポートを適切な場所に移動
+            if [ -d "htmlcov" ]; then
+              echo "📁 Moving coverage report to ${coverage_path}"
+              # 既存のパスをクリア
+              rm -rf "${coverage_path}"
+              mkdir -p "$(dirname "${coverage_path}")"
+              mv htmlcov "${coverage_path}"
+            else
+              echo "⚠️ htmlcov directory not found, generating directly..."
+              # justで生成されなかった場合のフォールバック
+              uv run pytest --cov=project_a --cov-report="html:${coverage_path}" project_a tests/
+            fi
+          else
+            echo "📊 Using direct uv run for coverage report generation..."
+            # 直接pytestでカバレッジレポートを生成
+            uv run pytest --cov=project_a --cov-report="html:${coverage_path}" project_a tests/
+          fi
+
+          # 生成されたファイルの確認
+          if [ -f "${coverage_path}/index.html" ]; then
+            echo "✅ Coverage report generated successfully"
+            echo "📄 Report index size: $(du -h "${coverage_path}/index.html" | cut -f1)"
+            echo "📁 Total report size: $(du -sh "${coverage_path}" | cut -f1)"
+
+            # カバレッジレポート内のファイル数を確認
+            file_count=$(find "${coverage_path}" -name "*.html" | wc -l)
+            echo "📋 HTML files generated: ${file_count}"
+          else
+            echo "❌ Coverage report generation failed"
+            echo "🔍 Contents of coverage directory:"
+            ls -la "${coverage_path}" || echo "Coverage directory does not exist"
+            exit 1
+          fi
+
+      - name: Generate coverage summary
+        shell: bash
+        run: |
+          echo "📈 Generating coverage summary..."
+
+          # カバレッジサマリーの取得
+          if command -v just &> /dev/null && just --list | grep -q "testcov"; then
+            coverage_summary=$(uv run coverage report --format=total 2>/dev/null || echo "N/A")
+          else
+            coverage_summary=$(uv run coverage report --format=total 2>/dev/null || echo "N/A")
+          fi
+
+          echo "COVERAGE_SUMMARY=${coverage_summary}" >> "$GITHUB_ENV"
+          echo "📊 Coverage: ${coverage_summary}%"
+
       - name: Upload pytest-cov results
         uses: actions/upload-artifact@v4.6.1
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
+          retention-days: 30
 
   check_all_tests:
     needs: test
@@ -95,8 +211,16 @@ jobs:
       - name: Check test results
         if: contains(needs.test.result, 'failure')
         run: |
-          echo "Some tests failed. Please check the test results and fix any issues before merging."
+          echo "::error::Some tests failed during coverage report generation."
+          echo "::error::Failed test matrices: ${{ toJson(needs.test.result) }}"
+          echo "::warning::Please check the test results and fix any issues before merging."
           exit 1
+
+      - name: All tests passed
+        if: success()
+        run: |
+          echo "🎉 All tests passed successfully across all environments!"
+          echo "📊 Coverage reports generated for all OS and Python version combinations."
 
   deploy:
     needs: [test, check_all_tests, set_variables]
@@ -106,69 +230,130 @@ jobs:
       actions: write
     outputs:
       deploy_status: ${{ steps.check_and_deploy.outputs.deploy_status }}
+      updated_reports: ${{ steps.check_and_deploy.outputs.updated_reports }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
 
-      - name: Set up Python
-        uses: actions/setup-python@v5.6.0
+      - name: Install uv (for deployment utilities)
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: "3.12"
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python for deployment
+        run: |
+          uv python install 3.12
+          uv python pin 3.12
 
       - name: Download pytest-cov artifacts
         uses: actions/download-artifact@v4.1.9
 
       - name: Setup Git
         run: |
+          echo "⚙️ Setting up Git configuration..."
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
       - name: Check and Deploy to GitHub Pages
         id: check_and_deploy
+        shell: bash
         run: |
+          echo "🚀 Starting GitHub Pages deployment process..."
+
           # jsonで定義されたブランチ名を使用
           ghpages_branch="${{ needs.set_variables.outputs.ghpages_branch }}"
+          echo "📋 Target branch: ${ghpages_branch}"
 
           # ブランチの取得または作成
-          git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
-          git checkout "${ghpages_branch}"
-          git pull origin "${ghpages_branch}" --rebase || true
+          if git fetch origin "${ghpages_branch}"; then
+            echo "✅ Found existing ${ghpages_branch} branch"
+            git checkout "${ghpages_branch}"
+            git pull origin "${ghpages_branch}" --rebase || true
+          else
+            echo "🆕 Creating new ${ghpages_branch} branch"
+            git checkout -b "${ghpages_branch}"
+          fi
 
           changes_made=false
+          updated_reports=""
 
+          echo "📁 Processing coverage artifacts..."
           # アーティファクトの移動とコミット
           for artifact_dir in coverage-results-*; do
             if [ -d "$artifact_dir" ]; then
-              # パスの構築
-              os=$(echo "$artifact_dir" | sed -E 's/coverage-results-([^-]+(-[^-]+)?)-python-.*/\1/')
-              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
+              echo "🔍 Processing: $artifact_dir"
+
+              # パスの構築（改良されたパース）
+              os="${artifact_dir#coverage-results-}"
+              os="${os%-python-*}"
+              python_version="${artifact_dir##*-python-}"
+
+              echo "  📊 OS: $os, Python: $python_version"
 
               # 最終的なパスを構築
               coverage_path="pytest-cov-report/${os}/python/${python_version}"
 
-              # ディレクトリ作成と移動
-              mkdir -p "${coverage_path}"
-              rm -rf "${coverage_path}"
-              mv "${artifact_dir}" "${coverage_path}"
-              git add "${coverage_path}"
-              changes_made=true
+              if [ -f "${artifact_dir}/index.html" ]; then
+                echo "  📈 Coverage report found, checking for changes..."
+
+                # 既存のレポートとの差分チェック（index.htmlで比較）
+                if [ ! -f "${coverage_path}/index.html" ] || ! diff "${artifact_dir}/index.html" "${coverage_path}/index.html" > /dev/null 2>&1; then
+                  echo "  ✏️ Changes detected, updating coverage report..."
+
+                  # ディレクトリ作成と移動
+                  mkdir -p "$(dirname "${coverage_path}")"
+                  rm -rf "${coverage_path}"
+                  mv "${artifact_dir}" "${coverage_path}"
+                  git add "${coverage_path}"
+                  changes_made=true
+                  updated_reports="${updated_reports}${os} (Python ${python_version}), "
+
+                  # カバレッジファイル数の確認
+                  file_count=$(find "${coverage_path}" -name "*.html" | wc -l)
+                  echo "    📋 HTML files: ${file_count}"
+                else
+                  echo "  ✅ No changes detected, skipping..."
+                fi
+              else
+                echo "  ⚠️ No index.html found in ${artifact_dir}"
+              fi
             fi
           done
 
+          # 更新されたレポートの整理
+          if [ -n "$updated_reports" ]; then
+            updated_reports="${updated_reports%, }"
+          fi
+
           if [ "${changes_made}" = true ]; then
-            git commit -m "Update pytest-html reports on GitHub Pages"
+            echo "📝 Committing coverage report changes..."
+            commit_message="📊 Update pytest-cov reports on GitHub Pages
+
+            📈 Updated coverage reports: ${updated_reports}
+            🔧 Tool: uv + just
+            📅 Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
+            📝 Commit: ${GITHUB_SHA::8}"
+
+            git commit -m "$commit_message"
             git push origin "${ghpages_branch}"
             echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+            echo "updated_reports=${updated_reports}" >> "$GITHUB_OUTPUT"
+            echo "✅ Deployment completed successfully"
           else
-            echo "No changes to commit"
+            echo "ℹ️ No changes to commit"
             echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
+            echo "updated_reports=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate URL list
         id: generate_url_list
+        shell: bash
         run: |
+          echo "🔗 Generating coverage report URL list..."
+
           IFS='/' read -ra REPO_INFO <<< "${GITHUB_REPOSITORY}"
           REPO_OWNER="${REPO_INFO[0]}"
           REPO_NAME="${REPO_INFO[1]}"
@@ -179,16 +364,33 @@ jobs:
           versions_python='${{ needs.set_variables.outputs.versions_python }}'
 
           # jqを使用してリストを展開
-          os_list=$(echo "${os}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
-          python_versions_list=$(echo "${versions_python}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
+          os_list=$(echo "${os}" | jq -r '.[]' | tr '\n' ' ')
+          os_list="${os_list% }"
+          python_versions_list=$(echo "${versions_python}" | jq -r '.[]' | tr '\n' ' ')
+          python_versions_list="${python_versions_list% }"
+
+          echo "📋 Available environments:"
+          echo "  OS: ${os_list}"
+          echo "  Python versions: ${python_versions_list}"
 
           # マトリックス情報から直接URLを生成
           for current_os in ${os_list}; do
             for version in ${python_versions_list}; do
               report_path="pytest-cov-report/${current_os}/python/${version}"
               if [ -d "$report_path" ]; then
-                URL_LIST="${URL_LIST}${report_path}:\n\
-                https://${REPO_OWNER}.github.io/${REPO_NAME}/${report_path}/index.html\n\n"
+                # OS絵文字の選択
+                case "${current_os}" in
+                  "ubuntu-latest") os_emoji="🐧" ;;
+                  "macos-latest") os_emoji="🍎" ;;
+                  "windows-latest") os_emoji="🪟" ;;
+                  *) os_emoji="💻" ;;
+                esac
+
+                URL_LIST="${URL_LIST}**${os_emoji} ${current_os} / Python ${version}:**\n"
+                URL_LIST="${URL_LIST}https://${REPO_OWNER}.github.io/${REPO_NAME}/${report_path}/index.html\n\n"
+                echo "  ✅ ${current_os} / Python ${version}"
+              else
+                echo "  ⚠️ ${current_os} / Python ${version} (not found)"
               fi
             done
           done
@@ -205,6 +407,8 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          echo "📢 Sending update notification to Discord..."
+
           # ワークフローの詳細ページURL
           workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
@@ -212,19 +416,22 @@ jobs:
           formatted_urls="${{ steps.generate_url_list.outputs.url_list }}"
 
           # メッセージの作成
-          message="### Deployment Status: Updated ✅
+          message="## 📈 Coverage Reports Updated ✅
 
-          ### Workflow Information
-          **Name:** ${{ github.workflow }}
+          ### 🔄 Deployment Information
+          **Workflow:** ${{ github.workflow }}
           **Run:** [View Details]($workflow_url)
+          **Tool:** uv + just
+          **Updated Reports:** ${{ steps.check_and_deploy.outputs.updated_reports }}
 
-          **Coverage Reports**
-          ${formatted_urls}"
+          ### 📊 Available Coverage Reports
+          ${formatted_urls}
 
-          # JSON生成（改行を保持）
+          **📅 Last Updated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
           timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           json_payload=$(jq -n \
-            --arg title "${{ github.workflow }} - Deploy Status" \
+            --arg title "📈 ${{ github.workflow }} - Deploy Status" \
             --arg description "$message" \
             --argjson color 65280 \
             --arg timestamp "$timestamp" \
@@ -234,15 +441,22 @@ jobs:
                   "title": $title,
                   "description": $description,
                   "color": $color,
-                  "timestamp": $timestamp
+                  "timestamp": $timestamp,
+                  "footer": {
+                    "text": "🤖 Automated coverage report deployment"
+                  }
                 }
               ]
             }')
 
-          # Discord Webhook送信
-          curl -X POST -H "Content-Type: application/json" \
-            -d "$json_payload" \
-            "$DISCORD_WEBHOOK_URL"
+          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+              -d "$json_payload" \
+              "$DISCORD_WEBHOOK_URL"
+            echo "✅ Discord notification sent"
+          else
+            echo "⚠️ Discord webhook URL not configured"
+          fi
 
       # メッセージ送信 (変更がない場合)
       - name: Send Discord Notification (No Changes)
@@ -250,21 +464,25 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
+          echo "📢 Sending no-change notification to Discord..."
+
           workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          message="### Deployment Status: No Changes ℹ️
+          message="## 📈 Coverage Reports - No Changes ℹ️
 
-          ### Workflow Information
-          **Name:** ${{ github.workflow }}
+          ### 🔄 Deployment Information
+          **Workflow:** ${{ github.workflow }}
           **Run:** [View Details]($workflow_url)
+          **Tool:** uv + just
 
-          No changes were detected in the coverage reports."
+          No changes were detected in the coverage reports.
+          All reports are up to date."
 
           timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           json_payload=$(jq -n \
-            --arg title "${{ github.workflow }} - Deploy Status" \
+            --arg title "📈 ${{ github.workflow }} - Deploy Status" \
             --arg description "$message" \
-            --argjson color 16711680 \
+            --argjson color 16776960 \
             --arg timestamp "$timestamp" \
             '{
               "embeds": [
@@ -272,11 +490,46 @@ jobs:
                   "title": $title,
                   "description": $description,
                   "color": $color,
-                  "timestamp": $timestamp
+                  "timestamp": $timestamp,
+                  "footer": {
+                    "text": "🤖 Automated coverage report deployment"
+                  }
                 }
               ]
             }')
 
-          curl -X POST -H "Content-Type: application/json" \
-            -d "$json_payload" \
-            "$DISCORD_WEBHOOK_URL"
+          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
+            curl -X POST -H "Content-Type: application/json" \
+              -d "$json_payload" \
+              "$DISCORD_WEBHOOK_URL"
+            echo "✅ Discord notification sent"
+          else
+            echo "⚠️ Discord webhook URL not configured"
+          fi
+
+      - name: Create deployment summary
+        if: always()
+        run: |
+          {
+            echo "## 📈 Coverage Report Deployment Summary"
+            echo ""
+            echo "### 🚀 Deployment Information"
+            echo "- **Status:** ${{ steps.check_and_deploy.outputs.deploy_status }}"
+            echo "- **Target Branch:** ${{ needs.set_variables.outputs.ghpages_branch }}"
+            echo "- **Tool Stack:** uv + just"
+            echo ""
+
+            if [ "${{ steps.check_and_deploy.outputs.deploy_status }}" == "updated" ]; then
+              echo "### ✅ Updated Reports"
+              echo "- **Updated:** ${{ steps.check_and_deploy.outputs.updated_reports }}"
+              echo ""
+              echo "### 🔗 Available Reports"
+              echo "${{ steps.generate_url_list.outputs.url_list }}"
+            else
+              echo "### ℹ️ No Changes"
+              echo "All coverage reports are up to date. No deployment was necessary."
+            fi
+
+            echo ""
+            echo "**Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+          } >> "$GITHUB_STEP_SUMMARY"

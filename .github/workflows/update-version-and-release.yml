@@ -3,9 +3,9 @@ name: Version Update and Release
 # Workflow Process Flow:
 # 1. Trigger Conditions:
 #    - Manual execution (workflow_dispatch)
-# 2. Environment Setup (Ubuntu, Python, Poetry)
-# 3. Retrieve the current version
-# 4. Update to the new version (patch, minor, or major)
+# 2. Environment Setup (Ubuntu, Python, uv)
+# 3. Retrieve the current version from pyproject.toml
+# 4. Update to the new version (patch, minor, or major) using uv
 # 5. Commit and push the changes
 # 6. Create and push a new tag
 # 7. Generate the changelog
@@ -28,60 +28,206 @@ jobs:
   update-version-and-release:
     runs-on: ubuntu-latest
     steps:
-      - uses: actions/checkout@v4.2.2
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_FOR_PUSHES }}
-      - name: Set up Python
-        uses: actions/setup-python@v5.6.0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: '3.12'
-      - name: Install poetry
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python with uv
         run: |
-          python -m pip install --upgrade pip
-          pip install poetry
+          # Python 3.12を使用（元の設定に合わせて）
+          uv python install 3.12
+          uv python pin 3.12
+
+      - name: Install version management tool
+        run: |
+          echo "📦 Installing version management dependencies..."
+          # tomlkitを使用してpyproject.tomlのバージョンを管理
+          uv add --dev tomlkit
+          uv sync --extra dev
+
       - name: Configure Git
         run: |
+          echo "⚙️ Configuring Git..."
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+
       - name: Get current version
         id: current_version
-        run: echo "version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
-      - name: Update version
-        id: update_version
         run: |
-          poetry version ${{ github.event.inputs.update_type }}
-          echo "new_version=$(poetry version -s)" >> "$GITHUB_OUTPUT"
-      - name: Commit and push if changed
+          echo "🔍 Getting current version from pyproject.toml..."
+          current_version=$(uv run python -c "
+          import tomlkit
+          with open('pyproject.toml', 'r') as f:
+              data = tomlkit.load(f)
+          print(data['project']['version'])
+          ")
+          echo "Current version: $current_version"
+          echo "version=$current_version" >> "$GITHUB_OUTPUT"
+
+      - name: Calculate new version
+        id: new_version
         run: |
-          git add pyproject.toml
-          git commit -m ":wrench:Bump version to ${{ steps.update_version.outputs.new_version }}" || echo "No changes to commit"
-          git push
+          echo "🔢 Calculating new version..."
+          new_version=$(uv run python -c "
+          import tomlkit
+          from packaging.version import Version
+
+          # 現在のバージョンを取得
+          with open('pyproject.toml', 'r') as f:
+              data = tomlkit.load(f)
+          current = Version(data['project']['version'])
+
+          # 新しいバージョンを計算
+          update_type = '${{ github.event.inputs.update_type }}'
+          if update_type == 'major':
+              new = Version(f'{current.major + 1}.0.0')
+          elif update_type == 'minor':
+              new = Version(f'{current.major}.{current.minor + 1}.0')
+          else:  # patch
+              new = Version(f'{current.major}.{current.minor}.{current.micro + 1}')
+
+          print(str(new))
+          ")
+          echo "New version: $new_version"
+          echo "version=$new_version" >> "$GITHUB_OUTPUT"
+
+      - name: Update version in pyproject.toml
+        run: |
+          echo "📝 Updating version in pyproject.toml..."
+          uv run python -c "
+          import tomlkit
+
+          # pyproject.tomlを読み込み
+          with open('pyproject.toml', 'r') as f:
+              data = tomlkit.load(f)
+
+          # バージョンを更新
+          data['project']['version'] = '${{ steps.new_version.outputs.version }}'
+
+          # ファイルに書き戻し
+          with open('pyproject.toml', 'w') as f:
+              tomlkit.dump(data, f)
+
+          print('✅ Version updated in pyproject.toml')
+          "
+
+          echo "🔍 Verifying version update..."
+          grep "version.*${{ steps.new_version.outputs.version }}" pyproject.toml || {
+            echo "❌ Version update verification failed"
+            exit 1
+          }
+          echo "✅ Version update verified"
+
+      - name: Update uv.lock file
+        run: |
+          echo "🔄 Updating uv.lock file..."
+          uv lock
+          echo "✅ uv.lock updated"
+
+      - name: Commit and push changes
+        run: |
+          echo "📤 Committing and pushing changes..."
+
+          # 変更があるかチェック
+          if git diff --quiet pyproject.toml uv.lock; then
+            echo "ℹ️ No changes to commit"
+          else
+            git add pyproject.toml uv.lock
+            git commit -m "🔖 Bump version to ${{ steps.new_version.outputs.version }}" || echo "No changes to commit"
+            git push
+            echo "✅ Changes committed and pushed"
+          fi
+
       - name: Create and push new tag
         run: |
-          git tag v${{ steps.update_version.outputs.new_version }}
+          echo "🏷️ Creating and pushing tag..."
+          git tag v${{ steps.new_version.outputs.version }}
           git push --tags
+          echo "✅ Tag v${{ steps.new_version.outputs.version }} created and pushed"
+
       - name: Generate changelog
         id: changelog
         run: |
-          changelog=$(git log --pretty=format:"- %s" v${{ steps.current_version.outputs.version }}..v${{ steps.update_version.outputs.new_version }})
+          echo "📋 Generating changelog..."
+
+          # 前のバージョンから現在のバージョンまでの変更ログを生成
+          if git rev-parse "v${{ steps.current_version.outputs.version }}" >/dev/null 2>&1; then
+            changelog=$(git log --pretty=format:"- %s" v${{ steps.current_version.outputs.version }}..HEAD)
+          else
+            # 前のタグが存在しない場合は最初のコミットから
+            changelog=$(git log --pretty=format:"- %s")
+          fi
+
+          if [ -z "$changelog" ]; then
+            changelog="- Initial release"
+          fi
+
+          echo "Generated changelog:"
+          echo "$changelog"
+
+          # GitHubの出力形式に設定
           {
             echo "changelog<<EOF"
             echo "$changelog"
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
+
       - name: Create Release
         uses: softprops/action-gh-release@v2.3.2
         with:
-          tag_name: v${{ steps.update_version.outputs.new_version }}
-          name: python-project-sandbox-v${{ steps.update_version.outputs.new_version }}
+          tag_name: v${{ steps.new_version.outputs.version }}
+          name: python-project-sandbox v${{ steps.new_version.outputs.version }}
           body: |
-            ## Changes in this Release
+            ## 🚀 Changes in this Release
 
+            ### 📊 Version Information
+            - **Previous Version:** ${{ steps.current_version.outputs.version }}
+            - **New Version:** ${{ steps.new_version.outputs.version }}
+            - **Update Type:** ${{ github.event.inputs.update_type }}
+            - **Tool:** uv
+
+            ### 📝 Changelog
             ${{ steps.changelog.outputs.changelog }}
 
-            For full changes, see the [comparison view](${{ github.server_url }}/${{ github.repository }}/compare/v${{ steps.current_version.outputs.version }}..v${{ steps.update_version.outputs.new_version }})
+            ### 🔗 Links
+            - [Full Changelog](${{ github.server_url }}/${{ github.repository }}/compare/v${{ steps.current_version.outputs.version }}..v${{ steps.new_version.outputs.version }})
+            - [pyproject.toml](${{ github.server_url }}/${{ github.repository }}/blob/v${{ steps.new_version.outputs.version }}/pyproject.toml)
+
+            ---
+
+            **Generated by GitHub Actions with uv** 🤖
           draft: false
           prerelease: false
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
+
+      - name: Create summary
+        run: |
+          {
+            echo "## 🎉 Version Update and Release Summary"
+            echo ""
+            echo "### 📊 Version Information"
+            echo "- **Previous Version:** ${{ steps.current_version.outputs.version }}"
+            echo "- **New Version:** ${{ steps.new_version.outputs.version }}"
+            echo "- **Update Type:** ${{ github.event.inputs.update_type }}"
+            echo "- **Tool:** uv"
+            echo ""
+            echo "### ✅ Completed Actions"
+            echo "- 📝 Updated pyproject.toml"
+            echo "- 🔄 Updated uv.lock"
+            echo "- 📤 Committed and pushed changes"
+            echo "- 🏷️ Created and pushed tag v${{ steps.new_version.outputs.version }}"
+            echo "- 🚀 Created GitHub release"
+            echo ""
+            echo "### 🔗 Quick Links"
+            echo "- [📋 Release](${{ github.server_url }}/${{ github.repository }}/releases/tag/v${{ steps.new_version.outputs.version }})"
+            echo "- [🔍 Compare Changes](${{ github.server_url }}/${{ github.repository }}/compare/v${{ steps.current_version.outputs.version }}..v${{ steps.new_version.outputs.version }})"
+          } >> "$GITHUB_STEP_SUMMARY"

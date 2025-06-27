@@ -30,13 +30,13 @@ repos:
       - id: actionlint
 
   # https://python-poetry.org/docs/pre-commit-hooks/#usage
-  - repo: https://github.com/python-poetry/poetry
-    rev: 2.1.3
-    hooks:
-      - id: poetry-check
-        verbose: true
-      - id: poetry-lock
-        verbose: true
+  #- repo: https://github.com/python-poetry/poetry
+  #  rev: 2.1.3
+  #  hooks:
+  #    - id: poetry-check
+  #      verbose: true
+  #    - id: poetry-lock
+  #      verbose: true
 
   # https://github.com/python-poetry/poetry-plugin-export?tab=readme-ov-file#usage
   #- repo: https://github.com/python-poetry/poetry-plugin-export.git
@@ -93,14 +93,14 @@ repos:
         args: [--config-file=pyproject.toml]
 
   # Repository local hooks
-  - repo: local
-    hooks:
-      - id: sync-poetry-deps
-        name: Sync Poetry dependencies to PEP 621
-        entry: poetry run python scripts/sync_poetry_deps.py
-        language: system
-        files: pyproject.toml
-        pass_filenames: false
+  #- repo: local
+  #  hooks:
+    #  - id: sync-poetry-deps
+    #    name: Sync Poetry dependencies to PEP 621
+    #    entry: poetry run python scripts/sync_poetry_deps.py
+    #    language: system
+    #    files: pyproject.toml
+    #    pass_filenames: false
 
     #-   id: isort
     #    name: isort
