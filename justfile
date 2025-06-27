@@ -19,7 +19,7 @@ test-testmon:
     uv run pytest --testmon
 
 test-coverage:
-    uv run pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html
+    uv run pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
 
 # 短縮エイリアス
 testcov: test-coverage

@@ -116,9 +116,15 @@ jobs:
       - name: Verify installations
         shell: bash
         run: |
+          echo "🔧 Tool versions:"
           uv --version
           just --version || echo "just not yet available in PATH"
           uv run python --version
+          if [ -f "uv.lock" ]; then
+            echo "📦 uv.lock hash: $(sha256sum uv.lock | cut -d' ' -f1)"
+          else
+            echo "📦 uv.lock: not found"
+          fi
 
       - name: Cache uv dependencies
         uses: actions/cache@v4
@@ -153,10 +159,26 @@ jobs:
           if command -v just &> /dev/null; then
             echo "Running tests with just..."
             just testcov
+
+            # XMLレポートが生成されていない場合は追加で生成
+            if [ ! -f "coverage.xml" ]; then
+              echo "📄 Generating missing coverage.xml..."
+              uv run coverage xml
+            fi
+
+            # JUnit XMLレポートが生成されていない場合は追加で生成
+            if [ ! -f "pytest.xml" ]; then
+              echo "📄 Generating missing pytest.xml..."
+              uv run pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
+            fi
           else
             echo "Running tests with uv run..."
             uv run pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml --junitxml=pytest.xml project_a tests/
           fi
+
+          # 生成されたファイルの確認
+          echo "📋 Generated files:"
+          ls -la ./*.xml ./htmlcov/ 2>/dev/null || echo "Some files may be missing"
 
           # カバレッジの取得
           coverage_percentage=$(uv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
@@ -167,10 +189,20 @@ jobs:
         shell: bash
         run: |
           # PR用のカバレッジテキストレポートを生成
-          if command -v just &> /dev/null; then
-            just testcov > pytest-coverage.txt
+          echo "📝 Generating coverage text report for PR comment..."
+
+          # 既にテストが実行されているので、coverageコマンドを使用してテキストレポートを生成
+          uv run coverage report > pytest-coverage.txt
+
+          # ファイルが生成されたことを確認
+          if [ -f "pytest-coverage.txt" ]; then
+            echo "✅ pytest-coverage.txt generated successfully"
+            echo "📄 File size: $(du -h pytest-coverage.txt | cut -f1)"
+            echo "📝 First few lines:"
+            head -5 pytest-coverage.txt
           else
-            uv run pytest --cov=. --cov-branch --cov-report=term-missing project_a tests/ > pytest-coverage.txt
+            echo "❌ pytest-coverage.txt generation failed"
+            exit 1
           fi
 
       - name: Check coverage threshold
@@ -184,8 +216,43 @@ jobs:
             echo "✅ Test coverage is above or equal to 90%. Current coverage: ${COVERAGE}%"
           fi
 
+      - name: Verify required files for coverage comment
+        shell: bash
+        run: |
+          echo "🔍 Verifying required files..."
+
+          # 必要なファイルの確認
+          files_missing=false
+
+          if [ ! -f "pytest-coverage.txt" ]; then
+            echo "❌ pytest-coverage.txt not found"
+            files_missing=true
+          else
+            echo "✅ pytest-coverage.txt found ($(du -h pytest-coverage.txt | cut -f1))"
+          fi
+
+          if [ ! -f "coverage.xml" ]; then
+            echo "❌ coverage.xml not found"
+            files_missing=true
+          else
+            echo "✅ coverage.xml found ($(du -h coverage.xml | cut -f1))"
+          fi
+
+          if [ ! -f "pytest.xml" ]; then
+            echo "❌ pytest.xml not found"
+            files_missing=true
+          else
+            echo "✅ pytest.xml found ($(du -h pytest.xml | cut -f1))"
+          fi
+
+          if [ "$files_missing" = true ]; then
+            echo "⚠️ Some required files are missing, but continuing workflow..."
+          else
+            echo "🎉 All required files are present!"
+          fi
       - name: Pytest coverage comment
         id: coverageComment
+        if: always()
         uses: MishaKav/pytest-coverage-comment@v1.1.54
         with:
           pytest-coverage-path: ./pytest-coverage.txt
