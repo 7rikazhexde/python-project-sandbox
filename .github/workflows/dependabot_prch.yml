@@ -347,8 +347,12 @@ jobs:
             echo "This is an automated Dependabot PR that updates project dependencies."
             echo "The uv.lock file has been automatically updated to reflect the changes."
             echo ""
-            echo "${{ steps.coverageComment.outputs.summaryReport }}"
           } >> "$GITHUB_STEP_SUMMARY"
+
+          # カバレッジレポートを別途追加（HTMLエスケープ処理）
+          if [ -n "${{ steps.coverageComment.outputs.summaryReport }}" ]; then
+            printf '%s\n' '${{ steps.coverageComment.outputs.summaryReport }}' >> "$GITHUB_STEP_SUMMARY"
+          fi
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
