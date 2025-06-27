@@ -1,0 +1,72 @@
+name: Update Requirements after Dependabot Merge
+
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - プルリクエストがマージされたとき、かつ、Dependabot によるマージであること
+#    - 手動でワークフローをトリガーするとき
+# 2. 環境のセットアップ（Ubuntu、Python、Poetry）
+# 3. poetry.lock ファイルの更新
+# 4. 依存関係のインストール（更新された lock ファイルを使用）
+# 5. requirements.txt と requirements-dev.txt の生成
+# 6. Gist にファイル（requirements.txt と requirements-dev.txt）をアップロード
+# 7. requirements.txt と requirements-dev.txt を削除
+
+on:
+  pull_request:
+    types: [closed]
+  workflow_dispatch:
+
+jobs:
+  update-requirements:
+    if: github.event.pull_request.merged == true && github.event.pull_request.user.login == 'dependabot[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_FOR_PUSHES }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          python-version: '3.13'
+
+      - name: Install Poetry
+        run: pip install poetry
+
+      - name: Add plugin
+        run: poetry self add poetry-plugin-export
+
+      - name: Update lock file
+        run: poetry lock
+
+      - name: Install dependencies
+        run: poetry install
+
+      - name: Generate requirements files
+        run: |
+          poetry export -f requirements.txt -o requirements.txt --without-hashes
+          poetry export -f requirements.txt -o requirements-dev.txt --without-hashes --with dev
+
+      - name: Upload requirements files to Gist
+        env:
+          GIST_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
+        run: |
+          upload_to_gist() {
+            local file="$1"
+            local gist_id="$2"
+            local json_payload
+            # jqにfileとcontentを渡してJSONを構築
+            json_payload=$(jq -n --arg fname "$file" --arg content "$(cat "$file")" '{"files": {($fname): {"content": $content}}}')
+            curl -X PATCH \
+              -H "Authorization: token $GIST_TOKEN" \
+              -H "Content-Type: application/json" \
+              -d "$json_payload" \
+              "https://api.github.com/gists/$gist_id" || echo "Failed to upload $file to Gist"
+          }
+          upload_to_gist "requirements.txt" "e98bb6078bc1d99f94c26f6c739724f2"
+          upload_to_gist "requirements-dev.txt" "4d9c1e43c07c990b344fce63faffeef2"
+
+      - name: Clean up local requirements files
+        run: |
+          rm requirements.txt requirements-dev.txt

@@ -2,7 +2,7 @@ name: Update pre-commit Hooks
 
 on:
   schedule:
-    - cron: '0 0 * * 5'
+    - cron: '0 0 * * 5'  # 毎週金曜日の午前0時（UTC）
   workflow_dispatch:
 
 jobs:
@@ -32,72 +32,130 @@ jobs:
 
   update:
     needs: set_variables
-    #runs-on: ubuntu-latest
     runs-on: ${{ fromJson(needs.set_variables.outputs.os)[0] }}
     steps:
-      - uses: actions/checkout@v4.2.2
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_FOR_PUSHES }}
-      - name: Set up Python
-        uses: actions/setup-python@v5.6.0
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          #python-version: '3.13'
-          python-version: ${{ fromJson(needs.set_variables.outputs.versions_python)[0] }}
-      - name: Install poetry
-        uses: snok/install-poetry@v1.4.1
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python with uv
+        run: |
+          python_version="${{ fromJson(needs.set_variables.outputs.versions_python)[0] }}"
+          echo "🐍 Setting up Python $python_version"
+          uv python install "$python_version"
+          uv python pin "$python_version"
+
+      - name: Install just task runner
+        shell: bash
+        env:
+          RUNNER_OS: ${{ runner.os }}
+        run: |
+          case "${RUNNER_OS}" in
+            "Linux")
+              curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
+              echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+              ;;
+            "macOS")
+              brew install just
+              ;;
+            "Windows")
+              choco install just
+              ;;
+          esac
+
+      - name: Verify installations
+        run: |
+          echo "🔧 Tool versions:"
+          uv --version
+          just --version || echo "just not yet available in PATH"
+          uv run python --version
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
         with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+          path: |
+            ~/.cache/uv
+            .venv
+          key: uv-${{ runner.os }}-${{ fromJson(needs.set_variables.outputs.versions_python)[0] }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ fromJson(needs.set_variables.outputs.versions_python)[0] }}-
+            uv-${{ runner.os }}-
 
-      #- name: Add plugin
-      #  run: poetry self add poetry-plugin-export
-      #- name: Cache dependencies
-      #  uses: actions/cache@v4.2.3
-      #  with:
-      #    path: ~/.cache/pypoetry
-      #    key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
-
-      - name: Check poetry version
-        run: poetry --version
-
-      - name: Reset virtual environment
-        shell: bash
+      - name: Install dependencies
         run: |
-          rm -rf .venv || true
-          poetry env remove --all || true
-          poetry env use python
+          echo "📥 Installing dependencies with uv..."
+          uv sync --extra dev
 
-      - name: Update poetry lock file
-        shell: bash
-        run: |
-          rm -f poetry.lock
-          poetry lock
-
-      - name: install dependencies
-        run: poetry install
+          echo "🔍 Installed packages:"
+          uv pip list | grep -E "(pre-commit|ruff|mypy)" || echo "Key tools not found in list"
 
       # Update pre-commit hooks and check for changes
       - name: Update pre-commit hooks
         id: update_hooks
         run: |
-          poetry run pre-commit autoupdate
+          echo "🔄 Updating pre-commit hooks..."
+
+          # pre-commit設定ファイルの存在確認
+          if [ ! -f ".pre-commit-config.yaml" ]; then
+            echo "❌ .pre-commit-config.yaml not found"
+            exit 1
+          fi
+
+          echo "📋 Current pre-commit configuration:"
+          uv run pre-commit --version
+
+          # pre-commit hooks更新前の状態を記録
+          echo "🔍 Before update:"
+          grep -E "(rev:|  - repo:)" .pre-commit-config.yaml || echo "No repos found"
+
+          # pre-commit hooksの更新実行
+          uv run pre-commit autoupdate
+
+          # 変更があったかチェック
           if git diff --exit-code .pre-commit-config.yaml; then
             echo "has_updates=false" >> "$GITHUB_OUTPUT"
-            echo "No updates to pre-commit hooks. Exiting workflow."
+            echo "ℹ️ No updates to pre-commit hooks. Exiting workflow."
+            echo "update_summary=No updates available" >> "$GITHUB_OUTPUT"
           else
             echo "has_updates=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Pre-commit hooks updated successfully!"
+
+            # 更新内容のサマリーを生成
+            echo "📋 After update:"
+            grep -E "(rev:|  - repo:)" .pre-commit-config.yaml || echo "No repos found"
+
+            # 変更の詳細を記録
+            update_summary=$(git diff --no-index /dev/null .pre-commit-config.yaml | grep -c "^+" || echo "0")
+            echo "update_summary=Updated hooks with $update_summary changes" >> "$GITHUB_OUTPUT"
           fi
 
       # Testing and Coverage Measurement
-      - name: Run test
+      - name: Run tests with coverage
         id: pytest
         if: steps.update_hooks.outputs.has_updates == 'true'
         shell: bash
         run: |
-          poetry run task testcixml
-          coverage_percentage=$(poetry run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
+          echo "🧪 Running tests to verify pre-commit hook updates..."
+
+          # justが利用可能な場合はjustを使用、そうでなければuv runで直接実行
+          if command -v just &> /dev/null && just --list | grep -q "testcixml"; then
+            echo "Using just for test execution..."
+            just testcixml
+          else
+            echo "Using uv run for test execution..."
+            uv run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/
+          fi
+
+          # カバレッジの取得
+          coverage_percentage=$(uv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
           echo "Current coverage: ${coverage_percentage}%"
           echo "COVERAGE=${coverage_percentage}" >> "$GITHUB_ENV"
 
@@ -106,15 +164,76 @@ jobs:
         if: steps.update_hooks.outputs.has_updates == 'true'
         shell: bash
         run: |
+          echo "📊 Checking coverage threshold..."
+
           if [[ ! "$COVERAGE" =~ ^[0-9]+$ ]]; then
-            echo "Error: Invalid coverage value: ${COVERAGE}"
+            echo "❌ Error: Invalid coverage value: ${COVERAGE}"
+            echo "::error::Coverage check failed due to invalid coverage value"
+            exit 1
           elif [ "$COVERAGE" -lt 90 ]; then
-            echo "Test coverage is below 90%. Current coverage: ${COVERAGE}%"
+            echo "⚠️ Test coverage is below 90%. Current coverage: ${COVERAGE}%"
+            echo "::warning::Pre-commit hook update caused coverage to drop below 90%"
+            echo "::notice::Skipping commit due to insufficient coverage"
           else
-            echo "Test coverage is above or equal to 90%. Current coverage: ${COVERAGE}%"
+            echo "✅ Test coverage is above or equal to 90%. Current coverage: ${COVERAGE}%"
+            echo "💾 Committing pre-commit hook updates..."
+
             git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
             git config --local user.name "github-actions[bot]"
+
+            # コミットメッセージに更新情報を含める
+            commit_message="⬆️ Update pre-commit hooks [skip ci]
+
+            📋 Summary: ${{ steps.update_hooks.outputs.update_summary }}
+            🧪 Coverage: ${COVERAGE}%
+            🔧 Tool: uv + just
+            📅 Updated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
             git add .pre-commit-config.yaml
-            git commit -m ":arrow_up: Update pre-commit hooks [skip ci]" || echo "No changes to commit"
+            git commit -m "$commit_message" || echo "No changes to commit"
             git push
+
+            echo "🎉 Pre-commit hooks updated and committed successfully!"
           fi
+
+      - name: Run updated pre-commit hooks
+        if: steps.update_hooks.outputs.has_updates == 'true'
+        continue-on-error: true
+        run: |
+          echo "🔍 Testing updated pre-commit hooks..."
+          uv run pre-commit run --all-files || echo "Some pre-commit checks failed, but continuing workflow"
+
+      - name: Create summary
+        if: always()
+        run: |
+          {
+            echo "## 🔄 Pre-commit Hooks Update Summary"
+            echo ""
+            echo "### 📊 Update Information"
+            echo "- **OS:** ${{ fromJson(needs.set_variables.outputs.os)[0] }}"
+            echo "- **Python Version:** ${{ fromJson(needs.set_variables.outputs.versions_python)[0] }}"
+            echo "- **Tool:** uv + just"
+            echo "- **Has Updates:** ${{ steps.update_hooks.outputs.has_updates }}"
+            echo ""
+
+            if [ "${{ steps.update_hooks.outputs.has_updates }}" == "true" ]; then
+              echo "### ✅ Update Results"
+              echo "- **Status:** Updates found and processed"
+              echo "- **Summary:** ${{ steps.update_hooks.outputs.update_summary }}"
+              if [ -n "$COVERAGE" ]; then
+                echo "- **Coverage:** ${COVERAGE}%"
+                if [ "$COVERAGE" -ge 90 ]; then
+                  echo "- **Commit Status:** ✅ Committed and pushed"
+                else
+                  echo "- **Commit Status:** ⚠️ Skipped due to low coverage"
+                fi
+              fi
+            else
+              echo "### ℹ️ No Updates"
+              echo "- **Status:** All pre-commit hooks are already up to date"
+              echo "- **Action:** No changes required"
+            fi
+
+            echo ""
+            echo "**Next scheduled run:** Every Friday at 00:00 UTC"
+          } >> "$GITHUB_STEP_SUMMARY"

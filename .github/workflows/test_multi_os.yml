@@ -8,9 +8,8 @@ on:
       - 'project_a/**'
       - 'tests/**'
       - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'requirements-dev.txt'
-      - 'requirements.txt'
+      - 'uv.lock'          # poetry.lock → uv.lock
+      - 'justfile'         # justfile を追加
   workflow_dispatch:
 
 jobs:
@@ -45,14 +44,18 @@ jobs:
     outputs:
       file_exists: ${{ steps.check_file.outputs.file_exists }}
     steps:
-      - uses: actions/checkout@v4.2.2
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
       - name: Check file existence
         id: check_file
         run: |
           if [ -f "project_a/staking/ton_whales_staking_dashboard.py" ]; then
             echo "file_exists=true" >> "$GITHUB_OUTPUT"
+            echo "✅ Found excluded file: project_a/staking/ton_whales_staking_dashboard.py"
           else
             echo "file_exists=false" >> "$GITHUB_OUTPUT"
+            echo "ℹ️ Excluded file not found: project_a/staking/ton_whales_staking_dashboard.py"
           fi
 
   test:
@@ -68,73 +71,128 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4.2.2
-      - name: Set up Python
-        uses: actions/setup-python@v5.6.0
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v4
         with:
-          python-version: ${{matrix.python-version}}
+          version: "latest"
+          enable-cache: true
+
+      - name: Set up Python with uv
+        run: |
+          uv python install "${{ matrix.python-version }}"
+          uv python pin "${{ matrix.python-version }}"
+
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
         with:
           timezoneLinux: "Asia/Tokyo"
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
-      - name: Check timezone
+
+      - name: Check timezone and Python version
         shell: bash
         run: |
           echo "System date: $(date)"
           echo "TZ environment variable: ${TZ}"
-          python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
-      - name: Install poetry
-        uses: snok/install-poetry@v1.4.1
+          uv run python -c "import datetime, platform, sys; print(f'Python version: {sys.version}'); print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
+
+      - name: Install just task runner
+        shell: bash
+        env:
+          RUNNER_OS: ${{ runner.os }}
+        run: |
+          case "${RUNNER_OS}" in
+            "Linux")
+              curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
+              echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+              ;;
+            "macOS")
+              brew install just
+              ;;
+            "Windows")
+              choco install just
+              ;;
+          esac
+
+      - name: Verify installations
+        shell: bash
+        run: |
+          echo "🔧 Tool versions:"
+          uv --version
+          just --version || echo "just not yet available in PATH"
+          uv run python --version
+          echo "📦 uv.lock hash: $(sha256sum uv.lock | cut -d' ' -f1)"
+
+      - name: Cache uv dependencies
+        uses: actions/cache@v4
         with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+          path: |
+            ~/.cache/uv
+            .venv
+          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
+          restore-keys: |
+            uv-${{ runner.os }}-${{ matrix.python-version }}-
+            uv-${{ runner.os }}-
 
-      - name: Add Poetry to PATH (Windows)
-        if: runner.os == 'Windows'
-        shell: powershell
-        run: |
-          $poetryPath = "$env:USERPROFILE\.local\bin"
-          echo "$poetryPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "Added $poetryPath to PATH"
-
-      - name: Check poetry version
-        run: poetry --version
-
-      - name: Reset virtual environment
+      - name: Install dependencies
         shell: bash
         run: |
-          rm -rf .venv || true
-          poetry env remove --all || true
-          poetry env use python
+          echo "📥 Installing dependencies with uv..."
+          uv sync --extra dev
 
-      - name: Update poetry lock file
-        shell: bash
-        run: |
-          rm -f poetry.lock
-          poetry lock
+          echo "🔍 Virtual environment info:"
+          uv venv --show-path || echo "Using default .venv"
 
-      - name: install dependencies
-        run: poetry install
+          echo "📋 Installed packages:"
+          uv pip list | head -20
+          echo "... (truncated)"
 
-      - name: Run test
+      - name: Run tests with coverage
         id: pytest
         shell: bash
-        #continue-on-error: true
-        # Mac / Linux
-        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
-        # Windowss
-        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
-        run: poetry run task testcixml
+        run: |
+          echo "🧪 Running tests..."
+
+          # justが利用可能な場合はjustを使用、そうでなければuv runで直接実行
+          if command -v just &> /dev/null; then
+            echo "Using just for test execution..."
+            # CI用のXMLレポート生成タスクを実行
+            if just --list | grep -q "testcixml"; then
+              just testcixml
+            else
+              # フォールバック: 直接pytest実行
+              uv run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
+            fi
+          else
+            echo "Using uv run for test execution..."
+            uv run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
+          fi
+
+          echo "✅ Tests completed"
+
+      - name: Generate coverage text report
+        shell: bash
+        run: |
+          # PR用のカバレッジテキストレポートが未生成の場合は生成
+          if [ ! -f "pytest-coverage.txt" ]; then
+            echo "📊 Generating coverage text report..."
+            if command -v just &> /dev/null && just --list | grep -q "testcov"; then
+              just testcov > pytest-coverage.txt
+            else
+              uv run pytest --cov=project_a --cov-branch --cov-report=term-missing tests/ > pytest-coverage.txt
+            fi
+          fi
+
       - name: Pytest coverage comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.54
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
-          title: Coverage Report (${{ matrix.os }} / Python ${{ matrix.python-version }})
+          title: Multi-OS Coverage Report (${{ matrix.os }} / Python ${{ matrix.python-version }})
           badge-title: coverage
           hide-badge: false
           hide-report: false
@@ -143,16 +201,26 @@ jobs:
           report-only-changed-files: false
           remove-link-from-badge: false
           junitxml-path: ./pytest.xml
-          junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
+          junitxml-title: "Multi-OS Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check test results
         if: steps.pytest.outcome == 'failure'
         run: |
-          echo "Tests failed. This will prevent merging the pull request."
+          echo "::error::Tests failed on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+          echo "::error::This will prevent merging the pull request."
           exit 1
+
       - name: Save summary report
+        shell: bash
         run: |
+          echo "💾 Saving summary report..."
           echo '${{ steps.coverageComment.outputs.summaryReport }}' > summary-report.md
+
+          # レポート内容の確認
+          echo "📄 Summary report preview:"
+          head -5 summary-report.md
+
       - name: Upload coverage data
         uses: actions/upload-artifact@v4.6.1
         with:
@@ -162,6 +230,7 @@ jobs:
             coverage.xml
             pytest.xml
             summary-report.md
+          retention-days: 30
 
   update_readme:
     needs: [set_variables, check_file, test]
@@ -170,13 +239,19 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v4.2.2
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
+
       - name: Download all artifacts
         uses: actions/download-artifact@v4.1.9
+
       - name: Update README in coverage branch
+        shell: bash
         run: |
+          echo "🔄 Updating README in coverage branch..."
+
           # GitHub Actionsの変数形式で設定
           os='${{ needs.set_variables.outputs.os }}'
           python_versions='${{ needs.set_variables.outputs.versions_python }}'
@@ -185,26 +260,36 @@ jobs:
           os_list=$(echo "${os}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
           python_versions_list=$(echo "${python_versions}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
 
+          echo "📋 Testing matrix:"
+          echo "  OS: ${os_list}"
+          echo "  Python versions: ${python_versions_list}"
+
           # "coverage" ブランチが存在する場合はチェックアウト、存在しない場合は新規作成する
           if git ls-remote --heads origin coverage | grep coverage; then
+            echo "📂 Checking out existing coverage branch..."
             git checkout coverage
           else
+            echo "🆕 Creating new coverage branch..."
             git checkout --orphan coverage
             git rm -rf .
           fi
 
           # README.mdの内容を一度に生成
           {
-            echo "# Pytest Coverages Summary"
-            echo "[![](https://github.com/${GITHUB_REPOSITORY}/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/${GITHUB_REPOSITORY}/actions/workflows/test_multi_os.yml)"
+            echo "# 🧪 Pytest Coverage Summary"
+            echo ""
+            echo "[![Test Multi-OS](https://github.com/${GITHUB_REPOSITORY}/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/${GITHUB_REPOSITORY}/actions/workflows/test_multi_os.yml)"
+            echo ""
+            echo "## 📊 Latest Test Results"
             echo ""
 
             # 最新のコミット情報をREADMEに追加
             commit_hash8=${GITHUB_SHA::8}
             commit_link="[${commit_hash8}](https://github.com/${GITHUB_REPOSITORY}/tree/${commit_hash8})"
             echo -e "> [!Note]"
-            echo -e "> "
-            echo -e "> Commit: ${commit_link}"
+            echo -e "> **Latest Commit:** ${commit_link}"
+            echo -e "> **Tool Stack:** uv + just"
+            echo -e "> **Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
             echo -e ""
 
             # テスト対象外のファイルに関する注記を追加（ファイルの存在確認結果に基づく）
@@ -215,30 +300,50 @@ jobs:
 
             if [[ "${{ needs.check_file.outputs.file_exists }}" == "true" ]]; then
               echo -e "> [!Important]"
+              echo -e "> **Excluded from Coverage:**"
               echo -e "> The following file is intentionally excluded from test coverage:"
               echo -e "> - [${file_path_1}](${file_link})"
               echo -e "> "
               echo -e "> This file contains complex external dependencies and is verified through manual and integration testing."
               echo -e "> "
             else
-              echo "Note: File ${file_path_1} not found. Skipping addition to README.md." >&2
+              echo "<!-- Note: File ${file_path_1} not found. Skipping addition to README.md. -->" >&2
             fi
+
+            echo "## 🔍 Coverage Reports by Environment"
+            echo ""
 
             # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
             for os in ${os_list}; do
               for version in ${python_versions_list}; do
-                echo "## Coverage Report (os: ${os} / python-version: ${version})"
+                # OS絵文字の選択
+                case "${os}" in
+                  "ubuntu-latest") os_emoji="🐧" ;;
+                  "macos-latest") os_emoji="🍎" ;;
+                  "windows-latest") os_emoji="🪟" ;;
+                  *) os_emoji="💻" ;;
+                esac
+
+                echo "### ${os_emoji} ${os} / Python ${version}"
+                echo ""
+
                 if [ -f "coverage-data-${os}-${version}/summary-report.md" ]; then
+                  # HTMLエンティティをデコードし、エスケープ文字を処理
                   sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-${os}-${version}/summary-report.md" |
                   sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
                   sed '/^$/N;/^\n$/D' |
                   sed -e 's/^"//' -e 's/"$//'
                 else
-                  echo "No summary report found for ${os} - ${version}"
+                  echo "⚠️ No summary report found for ${os} - Python ${version}"
                 fi
                 echo ""
               done
             done
+
+            echo "---"
+            echo ""
+            echo "**Generated by GitHub Actions** • [View Workflow](https://github.com/${GITHUB_REPOSITORY}/actions/workflows/test_multi_os.yml)"
+
           } > README.md
 
           # カバレッジレポート内のリンクを有効にするためにファイルパスを修正する
@@ -247,14 +352,32 @@ jobs:
             s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
             s|/blob/\([a-f0-9]*\)/project_a/README\.md|/blob/\1/README.md|g
           ' README.md
-      - name: Commit and push
+
+          echo "✅ README.md generated successfully"
+
+      - name: Commit and push coverage branch
+        shell: bash
         run: |
+          echo "📤 Committing and pushing to coverage branch..."
+
           # Gitのユーザー設定とコミット、ブランチへのプッシュ
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
-          git add README.md
-          git commit -m "Update coverage for all environments"
-          git push origin coverage
+
+          # 変更があるかチェック
+          if git diff --quiet README.md; then
+            echo "ℹ️ No changes to commit"
+          else
+            git add README.md
+            git commit -m "📊 Update coverage for all environments
+
+            - Commit: ${GITHUB_SHA::8}
+            - Tools: uv + just
+            - Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+
+            git push origin coverage
+            echo "✅ Coverage branch updated successfully"
+          fi
 
   check_all_tests:
     needs: [set_variables, check_file, test, update_readme]
@@ -263,5 +386,13 @@ jobs:
       - name: Check test results
         if: contains(needs.test.result, 'failure')
         run: |
-          echo "Some tests failed. Please check the test results and fix any issues before merging."
+          echo "::error::Some tests failed across multiple environments."
+          echo "::error::Failed test matrices: ${{ toJson(needs.test.result) }}"
+          echo "::warning::Please check the test results and fix any issues before merging."
           exit 1
+
+      - name: All tests passed
+        if: success()
+        run: |
+          echo "🎉 All tests passed successfully across all OS and Python version combinations!"
+          echo "✅ Multi-OS testing completed with uv + just"

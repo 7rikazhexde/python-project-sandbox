@@ -1,0 +1,120 @@
+name: Update pre-commit Hooks
+
+on:
+  schedule:
+    - cron: '0 0 * * 5'
+  workflow_dispatch:
+
+jobs:
+  set_variables:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set variables from JSON
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@main
+        with:
+          json-file: .github/json2vars-setter/ci_matrix.json
+
+      - name: Debug output values
+        run: |
+          echo "os: ${{ steps.json2vars.outputs.os }}"
+          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
+          echo "Selected OS: ${{ fromJson(steps.json2vars.outputs.os)[0] }}"
+          echo "Selected Python version: ${{ fromJson(steps.json2vars.outputs.versions_python)[0] }}"
+
+  update:
+    needs: set_variables
+    #runs-on: ubuntu-latest
+    runs-on: ${{ fromJson(needs.set_variables.outputs.os)[0] }}
+    steps:
+      - uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_FOR_PUSHES }}
+      - name: Set up Python
+        uses: actions/setup-python@v5.6.0
+        with:
+          #python-version: '3.13'
+          python-version: ${{ fromJson(needs.set_variables.outputs.versions_python)[0] }}
+      - name: Install poetry
+        uses: snok/install-poetry@v1.4.1
+        with:
+          version: latest
+          virtualenvs-create: true
+          virtualenvs-in-project: true
+
+      #- name: Add plugin
+      #  run: poetry self add poetry-plugin-export
+      #- name: Cache dependencies
+      #  uses: actions/cache@v4.2.3
+      #  with:
+      #    path: ~/.cache/pypoetry
+      #    key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+
+      - name: Check poetry version
+        run: poetry --version
+
+      - name: Reset virtual environment
+        shell: bash
+        run: |
+          rm -rf .venv || true
+          poetry env remove --all || true
+          poetry env use python
+
+      - name: Update poetry lock file
+        shell: bash
+        run: |
+          rm -f poetry.lock
+          poetry lock
+
+      - name: install dependencies
+        run: poetry install
+
+      # Update pre-commit hooks and check for changes
+      - name: Update pre-commit hooks
+        id: update_hooks
+        run: |
+          poetry run pre-commit autoupdate
+          if git diff --exit-code .pre-commit-config.yaml; then
+            echo "has_updates=false" >> "$GITHUB_OUTPUT"
+            echo "No updates to pre-commit hooks. Exiting workflow."
+          else
+            echo "has_updates=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # Testing and Coverage Measurement
+      - name: Run test
+        id: pytest
+        if: steps.update_hooks.outputs.has_updates == 'true'
+        shell: bash
+        run: |
+          poetry run task testcixml
+          coverage_percentage=$(poetry run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
+          echo "Current coverage: ${coverage_percentage}%"
+          echo "COVERAGE=${coverage_percentage}" >> "$GITHUB_ENV"
+
+      # Coverage check and commit/push
+      - name: Commit changes if coverage is above 90%
+        if: steps.update_hooks.outputs.has_updates == 'true'
+        shell: bash
+        run: |
+          if [[ ! "$COVERAGE" =~ ^[0-9]+$ ]]; then
+            echo "Error: Invalid coverage value: ${COVERAGE}"
+          elif [ "$COVERAGE" -lt 90 ]; then
+            echo "Test coverage is below 90%. Current coverage: ${COVERAGE}%"
+          else
+            echo "Test coverage is above or equal to 90%. Current coverage: ${COVERAGE}%"
+            git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+            git config --local user.name "github-actions[bot]"
+            git add .pre-commit-config.yaml
+            git commit -m ":arrow_up: Update pre-commit hooks [skip ci]" || echo "No changes to commit"
+            git push
+          fi
