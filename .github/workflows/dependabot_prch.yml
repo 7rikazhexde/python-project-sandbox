@@ -331,28 +331,33 @@ jobs:
           echo "::error::Tests failed on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
           echo "::warning::Dependabot dependency update caused test failures"
 
+      #- name: Write job summary
+      #  shell: bash
+      #  run: |
+      #    {
+      #      echo "## 🤖 Dependabot Test Results Summary"
+      #      echo ""
+      #      echo "- **OS:** ${{ matrix.os }}"
+      #      echo "- **Python Version:** ${{ matrix.python-version }}"
+      #      echo "- **Coverage:** ${COVERAGE}%"
+      #      echo "- **Status:** ${{ steps.pytest.outcome == 'success' && '✅ Passed' || '❌ Failed' }}"
+      #      echo "- **Tool:** uv + just"
+      #      echo ""
+      #      echo "### Dependency Update Information"
+      #      echo "This is an automated Dependabot PR that updates project dependencies."
+      #      echo "The uv.lock file has been automatically updated to reflect the changes."
+      #      echo ""
+      #    } >> "$GITHUB_STEP_SUMMARY"
+      #    # カバレッジレポートを別途追加（HTMLエスケープ処理）
+      #    if [ -n "${{ steps.coverageComment.outputs.summaryReport }}" ]; then
+      #      printf '%s\n' '${{ steps.coverageComment.outputs.summaryReport }}' >> "$GITHUB_STEP_SUMMARY"
+      #    fi
+
       - name: Write job summary
+        id: check_status
         shell: bash
         run: |
-          {
-            echo "## 🤖 Dependabot Test Results Summary"
-            echo ""
-            echo "- **OS:** ${{ matrix.os }}"
-            echo "- **Python Version:** ${{ matrix.python-version }}"
-            echo "- **Coverage:** ${COVERAGE}%"
-            echo "- **Status:** ${{ steps.pytest.outcome == 'success' && '✅ Passed' || '❌ Failed' }}"
-            echo "- **Tool:** uv + just"
-            echo ""
-            echo "### Dependency Update Information"
-            echo "This is an automated Dependabot PR that updates project dependencies."
-            echo "The uv.lock file has been automatically updated to reflect the changes."
-            echo ""
-          } >> "$GITHUB_STEP_SUMMARY"
-
-          # カバレッジレポートを別途追加（HTMLエスケープ処理）
-          if [ -n "${{ steps.coverageComment.outputs.summaryReport }}" ]; then
-            printf '%s\n' '${{ steps.coverageComment.outputs.summaryReport }}' >> "$GITHUB_STEP_SUMMARY"
-          fi
+          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
