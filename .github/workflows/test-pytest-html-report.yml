@@ -27,7 +27,7 @@ jobs:
 
       - name: Set variables from JSON
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@main
+        uses: 7rikazhexde/json2vars-setter@v1.0.1
         with:
           json-file: .github/workflows/matrix.json
 
@@ -82,17 +82,49 @@ jobs:
         shell: bash
         env:
           RUNNER_OS: ${{ runner.os }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           case "${RUNNER_OS}" in
             "Linux")
-              curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
-              echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+              echo "🐧 Installing just on Linux..."
+              # GitHub Actionsのトークンを使用してAPI制限を回避
+              if [ -n "$GITHUB_TOKEN" ]; then
+                echo "Using GitHub token for API access..."
+                release_info=$(curl -H "Authorization: token $GITHUB_TOKEN" \
+                  -H "Accept: application/vnd.github.v3+json" \
+                  -s "https://api.github.com/repos/casey/just/releases/latest")
+                download_url=$(echo "$release_info" | grep -o '"browser_download_url": "[^"]*x86_64-unknown-linux-musl.tar.gz"' | cut -d'"' -f4)
+              else
+                # フォールバック: 最新の安定版を直接指定
+                echo "Using fallback download method..."
+                download_url="https://github.com/casey/just/releases/download/1.34.0/just-1.34.0-x86_64-unknown-linux-musl.tar.gz"
+              fi
+
+              if [ -n "$download_url" ]; then
+                echo "📥 Downloading just from: $download_url"
+                mkdir -p "${HOME}/.local/bin"
+                cd /tmp
+                curl -L "$download_url" | tar xz
+                mv just "${HOME}/.local/bin/"
+                chmod +x "${HOME}/.local/bin/just"
+                echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
+                echo "✅ just installed successfully"
+              else
+                echo "❌ Failed to get download URL for just"
+                exit 1
+              fi
               ;;
             "macOS")
+              echo "🍎 Installing just on macOS..."
               brew install just
               ;;
             "Windows")
+              echo "🪟 Installing just on Windows..."
               choco install just
+              ;;
+            *)
+              echo "❓ Unknown OS: ${RUNNER_OS}"
+              exit 1
               ;;
           esac
 
@@ -101,8 +133,25 @@ jobs:
         run: |
           echo "🔧 Tool versions:"
           uv --version
-          just --version || echo "just not yet available in PATH"
+
+          # justのバージョン確認（パスが更新されるまで少し待つ）
+          sleep 2
+          if command -v just &> /dev/null; then
+            just --version
+            echo "✅ just is available"
+          else
+            echo "⚠️ just not yet available in PATH, checking manually..."
+            if [ -f "${HOME}/.local/bin/just" ]; then
+              "${HOME}/.local/bin/just" --version
+              echo "✅ just found in ${HOME}/.local/bin"
+            else
+              echo "❌ just installation failed"
+              exit 1
+            fi
+          fi
+
           uv run python --version
+
           if [ -f "uv.lock" ]; then
             echo "📦 uv.lock hash: $(sha256sum uv.lock | cut -d' ' -f1 2>/dev/null || echo 'N/A')"
           else
@@ -127,7 +176,11 @@ jobs:
           uv sync --extra dev
 
           echo "🔍 Installed testing packages:"
-          uv pip list | grep -E "(pytest|pytest-html)" || echo "Testing packages not found in list"
+          if uv pip list | grep -E "(pytest|pytest-html)"; then
+            echo "Testing packages found"
+          else
+            echo "Testing packages not found in list"
+          fi
 
       - name: Run tests with pytest-html
         id: pytest-html
@@ -141,31 +194,113 @@ jobs:
 
           echo "📂 Report will be saved to: ${report_path}"
 
-          # justが利用可能かチェックしてHTMLレポート生成
-          if command -v just &> /dev/null && just --list | grep -q "testhtmlreport"; then
+          # justコマンドのパスを確定
+          if command -v just &> /dev/null; then
+            JUST_CMD="just"
+          elif [ -f "${HOME}/.local/bin/just" ]; then
+            JUST_CMD="${HOME}/.local/bin/just"
+          else
+            JUST_CMD=""
+          fi
+
+          # HTMLレポート生成
+          if [ -n "$JUST_CMD" ] && $JUST_CMD --list | grep -q "testhtml"; then
             echo "🚀 Using just for HTML report generation..."
-            # justfileにHTMLレポート生成タスクがある場合
-            just testhtmlreport
-            # 生成されたファイルを適切な場所に移動
-            if [ -f "htmlcov/report_page.html" ]; then
-              mv htmlcov/report_page.html "${report_path}/"
-              # CSSファイルも存在する場合は移動
-              if [ -d "htmlcov/css" ]; then
-                cp -r htmlcov/css "${report_path}/"
+            echo "📋 Available just tasks:"
+            if command -v grep &> /dev/null; then
+              if $JUST_CMD --list | grep -E "(test|html)"; then
+                echo "Test/HTML tasks found"
+              else
+                echo "No test/html tasks found"
               fi
+            else
+              $JUST_CMD --list
+            fi
+
+            # justfile内のHTMLレポート生成タスクを使用
+            if $JUST_CMD --list | grep -q "test-html-report"; then
+              echo "🎯 Running: $JUST_CMD test-html-report"
+              $JUST_CMD test-html-report
+              # 生成されたレポートファイルを確認して移動
+              if [ -f "htmlcov/report_page.html" ]; then
+                echo "📁 Moving HTML report to ${report_path}/"
+                cp htmlcov/report_page.html "${report_path}/"
+                # CSS、JS、その他のアセットも一緒に移動
+                for asset_dir in css js assets; do
+                  if [ -d "htmlcov/${asset_dir}" ]; then
+                    cp -r "htmlcov/${asset_dir}" "${report_path}/"
+                    echo "📦 Copied ${asset_dir} assets"
+                  fi
+                done
+              fi
+            elif $JUST_CMD --list | grep -q "testhtml"; then
+              echo "🎯 Running: $JUST_CMD testhtml"
+              $JUST_CMD testhtml
+              # 生成されたレポートファイルを確認して移動
+              if [ -f "htmlcov/report_page.html" ]; then
+                echo "📁 Moving HTML report to ${report_path}/"
+                cp htmlcov/report_page.html "${report_path}/"
+                # CSS、JS、その他のアセットも一緒に移動
+                for asset_dir in css js assets; do
+                  if [ -d "htmlcov/${asset_dir}" ]; then
+                    cp -r "htmlcov/${asset_dir}" "${report_path}/"
+                    echo "📦 Copied ${asset_dir} assets"
+                  fi
+                done
+              fi
+            else
+              echo "📊 Fallback: Using direct pytest for HTML report generation..."
+              uv run pytest --html="${report_path}/report_page.html" --self-contained-html project_a tests/
             fi
           else
             echo "📊 Using direct uv run for HTML report generation..."
-            # 直接pytestでHTMLレポートを生成
-            uv run pytest --html="${report_path}/report_page.html" --css=css/style.css project_a tests/
+            # pytest-htmlの推奨オプションを使用
+            uv run pytest --html="${report_path}/report_page.html" \
+                          --self-contained-html \
+                          --capture=no \
+                          project_a tests/
           fi
 
-          # 生成されたファイルの確認
+          # 生成されたファイルの確認と検証
           if [ -f "${report_path}/report_page.html" ]; then
             echo "✅ HTML report generated successfully"
             echo "📄 Report size: $(du -h "${report_path}/report_page.html" | cut -f1)"
+
+            # HTMLレポートの品質チェック
+            file_size=$(stat -c%s "${report_path}/report_page.html" 2>/dev/null || stat -f%z "${report_path}/report_page.html" 2>/dev/null || echo "0")
+            if [ "$file_size" -gt 1024 ]; then
+              echo "📊 Report appears to contain content (${file_size} bytes)"
+
+              # HTMLファイル内のテスト結果数を確認
+              if command -v grep &> /dev/null; then
+                test_count=$(grep -o 'class="col-result' "${report_path}/report_page.html" | wc -l || echo "0")
+                echo "🧪 Tests in report: ${test_count}"
+              fi
+            else
+              echo "⚠️ Report file seems too small, may be incomplete"
+            fi
+
+            # アセットファイルの確認
+            for asset_dir in css js assets; do
+              if [ -d "${report_path}/${asset_dir}" ]; then
+                echo "🎨 ${asset_dir} assets copied successfully"
+              fi
+            done
           else
             echo "❌ HTML report generation failed"
+            echo "🔍 Contents of report directory:"
+            if [ -d "${report_path}" ]; then
+              ls -la "${report_path}"
+            else
+              echo "Report directory does not exist"
+            fi
+            echo "🔍 Contents of current directory:"
+            # Use find instead of ls | grep for better handling of filenames
+            if find . -maxdepth 1 \( -name "*html*" -o -name "*report*" \) -print | head -10; then
+              echo "Found HTML/report files above"
+            else
+              echo "No HTML or report files found"
+            fi
             exit 1
           fi
 
@@ -175,6 +310,7 @@ jobs:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: test_results/${{ matrix.os }}/python/${{ matrix.python-version }}
           retention-days: 30
+          if-no-files-found: error
 
   check_all_tests:
     needs: test
@@ -202,6 +338,7 @@ jobs:
       actions: write
     outputs:
       deploy_status: ${{ steps.check_and_deploy.outputs.deploy_status }}
+      updated_reports: ${{ steps.check_and_deploy.outputs.updated_reports }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
@@ -258,8 +395,9 @@ jobs:
               echo "🔍 Processing: $artifact_dir"
 
               # パスの構築（改良されたパース）
-              os=$(echo "$artifact_dir" | sed -E 's/test-results-([^-]+(-[^-]+)?)-python-.*/\1/')
-              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
+              os="${artifact_dir#test-results-}"
+              os="${os%-python-*}"
+              python_version="${artifact_dir##*-python-}"
 
               echo "  📊 OS: $os, Python: $python_version"
 
@@ -267,21 +405,41 @@ jobs:
               html_path="pytest-html-report/${os}/python/${python_version}"
 
               if [ -f "${artifact_dir}/report_page.html" ]; then
-                mkdir -p "${html_path}"
+                echo "  📋 HTML report found, checking for changes..."
 
                 # 既存のファイルとの差分を確認
                 if [ ! -f "${html_path}/report_page.html" ] || ! diff "${artifact_dir}/report_page.html" "${html_path}/report_page.html" > /dev/null 2>&1; then
-                  echo "  ✏️ Changes detected, updating..."
+                  echo "  ✏️ Changes detected, updating HTML report..."
+
+                  # ディレクトリ作成と移動
+                  mkdir -p "$(dirname "${html_path}")"
                   rm -rf "${html_path}"
                   mv "${artifact_dir}" "${html_path}"
                   git add "${html_path}"
                   changes_made=true
                   updated_reports="${updated_reports}${os} (Python ${python_version}), "
+
+                  # レポートファイル数の確認
+                  file_count=$(find "${html_path}" -name "*.html" | wc -l)
+                  echo "    📋 HTML files: ${file_count}"
+
+                  # ファイルサイズの確認
+                  if [ -f "${html_path}/report_page.html" ]; then
+                    file_size=$(du -h "${html_path}/report_page.html" | cut -f1)
+                    echo "    📄 Report size: ${file_size}"
+                  fi
                 else
                   echo "  ✅ No changes detected, skipping..."
                 fi
               else
                 echo "  ⚠️ No report_page.html found in ${artifact_dir}"
+                # 詳細な確認
+                echo "    📁 Contents of ${artifact_dir}:"
+                if [ -d "${artifact_dir}" ]; then
+                  ls -la "${artifact_dir}"
+                else
+                  echo "Directory not accessible"
+                fi
               fi
             fi
           done
@@ -350,7 +508,8 @@ jobs:
                 esac
 
                 URL_LIST="${URL_LIST}**${os_emoji} ${current_os} / Python ${version}:**\n"
-                URL_LIST="${URL_LIST}https://${REPO_OWNER}.github.io/${REPO_NAME}/${report_path}/report_page.html\n\n"
+                URL_LIST="${URL_LIST}🔗 [HTML Report](https://${REPO_OWNER}.github.io/${REPO_NAME}/${report_path}/report_page.html)\n"
+                URL_LIST="${URL_LIST}📊 [Sorted by Result](https://${REPO_OWNER}.github.io/${REPO_NAME}/${report_path}/report_page.html?sort=result)\n\n"
                 echo "  ✅ ${current_os} / Python ${version}"
               else
                 echo "  ⚠️ ${current_os} / Python ${version} (not found)"
@@ -384,11 +543,13 @@ jobs:
           ### 🔄 Deployment Information
           **Workflow:** ${{ github.workflow }}
           **Run:** [View Details]($workflow_url)
-          **Tool:** uv + just
+          **Tool:** uv + just + pytest-html
           **Updated Reports:** ${{ steps.check_and_deploy.outputs.updated_reports }}
 
           ### 📋 Available HTML Test Reports
           ${formatted_urls}
+
+          **💡 Tip:** Use the \"Sorted by Result\" link to quickly find failed tests!
 
           **📅 Last Updated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
@@ -436,7 +597,7 @@ jobs:
           ### 🔄 Deployment Information
           **Workflow:** ${{ github.workflow }}
           **Run:** [View Details]($workflow_url)
-          **Tool:** uv + just
+          **Tool:** uv + just + pytest-html
 
           No changes were detected in the HTML test reports.
           All reports are up to date."
@@ -479,7 +640,7 @@ jobs:
             echo "### 🚀 Deployment Information"
             echo "- **Status:** ${{ steps.check_and_deploy.outputs.deploy_status }}"
             echo "- **Target Branch:** ${{ needs.set_variables.outputs.ghpages_branch }}"
-            echo "- **Tool Stack:** uv + just"
+            echo "- **Tool Stack:** uv + just + pytest-html"
             echo ""
 
             if [ "${{ steps.check_and_deploy.outputs.deploy_status }}" == "updated" ]; then
@@ -488,6 +649,11 @@ jobs:
               echo ""
               echo "### 🔗 Available Reports"
               echo "${{ steps.generate_url_list.outputs.url_list }}"
+              echo ""
+              echo "### 💡 Usage Tips"
+              echo "- Click \"HTML Report\" for the full test report"
+              echo "- Click \"Sorted by Result\" to quickly find failed tests"
+              echo "- Reports are self-contained and work offline"
             else
               echo "### ℹ️ No Changes"
               echo "All HTML reports are up to date. No deployment was necessary."

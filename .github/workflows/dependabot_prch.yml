@@ -1,28 +1,5 @@
 name: Dependabot PR Check
 
-# ワークフローの処理の流れ:
-# 1. トリガー条件:
-#    - mainブランチへのプルリクエスト時
-#    - Dependabotによる実行であること
-#    - コミットメッセージが"Bump version"で始まっていないこと
-# 2. ジョブの条件判定: Dependabot によるPRであることをチェック
-# 3. OS毎の環境設定 (macos-latest, ubuntu-latest, windows-latest)
-# 4. Python環境のセットアップ (3.11, 3.12)
-# 5. タイムゾーンの設定 (Asia/Tokyo)
-# 6. リポジトリのチェックアウト
-# 7. uv のインストール
-# 8. Python バージョンのインストール (uv管理)
-# 9. uv.lock ファイルの自動更新 (Dependabot PR時)
-# 10. 依存関係のキャッシュ (uv.lock)
-# 11. プロジェクト依存関係のインストール (uv sync)
-# 12. テストの実行とカバレッジの計算 (just経由)
-# 13. カバレッジが90%以上であることのチェック
-# 14. テスト結果とカバレッジレポートの生成
-# 15. テスト結果の確認と警告の表示
-# 16. ジョブサマリーの作成
-# 17. 全テストの結果確認
-# 18. Discord Webhookの送信
-
 on:
   pull_request:
     branches:
@@ -44,15 +21,9 @@ jobs:
 
       - name: Set variables from JSON
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@main
-        #with:
-        #  json-file: .github/workflows/matrix.json
-
-      - name: Debug output values
-        run: |
-          echo "os: ${{ steps.json2vars.outputs.os }}"
-          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
-          echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
+        uses: 7rikazhexde/json2vars-setter@v1.0.1
+        with:
+          json-file: .github/json2vars-setter/matrix.json
 
   test:
     needs: set_variables
@@ -61,8 +32,6 @@ jobs:
         os: ${{ fromJson(needs.set_variables.outputs.os) }}
         python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
     runs-on: ${{ matrix.os }}
-    env:
-      TZ: 'Asia/Tokyo'
     permissions:
       contents: write
       pull-requests: write
@@ -70,8 +39,12 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
         with:
-          # Dependabotの変更をコミットするため、tokenを設定
           token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
 
       - name: Install uv
         uses: astral-sh/setup-uv@v4
@@ -79,285 +52,79 @@ jobs:
           version: "latest"
           enable-cache: true
 
-      - name: Set up Python with uv
-        run: |
-          uv python install "${{ matrix.python-version }}"
-          uv python pin "${{ matrix.python-version }}"
-
-      - name: Set timezone
-        uses: szenius/set-timezone@v2.0
-        with:
-          timezoneLinux: "Asia/Tokyo"
-          timezoneMacos: "Asia/Tokyo"
-          timezoneWindows: "Tokyo Standard Time"
-
-      - name: Check timezone and Python version
-        shell: bash
-        run: |
-          echo "System date: $(date)"
-          echo "TZ environment variable: ${TZ}"
-          uv run python -c "import datetime, platform, sys; print(f'Python version: {sys.version}'); print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
-
-      - name: Install just task runner
-        shell: bash
-        env:
-          RUNNER_OS: ${{ runner.os }}
-        run: |
-          case "${RUNNER_OS}" in
-            "Linux")
-              curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
-              echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-              ;;
-            "macOS")
-              brew install just
-              ;;
-            "Windows")
-              choco install just
-              ;;
-          esac
-
-      - name: Verify installations
-        shell: bash
-        run: |
-          echo "🔧 Tool versions:"
-          uv --version
-          just --version || echo "just not yet available in PATH"
-          uv run python --version
-          if [ -f "uv.lock" ]; then
-            echo "📦 uv.lock hash: $(sha256sum uv.lock | cut -d' ' -f1)"
-          else
-            echo "📦 uv.lock: not found"
-          fi
-
-      # DependabotのPRでuv.lockファイルを更新
-      - name: Update uv.lock for Dependabot PR
+      - name: Update uv.lock (Ubuntu only)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
         shell: bash
         run: |
-          echo "🔄 Updating uv.lock file for Dependabot PR..."
-
-          # uv.lockファイルの状態確認
-          echo "Current uv.lock hash:"
-          sha256sum uv.lock || echo "uv.lock not found"
-
-          # 依存関係の同期（uv.lockの更新）
           uv sync --extra dev
-
-          # 更新後のuv.lockファイルの確認
-          echo "Updated uv.lock hash:"
-          sha256sum uv.lock
-
-          # 変更があるかチェック
-          if git diff --quiet uv.lock; then
-            echo "✅ uv.lock is already up to date"
-          else
-            echo "📝 uv.lock has been updated"
+          if ! git diff --quiet uv.lock; then
             git config --local user.email "action@github.com"
             git config --local user.name "GitHub Action"
             git add uv.lock
             git commit -m "Update uv.lock after dependency changes" || echo "No changes to commit"
           fi
 
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/uv
-            .venv
-          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ matrix.python-version }}-
-            uv-${{ runner.os }}-
-
       - name: Install dependencies
         shell: bash
         run: |
-          # 開発依存関係も含めてインストール
           uv sync --extra dev
 
-          # 仮想環境の確認
-          echo "Virtual environment location:"
-          uv venv --show-path || echo "Using default .venv"
+      - name: Install just (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          else
+            brew install just
+          fi
 
-          # インストール済みパッケージの確認（Dependabotによる更新を確認）
-          echo "Installed packages:"
-          uv pip list
-
-          # 依存関係ツリーの表示（更新されたパッケージの確認）
-          echo "Dependency tree:"
-          uv tree || echo "uv tree not available"
+      - name: Install just (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: choco install just
 
       - name: Run tests with coverage
-        id: pytest
         shell: bash
         run: |
-          echo "🧪 Running tests to verify Dependabot dependency updates..."
-
-          # justが利用可能な場合はjustを使用、そうでなければuv runで直接実行
-          if command -v just &> /dev/null && just --list | grep -q "testcov"; then
-            echo "Using just for test execution..."
+          if command -v just >/dev/null 2>&1; then
             just testcov
-
-            # XMLレポートが生成されていない場合は追加で生成
-            if [ ! -f "coverage.xml" ]; then
-              echo "📄 Generating missing coverage.xml..."
-              uv run coverage xml
-            fi
-
-            # JUnit XMLレポートが生成されていない場合は追加で生成
-            if [ ! -f "pytest.xml" ]; then
-              echo "📄 Generating missing pytest.xml..."
-              uv run pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
-            fi
           else
-            echo "Using uv run for test execution..."
-            uv run pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml --junitxml=pytest.xml project_a tests/
+            uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
           fi
 
-          # 生成されたファイルの確認
-          echo "📋 Generated files:"
-          ls -la ./*.xml ./htmlcov/ 2>/dev/null || echo "Some files may be missing"
-
-          # カバレッジの取得
-          coverage_percentage=$(uv run coverage report | grep TOTAL | awk '{print $NF}' | sed 's/%//')
-          echo "Current coverage: ${coverage_percentage}%"
-          echo "COVERAGE=${coverage_percentage}" >> "$GITHUB_ENV"
-
-      - name: Generate coverage text report for PR comment
+      - name: Generate required reports
         shell: bash
         run: |
-          # PR用のカバレッジテキストレポートを生成
-          echo "📝 Generating coverage text report for Dependabot PR comment..."
-
-          # 既にテストが実行されているので、coverageコマンドを使用してテキストレポートを生成
           uv run coverage report > pytest-coverage.txt
 
-          # ファイルが生成されたことを確認
-          if [ -f "pytest-coverage.txt" ]; then
-            echo "✅ pytest-coverage.txt generated successfully"
-            echo "📄 File size: $(du -h pytest-coverage.txt | cut -f1)"
-            echo "📝 First few lines:"
-            head -5 pytest-coverage.txt
-          else
-            echo "❌ pytest-coverage.txt generation failed"
-            # Dependabotの場合はエラーでも継続
-            echo "⚠️ Continuing workflow despite missing coverage text report"
-            echo "No coverage data available" > pytest-coverage.txt
-          fi
-
-      - name: Verify required files for coverage comment
-        shell: bash
-        run: |
-          echo "🔍 Verifying required files for Dependabot PR..."
-
-          # 必要なファイルの確認
-          if [ ! -f "pytest-coverage.txt" ]; then
-            echo "❌ pytest-coverage.txt not found"
-            echo "🔧 Creating fallback coverage text file..."
-            echo "Coverage data not available for this Dependabot update" > pytest-coverage.txt
-          else
-            echo "✅ pytest-coverage.txt found ($(du -h pytest-coverage.txt | cut -f1))"
-          fi
-
           if [ ! -f "coverage.xml" ]; then
-            echo "❌ coverage.xml not found"
-            echo "🔧 Attempting to generate coverage.xml..."
-            # 既存のカバレッジデータから生成を試行
-            if uv run coverage xml 2>/dev/null; then
-              echo "✅ coverage.xml generated successfully"
-            else
-              echo "⚠️ Could not generate coverage.xml, skipping coverage comment"
-              echo "SKIP_COVERAGE_COMMENT=true" >> "$GITHUB_ENV"
-            fi
-          else
-            echo "✅ coverage.xml found ($(du -h coverage.xml | cut -f1))"
+            uv run coverage xml
           fi
 
           if [ ! -f "pytest.xml" ]; then
-            echo "❌ pytest.xml not found"
-            echo "🔧 Attempting to generate pytest.xml..."
-            # 簡単なテスト実行でJUnit XMLを生成
-            if uv run pytest --junitxml=pytest.xml project_a tests/ --tb=no -q 2>/dev/null; then
-              echo "✅ pytest.xml generated successfully"
-            else
-              echo "⚠️ Could not generate pytest.xml, skipping coverage comment"
-              echo "SKIP_COVERAGE_COMMENT=true" >> "$GITHUB_ENV"
-            fi
-          else
-            echo "✅ pytest.xml found ($(du -h pytest.xml | cut -f1))"
+            uv run pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
           fi
 
-          # 最終確認
-          if [ "${SKIP_COVERAGE_COMMENT:-false}" = "true" ]; then
-            echo "⚠️ Coverage comment will be skipped due to missing files"
-          else
-            echo "🎉 All required files are present!"
-          fi
-
-      - name: Check coverage threshold
+      - name: Check coverage threshold (Warning only)
         shell: bash
         run: |
+          COVERAGE=$(uv run coverage report --format=total)
+          echo "Coverage: ${COVERAGE}%"
           if [ "${COVERAGE}" -lt 90 ]; then
-            echo "::error::Test coverage is below 90%. Current coverage: ${COVERAGE}%"
-            echo "::warning::Dependabot dependency update caused coverage to drop below 90%"
-            # Dependabotの場合は警告のみで継続（依存関係更新が主目的）
-            echo "::notice::Dependabot PR: Coverage check failed but continuing workflow"
-          else
-            echo "✅ Test coverage is above or equal to 90%. Current coverage: ${COVERAGE}%"
+            echo "::warning::Coverage ${COVERAGE}% is below 90% threshold (Dependabot - continuing)"
           fi
 
       - name: Pytest coverage comment
-        id: coverageComment
-        if: always() && env.SKIP_COVERAGE_COMMENT != 'true'
         uses: MishaKav/pytest-coverage-comment@v1.1.54
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
           title: 🤖 Dependabot Coverage Report (${{ matrix.os }} / Python ${{ matrix.python-version }})
-          badge-title: coverage
-          hide-badge: false
-          hide-report: false
-          create-new-comment: true
-          hide-comment: false
-          report-only-changed-files: false
-          remove-link-from-badge: false
           junitxml-path: ./pytest.xml
-          junitxml-title: "🤖 Dependabot Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
           github-token: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check test results
-        if: steps.pytest.outcome == 'failure'
-        run: |
-          echo "::error::Tests failed on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
-          echo "::warning::Dependabot dependency update caused test failures"
-
-      #- name: Write job summary
-      #  shell: bash
-      #  run: |
-      #    {
-      #      echo "## 🤖 Dependabot Test Results Summary"
-      #      echo ""
-      #      echo "- **OS:** ${{ matrix.os }}"
-      #      echo "- **Python Version:** ${{ matrix.python-version }}"
-      #      echo "- **Coverage:** ${COVERAGE}%"
-      #      echo "- **Status:** ${{ steps.pytest.outcome == 'success' && '✅ Passed' || '❌ Failed' }}"
-      #      echo "- **Tool:** uv + just"
-      #      echo ""
-      #      echo "### Dependency Update Information"
-      #      echo "This is an automated Dependabot PR that updates project dependencies."
-      #      echo "The uv.lock file has been automatically updated to reflect the changes."
-      #      echo ""
-      #    } >> "$GITHUB_STEP_SUMMARY"
-      #    # カバレッジレポートを別途追加（HTMLエスケープ処理）
-      #    if [ -n "${{ steps.coverageComment.outputs.summaryReport }}" ]; then
-      #      printf '%s\n' '${{ steps.coverageComment.outputs.summaryReport }}' >> "$GITHUB_STEP_SUMMARY"
-      #    fi
-
-      - name: Write job summary
-        id: check_status
-        shell: bash
-        run: |
-          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> "$GITHUB_STEP_SUMMARY"
+        continue-on-error: true
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
@@ -368,6 +135,7 @@ jobs:
             coverage.xml
             htmlcov/
             pytest.xml
+            pytest-coverage.txt
           retention-days: 30
 
   check_all_tests:
@@ -378,16 +146,13 @@ jobs:
       - name: Check test results
         if: contains(needs.test.result, 'failure')
         run: |
-          echo "::error::Some tests failed in Dependabot PR. This may indicate compatibility issues with the updated dependencies."
-          echo "::warning::Failed test matrices: ${{ toJson(needs.test.result) }}"
-          echo "::notice::Consider reviewing the dependency update or fixing compatibility issues"
+          echo "::error::Some tests failed in Dependabot PR. Manual review required."
           exit 1
 
       - name: All tests passed
         if: success()
         run: |
-          echo "✅ All tests passed successfully for Dependabot dependency updates!"
-          echo "🤖 Dependencies have been updated and tested across all OS and Python version combinations."
+          echo "✅ All tests passed for Dependabot dependency updates!"
 
   send_notification:
     needs: [test, check_all_tests]
@@ -398,65 +163,50 @@ jobs:
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
           PR_TITLE: ${{ github.event.pull_request.title }}
-          WORKFLOW_ACTOR: ${{ github.actor }}
         run: |
+          if [ -z "$DISCORD_WEBHOOK_URL" ]; then
+            echo "Discord webhook not configured, skipping notification"
+            exit 0
+          fi
+
           workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
-          # テスト結果の判定
           if [[ "${{ contains(needs.test.result, 'failure') }}" == "true" ]]; then
             status="FAILED ❌"
-            color=16711680  # 赤色
-            description="⚠️ Tests failed with dependency updates. Manual review required."
+            color=16711680
+            description="Tests failed with dependency updates. Manual review required."
           elif [[ "${{ needs.check_all_tests.result }}" == "success" ]]; then
             status="SUCCESS ✅"
-            color=65280     # 緑色
-            description="🎉 All tests passed! Dependencies updated successfully."
+            color=65280
+            description="All tests passed! Dependencies updated successfully."
           else
             status="CANCELLED ⚠️"
-            color=16776960  # 黄色
-            description="🔄 Workflow was cancelled or skipped."
+            color=16776960
+            description="Workflow was cancelled or skipped."
           fi
 
           message="## 🤖 Dependabot PR Check Completed
 
-          ### Workflow Information
-          • **Name:** ${{ github.workflow }}
-          • **Status:** ${status}
-          • **Run:** [View Details]($workflow_url)
-          • **PR Title:** ${PR_TITLE}
-          • **Actor:** ${WORKFLOW_ACTOR}
-          • **Tool:** uv + just
-
-          ### Dependency Update
-          • **uv.lock:** Automatically updated
-          • **Testing:** Cross-platform compatibility verified
+          **Status:** ${status}
+          **PR:** ${PR_TITLE}
+          [View Details]($workflow_url)
 
           ${description}"
 
-          timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
           json_payload=$(jq -n \
-            --arg title "🤖 ${{ github.workflow }} - Dependabot Check Status" \
+            --arg title "🤖 Dependabot Check - ${{ github.workflow }}" \
             --arg description "$message" \
             --argjson color "$color" \
-            --arg timestamp "$timestamp" \
             '{
               "embeds": [
                 {
                   "title": $title,
                   "description": $description,
-                  "color": $color,
-                  "timestamp": $timestamp,
-                  "footer": {
-                    "text": "🤖 Automated by Dependabot + uv + just"
-                  }
+                  "color": $color
                 }
               ]
             }')
 
-          if [ -n "$DISCORD_WEBHOOK_URL" ]; then
-            curl -X POST -H "Content-Type: application/json" \
-              -d "$json_payload" \
-              "$DISCORD_WEBHOOK_URL"
-          else
-            echo "Discord webhook URL not set, skipping notification"
-          fi
+          curl -X POST -H "Content-Type: application/json" \
+            -d "$json_payload" \
+            "$DISCORD_WEBHOOK_URL"
