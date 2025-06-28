@@ -54,6 +54,7 @@ jobs:
 
       - name: Update uv.lock (Ubuntu only)
         if: matrix.os == 'ubuntu-latest' && matrix.python-version == '3.11'
+        shell: bash
         run: |
           uv sync --extra dev
           if ! git diff --quiet uv.lock; then
@@ -64,11 +65,13 @@ jobs:
           fi
 
       - name: Install dependencies
+        shell: bash
         run: |
           uv sync --extra dev
 
       - name: Install just (Linux/macOS)
         if: runner.os != 'Windows'
+        shell: bash
         run: |
           if [ "${{ runner.os }}" = "Linux" ]; then
             curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
@@ -79,9 +82,11 @@ jobs:
 
       - name: Install just (Windows)
         if: runner.os == 'Windows'
+        shell: powershell
         run: choco install just
 
       - name: Run tests with coverage
+        shell: bash
         run: |
           if command -v just >/dev/null 2>&1; then
             just testcov
@@ -90,6 +95,7 @@ jobs:
           fi
 
       - name: Generate required reports
+        shell: bash
         run: |
           uv run coverage report > pytest-coverage.txt
 
@@ -102,6 +108,7 @@ jobs:
           fi
 
       - name: Check coverage threshold (Warning only)
+        shell: bash
         run: |
           COVERAGE=$(uv run coverage report --format=total)
           echo "Coverage: ${COVERAGE}%"

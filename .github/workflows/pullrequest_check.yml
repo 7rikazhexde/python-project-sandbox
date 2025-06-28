@@ -57,11 +57,13 @@ jobs:
           enable-cache: true
 
       - name: Install dependencies
+        shell: bash
         run: |
           uv sync --extra dev
 
       - name: Install just (Linux/macOS)
         if: runner.os != 'Windows'
+        shell: bash
         run: |
           if [ "${{ runner.os }}" = "Linux" ]; then
             curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
@@ -72,9 +74,11 @@ jobs:
 
       - name: Install just (Windows)
         if: runner.os == 'Windows'
+        shell: powershell
         run: choco install just
 
       - name: Run tests with coverage
+        shell: bash
         run: |
           if command -v just >/dev/null 2>&1; then
             just testcov
@@ -83,6 +87,7 @@ jobs:
           fi
 
       - name: Generate required reports
+        shell: bash
         run: |
           # Coverage text report for PR comment
           uv run coverage report > pytest-coverage.txt
@@ -97,6 +102,7 @@ jobs:
           fi
 
       - name: Check coverage threshold
+        shell: bash
         run: |
           COVERAGE=$(uv run coverage report --format=total)
           echo "Coverage: ${COVERAGE}%"
