@@ -301,125 +301,43 @@ jobs:
 
       - name: Check and Deploy to GitHub Pages
         id: check_and_deploy
-        shell: bash
         run: |
-          echo "🚀 Starting GitHub Pages deployment process..."
-
           # jsonで定義されたブランチ名を使用
           ghpages_branch="${{ needs.set_variables.outputs.ghpages_branch }}"
-          echo "📋 Target branch: ${ghpages_branch}"
 
           # ブランチの取得または作成
-          if git fetch origin "${ghpages_branch}" 2>/dev/null; then
-            echo "✅ Found existing ${ghpages_branch} branch"
-            git checkout "${ghpages_branch}"
-
-            # リベースではなく、強制的に最新の状態に同期
-            echo "🔄 Syncing with remote branch..."
-            git reset --hard "origin/${ghpages_branch}"
-          else
-            echo "🆕 Creating new ${ghpages_branch} branch"
-            git checkout -b "${ghpages_branch}"
-          fi
+          git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
+          git checkout "${ghpages_branch}"
+          git pull origin "${ghpages_branch}" --rebase || true
 
           changes_made=false
-          updated_reports=""
 
-          echo "📁 Processing coverage artifacts..."
           # アーティファクトの移動とコミット
           for artifact_dir in coverage-results-*; do
             if [ -d "$artifact_dir" ]; then
-              echo "🔍 Processing: $artifact_dir"
-
-              # パスの構築（改良されたパース）
-              os="${artifact_dir#coverage-results-}"
-              os="${os%-python-*}"
-              python_version="${artifact_dir##*-python-}"
-
-              echo "  📊 OS: $os, Python: $python_version"
+              # パスの構築
+              os=$(echo "$artifact_dir" | sed -E 's/coverage-results-([^-]+(-[^-]+)?)-python-.*/\1/')
+              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
 
               # 最終的なパスを構築
               coverage_path="pytest-cov-report/${os}/python/${python_version}"
 
-              if [ -f "${artifact_dir}/index.html" ]; then
-                echo "  📈 Coverage report found, checking for changes..."
-
-                # 既存のレポートとの差分チェック（index.htmlで比較）
-                if [ ! -f "${coverage_path}/index.html" ] || ! diff "${artifact_dir}/index.html" "${coverage_path}/index.html" > /dev/null 2>&1; then
-                  echo "  ✏️ Changes detected, updating coverage report..."
-
-                  # ディレクトリ作成と移動
-                  mkdir -p "$(dirname "${coverage_path}")"
-                  rm -rf "${coverage_path}"
-                  mv "${artifact_dir}" "${coverage_path}"
-                  git add "${coverage_path}"
-                  changes_made=true
-                  updated_reports="${updated_reports}${os} (Python ${python_version}), "
-
-                  # カバレッジファイル数の確認
-                  file_count=$(find "${coverage_path}" -name "*.html" | wc -l)
-                  echo "    📋 HTML files: ${file_count}"
-                else
-                  echo "  ✅ No changes detected, skipping..."
-                fi
-              else
-                echo "  ⚠️ No index.html found in ${artifact_dir}"
-              fi
+              # ディレクトリ作成と移動
+              mkdir -p "${coverage_path}"
+              rm -rf "${coverage_path}"
+              mv "${artifact_dir}" "${coverage_path}"
+              git add "${coverage_path}"
+              changes_made=true
             fi
           done
 
-          # 更新されたレポートの整理
-          if [ -n "$updated_reports" ]; then
-            updated_reports="${updated_reports%, }"
-          fi
-
           if [ "${changes_made}" = true ]; then
-            echo "📝 Committing coverage report changes..."
-            commit_message="📊 Update pytest-cov reports on GitHub Pages
-
-            📈 Updated coverage reports: ${updated_reports}
-            🔧 Tool: uv + just
-            📅 Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')
-            📝 Commit: ${GITHUB_SHA::8}"
-
-            git commit -m "$commit_message"
-
-            # プッシュの前に再度リモートの変更を取得して競合を回避
-            echo "🔄 Checking for remote changes before push..."
-            if git fetch origin "${ghpages_branch}" 2>/dev/null; then
-              # リモートに変更がある場合はリベースを試行
-              if ! git diff --quiet HEAD "origin/${ghpages_branch}"; then
-                echo "⚠️ Remote changes detected, attempting rebase..."
-                if git rebase "origin/${ghpages_branch}"; then
-                  echo "✅ Rebase successful"
-                else
-                  echo "❌ Rebase failed, using force push with lease"
-                  git rebase --abort 2>/dev/null || true
-                  git push --force-with-lease origin "${ghpages_branch}"
-                  echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
-                  echo "updated_reports=${updated_reports}" >> "$GITHUB_OUTPUT"
-                  echo "✅ Force push completed successfully"
-                  exit 0
-                fi
-              fi
-            fi
-
-            # 通常のプッシュを試行
-            if git push origin "${ghpages_branch}"; then
-              echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
-              echo "updated_reports=${updated_reports}" >> "$GITHUB_OUTPUT"
-              echo "✅ Deployment completed successfully"
-            else
-              echo "❌ Normal push failed, using force push with lease as fallback"
-              git push --force-with-lease origin "${ghpages_branch}"
-              echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
-              echo "updated_reports=${updated_reports}" >> "$GITHUB_OUTPUT"
-              echo "✅ Force push completed successfully"
-            fi
+            git commit -m "Update pytest-html reports on GitHub Pages"
+            git push origin "${ghpages_branch}"
+            echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
           else
-            echo "ℹ️ No changes to commit"
+            echo "No changes to commit"
             echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
-            echo "updated_reports=" >> "$GITHUB_OUTPUT"
           fi
 
       - name: Generate URL list
