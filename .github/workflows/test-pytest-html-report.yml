@@ -189,8 +189,20 @@ jobs:
             echo "🪟 Windows detected, using workaround for uv..."
             # 仮想環境を削除して再作成
             rm -rf .venv || true
-            uv venv --python "${{ matrix.python-version }}"
-            # 直接pipで依存関係をインストール
+            uv venv --python "${{ matrix.python-version }}" --seed
+
+            # pipが利用可能になるまで待つ
+            echo "⏳ Waiting for pip to be available..."
+            sleep 2
+
+            # pipの存在確認とensurepip実行
+            if ! .venv/Scripts/python.exe -m pip --version; then
+              echo "🔧 Installing pip using ensurepip..."
+              .venv/Scripts/python.exe -m ensurepip --upgrade
+            fi
+
+            # 依存関係をインストール
+            echo "📦 Installing dependencies..."
             .venv/Scripts/python.exe -m pip install --upgrade pip
             .venv/Scripts/python.exe -m pip install -e ".[dev]"
           else
