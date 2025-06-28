@@ -45,8 +45,8 @@ jobs:
       - name: Set variables from JSON
         id: json2vars
         uses: 7rikazhexde/json2vars-setter@v1.0.1
-        #with:
-        #  json-file: .github/workflows/matrix.json
+        with:
+          json-file: .github/json2vars-setter/matrix.json
 
       - name: Debug output values
         run: |
