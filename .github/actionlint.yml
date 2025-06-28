@@ -1,0 +1,62 @@
+# Actionlint configuration file
+# https://github.com/rhysd/actionlint/blob/main/docs/config.md
+
+# Enable shellcheck integration with minimal exclusions
+shellcheck:
+  enable: true
+  # Only exclude rules that are truly problematic in GitHub Actions context
+  # Don't add opts here - handle issues inline instead
+
+# Pyflakes integration for Python scripts
+pyflakes:
+  enable: true
+
+# Only ignore truly unavoidable patterns
+ignore:
+  # Ignore patterns only if they are genuinely unfixable
+  # Example: ignore specific actionlint checks that conflict with your setup
+  # - "specific pattern that cannot be fixed"
+
+# Custom action validation
+action-ref:
+  # Allow using actions with specific patterns
+  allowed-patterns:
+    # GitHub公式アクション（セキュリティ上、バージョン固定を推奨）
+    - "actions/checkout@v*"
+    - "actions/setup-python@v*"
+    - "actions/setup-node@v*"
+    - "actions/cache@v*"
+    - "actions/upload-artifact@v*"
+    - "actions/download-artifact@v*"
+
+    # サードパーティアクション（信頼できるもののみ）
+    - "astral-sh/setup-uv@v*"
+    - "szenius/set-timezone@v*"
+    - "7rikazhexde/json2vars-setter@*"  # 自分のアクションなので@*で許可
+    - "MishaKav/pytest-coverage-comment@v*"
+
+    # 必要に応じて追加
+    # - "codecov/codecov-action@v*"     # コードカバレッジ
+    # - "github/super-linter@v*"        # スーパーリンター
+    # - "docker/build-push-action@v*"   # Docker関連
+
+# Matrix validation
+matrix:
+  # Maximum number of jobs in matrix
+  max-jobs: 25
+
+# Expression validation
+expression:
+  # Allow specific GitHub Actions contexts
+  allowed-contexts:
+    - "github"
+    - "env"
+    - "vars"
+    - "job"
+    - "steps"
+    - "runner"
+    - "strategy"
+    - "matrix"
+    - "needs"
+    - "inputs"
+    - "secrets"

@@ -145,18 +145,21 @@ jobs:
           if command -v just &> /dev/null && just --list | grep -q "testcov"; then
             echo "🚀 Using just for coverage report generation..."
 
-            # justでカバレッジテストを実行
-            just testcov
+            # 一時的なHTMLディレクトリ名を使用してjustでカバレッジテストを実行
+            temp_htmlcov="temp_htmlcov_$(date +%s)"
+
+            # justコマンドを修正してカスタムHTMLディレクトリを使用
+            uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report="html:${temp_htmlcov}" --cov-report=xml project_a tests/
 
             # 生成されたHTMLカバレッジレポートを適切な場所に移動
-            if [ -d "htmlcov" ]; then
-              echo "📁 Moving coverage report to ${coverage_path}"
+            if [ -d "${temp_htmlcov}" ]; then
+              echo "📁 Moving coverage report from ${temp_htmlcov} to ${coverage_path}"
               # 既存のパスをクリア
               rm -rf "${coverage_path}"
               mkdir -p "$(dirname "${coverage_path}")"
-              mv htmlcov "${coverage_path}"
+              mv "${temp_htmlcov}" "${coverage_path}"
             else
-              echo "⚠️ htmlcov directory not found, generating directly..."
+              echo "⚠️ ${temp_htmlcov} directory not found, falling back to direct generation..."
               # justで生成されなかった場合のフォールバック
               uv run pytest --cov=project_a --cov-report="html:${coverage_path}" project_a tests/
             fi
