@@ -1,41 +1,21 @@
 version: 2
-# 2025年3月13日より、DependabotがuvをGA（一般提供）でサポート
-enable-beta-ecosystems: true
 updates:
-  - package-ecosystem: "uv"
+  - package-ecosystem: "pip"
     directory: "/"
     schedule:
       interval: "daily"
     groups:
-      python-dependencies:
+      dependencies:
         patterns:
           - "*"
-        update-types:
-          - "minor"
-          - "patch"
-    open-pull-requests-limit: 5
-    commit-message:
-      prefix: "deps"
-      prefix-development: "deps(dev)"
-      include: "scope"
-    # プルリクエストのラベル設定
-    labels:
-      - "dependencies"
-      - "python"
+    open-pull-requests-limit: 10
 
-  # GitHub Actions
   - package-ecosystem: "github-actions"
     directory: "/"
     schedule:
-      interval: "weekly"
+      interval: "daily"
     groups:
-      github-actions:
+      dependencies:
         patterns:
           - "*"
-    open-pull-requests-limit: 3
-    commit-message:
-      prefix: "ci"
-      include: "scope"
-    labels:
-      - "dependencies"
-      - "github-actions"
+    open-pull-requests-limit: 10
