@@ -250,15 +250,35 @@ jobs:
               fi
             else
               echo "📊 Fallback: Using direct pytest for HTML report generation..."
-              uv run pytest --html="${report_path}/report_page.html" --self-contained-html project_a tests/
+              # ダークモードCSS適用のために--cssオプションを追加
+              if [ -f "css/style.css" ]; then
+                echo "🎨 Applying custom dark mode CSS..."
+                uv run pytest --html="${report_path}/report_page.html" \
+                              --self-contained-html \
+                              --css=css/style.css \
+                              project_a tests/
+              else
+                echo "⚠️ Custom CSS not found, using default styling..."
+                uv run pytest --html="${report_path}/report_page.html" --self-contained-html project_a tests/
+              fi
             fi
           else
             echo "📊 Using direct uv run for HTML report generation..."
-            # pytest-htmlの推奨オプションを使用
-            uv run pytest --html="${report_path}/report_page.html" \
-                          --self-contained-html \
-                          --capture=no \
-                          project_a tests/
+            # ダークモードCSS適用のために--cssオプションを追加
+            if [ -f "css/style.css" ]; then
+              echo "🎨 Applying custom dark mode CSS..."
+              uv run pytest --html="${report_path}/report_page.html" \
+                            --self-contained-html \
+                            --css=css/style.css \
+                            --capture=no \
+                            project_a tests/
+            else
+              echo "⚠️ Custom CSS not found, using default styling..."
+              uv run pytest --html="${report_path}/report_page.html" \
+                            --self-contained-html \
+                            --capture=no \
+                            project_a tests/
+            fi
           fi
 
           # 生成されたファイルの確認と検証

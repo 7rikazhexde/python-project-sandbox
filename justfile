@@ -7,10 +7,10 @@ test-coverage-verbose:
     uv run pytest -s -vv --cov=. --cov-branch --cov-report term-missing --cov-report html
 
 test-html-report:
-    uv run pytest --html=htmlcov/report_page.html --self-contained-html --capture=no project_a tests/
+    uv run pytest --html=htmlcov/report_page.html --self-contained-html --css=css/style.css --capture=no project_a tests/
 
 test-html-report-custom htmldir="htmlcov":
-    uv run pytest --html={{htmldir}}/report_page.html --self-contained-html --capture=no project_a tests/
+    uv run pytest --html={{htmldir}}/report_page.html --self-contained-html --css=css/style.css --capture=no project_a tests/
 
 test-ci-xml:
     uv run python scripts/run_tests.py --report xml
@@ -133,7 +133,7 @@ lint-all: lint lint-workflows lint-shell lint-markdown
 report-all:
     @echo "📊 Generating comprehensive test reports..."
     rm -rf htmlcov/ pytest.xml coverage.xml pytest-coverage.txt || true
-    uv run pytest --cov=project_a --cov-branch --cov-report=html --cov-report=xml --cov-report=term-missing --html=htmlcov/test_report.html --self-contained-html --junitxml=pytest.xml project_a tests/ | tee pytest-coverage.txt
+    uv run pytest --cov=project_a --cov-branch --cov-report=html --cov-report=xml --cov-report=term-missing --html=htmlcov/test_report.html --self-contained-html --css=css/style.css --junitxml=pytest.xml project_a tests/ | tee pytest-coverage.txt
     @echo ""
     @echo "📁 Reports generated:"
     @echo "  📈 Coverage HTML: htmlcov/index.html"
