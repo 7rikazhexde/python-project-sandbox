@@ -376,10 +376,13 @@ jobs:
           echo "📋 Target branch: ${ghpages_branch}"
 
           # ブランチの取得または作成
-          if git fetch origin "${ghpages_branch}"; then
+          if git fetch origin "${ghpages_branch}" 2>/dev/null; then
             echo "✅ Found existing ${ghpages_branch} branch"
             git checkout "${ghpages_branch}"
-            git pull origin "${ghpages_branch}" --rebase || true
+
+            # リベースではなく、強制的に最新の状態に同期
+            echo "🔄 Syncing with remote branch..."
+            git reset --hard "origin/${ghpages_branch}"
           else
             echo "🆕 Creating new ${ghpages_branch} branch"
             git checkout -b "${ghpages_branch}"
@@ -459,10 +462,39 @@ jobs:
             📝 Commit: ${GITHUB_SHA::8}"
 
             git commit -m "$commit_message"
-            git push origin "${ghpages_branch}"
-            echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
-            echo "updated_reports=${updated_reports}" >> "$GITHUB_OUTPUT"
-            echo "✅ Deployment completed successfully"
+
+            # プッシュの前に再度リモートの変更を取得して競合を回避
+            echo "🔄 Checking for remote changes before push..."
+            if git fetch origin "${ghpages_branch}" 2>/dev/null; then
+              # リモートに変更がある場合はリベースを試行
+              if ! git diff --quiet HEAD "origin/${ghpages_branch}"; then
+                echo "⚠️ Remote changes detected, attempting rebase..."
+                if git rebase "origin/${ghpages_branch}"; then
+                  echo "✅ Rebase successful"
+                else
+                  echo "❌ Rebase failed, using force push with lease"
+                  git rebase --abort 2>/dev/null || true
+                  git push --force-with-lease origin "${ghpages_branch}"
+                  echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+                  echo "updated_reports=${updated_reports}" >> "$GITHUB_OUTPUT"
+                  echo "✅ Force push completed successfully"
+                  exit 0
+                fi
+              fi
+            fi
+
+            # 通常のプッシュを試行
+            if git push origin "${ghpages_branch}"; then
+              echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+              echo "updated_reports=${updated_reports}" >> "$GITHUB_OUTPUT"
+              echo "✅ Deployment completed successfully"
+            else
+              echo "❌ Normal push failed, using force push with lease as fallback"
+              git push --force-with-lease origin "${ghpages_branch}"
+              echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+              echo "updated_reports=${updated_reports}" >> "$GITHUB_OUTPUT"
+              echo "✅ Force push completed successfully"
+            fi
           else
             echo "ℹ️ No changes to commit"
             echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"

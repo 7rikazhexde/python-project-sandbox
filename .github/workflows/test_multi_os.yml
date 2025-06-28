@@ -8,8 +8,8 @@ on:
       - 'project_a/**'
       - 'tests/**'
       - 'pyproject.toml'
-      - 'uv.lock'          # poetry.lock → uv.lock
-      - 'justfile'         # justfile を追加
+      - 'uv.lock'
+      - 'justfile'
   workflow_dispatch:
 
 jobs:
@@ -74,16 +74,16 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
 
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
       - name: Install uv
         uses: astral-sh/setup-uv@v4
         with:
           version: "latest"
           enable-cache: true
-
-      - name: Set up Python with uv
-        run: |
-          uv python install "${{ matrix.python-version }}"
-          uv python pin "${{ matrix.python-version }}"
 
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
@@ -92,174 +92,49 @@ jobs:
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
 
-      - name: Check timezone and Python version
-        shell: bash
-        run: |
-          echo "System date: $(date)"
-          echo "TZ environment variable: ${TZ}"
-          uv run python -c "import datetime, platform, sys; print(f'Python version: {sys.version}'); print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
-
-      - name: Install just task runner
-        shell: bash
-        env:
-          RUNNER_OS: ${{ runner.os }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          case "${RUNNER_OS}" in
-            "Linux")
-              echo "🐧 Installing just on Linux..."
-              # GitHub Actionsのトークンを使用してAPI制限を回避
-              if [ -n "$GITHUB_TOKEN" ]; then
-                echo "Using GitHub token for API access..."
-                release_info=$(curl -H "Authorization: token $GITHUB_TOKEN" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  -s "https://api.github.com/repos/casey/just/releases/latest")
-                download_url=$(echo "$release_info" | grep -o '"browser_download_url": "[^"]*x86_64-unknown-linux-musl.tar.gz"' | cut -d'"' -f4)
-              else
-                # フォールバック: 最新の安定版を直接指定
-                echo "Using fallback download method..."
-                download_url="https://github.com/casey/just/releases/download/1.34.0/just-1.34.0-x86_64-unknown-linux-musl.tar.gz"
-              fi
-
-              if [ -n "$download_url" ]; then
-                echo "📥 Downloading just from: $download_url"
-                mkdir -p "${HOME}/.local/bin"
-                cd /tmp
-                curl -L "$download_url" | tar xz
-                mv just "${HOME}/.local/bin/"
-                chmod +x "${HOME}/.local/bin/just"
-                echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-                echo "✅ just installed successfully"
-              else
-                echo "❌ Failed to get download URL for just"
-                exit 1
-              fi
-              ;;
-            "macOS")
-              echo "🍎 Installing just on macOS..."
-              brew install just
-              ;;
-            "Windows")
-              echo "🪟 Installing just on Windows..."
-              choco install just
-              ;;
-            *)
-              echo "❓ Unknown OS: ${RUNNER_OS}"
-              exit 1
-              ;;
-          esac
-
-      - name: Verify installations
-        shell: bash
-        run: |
-          echo "🔧 Tool versions:"
-          uv --version
-
-          # justのバージョン確認（パスが更新されるまで少し待つ）
-          sleep 2
-          if command -v just &> /dev/null; then
-            just --version
-            echo "✅ just is available"
-          else
-            echo "⚠️ just not yet available in PATH, checking manually..."
-            if [ -f "${HOME}/.local/bin/just" ]; then
-              "${HOME}/.local/bin/just" --version
-              echo "✅ just found in ${HOME}/.local/bin"
-            else
-              echo "❌ just installation failed"
-              exit 1
-            fi
-          fi
-
-          uv run python --version
-
-          if [ -f "uv.lock" ]; then
-            echo "📦 uv.lock hash: $(sha256sum uv.lock | cut -d' ' -f1 2>/dev/null || echo 'N/A')"
-          else
-            echo "📦 uv.lock: not found"
-          fi
-
-      - name: Cache uv dependencies
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cache/uv
-            .venv
-          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ matrix.python-version }}-
-            uv-${{ runner.os }}-
-
       - name: Install dependencies
         shell: bash
         run: |
-          echo "📥 Installing dependencies with uv..."
           uv sync --extra dev
 
-          echo "🔍 Virtual environment info:"
-          uv venv --show-path || echo "Using default .venv"
+      - name: Install just (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          else
+            brew install just
+          fi
 
-          echo "📋 Installed packages:"
-          uv pip list | head -20
-          echo "... (truncated)"
+      - name: Install just (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: choco install just
 
       - name: Run tests with coverage
         id: pytest
         shell: bash
         run: |
-          echo "🧪 Running tests..."
-
-          # justが利用可能な場合はjustを使用、そうでなければuv runで直接実行
-          if command -v just &> /dev/null || [ -f "${HOME}/.local/bin/just" ]; then
-            echo "Using just for test execution..."
-
-            # justコマンドのパスを確定
-            if command -v just &> /dev/null; then
-              JUST_CMD="just"
+          if command -v just >/dev/null 2>&1; then
+            if just --list | grep -q "test-ci-xml"; then
+              just test-ci-xml
+            elif just --list | grep -q "testcixml"; then
+              just testcixml
             else
-              JUST_CMD="${HOME}/.local/bin/just"
-            fi
-
-            echo "📋 Available just tasks:"
-            $JUST_CMD --list
-
-            # CI用のXMLレポート生成タスクを実行
-            if $JUST_CMD --list | grep -q "test-ci-xml"; then
-              echo "🚀 Running: $JUST_CMD test-ci-xml"
-              $JUST_CMD test-ci-xml
-            elif $JUST_CMD --list | grep -q "testcixml"; then
-              echo "🚀 Running: $JUST_CMD testcixml"
-              $JUST_CMD testcixml
-            else
-              echo "📊 Running fallback pytest with coverage..."
-              # フォールバック: 直接pytest実行
-              uv run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
+              just testcov
             fi
           else
-            echo "Using uv run for test execution..."
             uv run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
           fi
-
-          echo "✅ Tests completed"
 
       - name: Generate coverage text report
         shell: bash
         run: |
-          # PR用のカバレッジテキストレポートが未生成の場合は生成
           if [ ! -f "pytest-coverage.txt" ]; then
-            echo "📊 Generating coverage text report..."
-
-            # justコマンドのパスを確定
-            if command -v just &> /dev/null; then
-              JUST_CMD="just"
-            elif [ -f "${HOME}/.local/bin/just" ]; then
-              JUST_CMD="${HOME}/.local/bin/just"
-            else
-              JUST_CMD=""
-            fi
-
-            if [ -n "$JUST_CMD" ] && $JUST_CMD --list | grep -q "testcov"; then
-              $JUST_CMD testcov > pytest-coverage.txt
+            if command -v just >/dev/null 2>&1 && just --list | grep -q "testcov"; then
+              just testcov > pytest-coverage.txt
             else
               uv run pytest --cov=project_a --cov-branch --cov-report=term-missing tests/ > pytest-coverage.txt
             fi
@@ -272,33 +147,20 @@ jobs:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
           title: Multi-OS Coverage Report (${{ matrix.os }} / Python ${{ matrix.python-version }})
-          badge-title: coverage
-          hide-badge: false
-          hide-report: false
-          create-new-comment: false
-          hide-comment: false
-          report-only-changed-files: false
-          remove-link-from-badge: false
           junitxml-path: ./pytest.xml
-          junitxml-title: "Multi-OS Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
           github-token: ${{ secrets.GITHUB_TOKEN }}
+        continue-on-error: true
 
       - name: Check test results
         if: steps.pytest.outcome == 'failure'
         run: |
           echo "::error::Tests failed on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
-          echo "::error::This will prevent merging the pull request."
           exit 1
 
       - name: Save summary report
         shell: bash
         run: |
-          echo "💾 Saving summary report..."
           echo '${{ steps.coverageComment.outputs.summaryReport }}' > summary-report.md
-
-          # レポート内容の確認
-          echo "📄 Summary report preview:"
-          head -5 summary-report.md
 
       - name: Upload coverage data
         uses: actions/upload-artifact@v4.6.1
@@ -329,8 +191,6 @@ jobs:
       - name: Update README in coverage branch
         shell: bash
         run: |
-          echo "🔄 Updating README in coverage branch..."
-
           # GitHub Actionsの変数形式で設定
           os='${{ needs.set_variables.outputs.os }}'
           python_versions='${{ needs.set_variables.outputs.versions_python }}'
@@ -339,16 +199,10 @@ jobs:
           os_list=$(echo "${os}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
           python_versions_list=$(echo "${python_versions}" | jq -r '.[]' | tr '\n' ' ' | sed 's/ $//')
 
-          echo "📋 Testing matrix:"
-          echo "  OS: ${os_list}"
-          echo "  Python versions: ${python_versions_list}"
-
           # "coverage" ブランチが存在する場合はチェックアウト、存在しない場合は新規作成する
           if git ls-remote --heads origin coverage | grep coverage; then
-            echo "📂 Checking out existing coverage branch..."
             git checkout coverage
           else
-            echo "🆕 Creating new coverage branch..."
             git checkout --orphan coverage
             git rm -rf .
           fi
@@ -365,34 +219,31 @@ jobs:
             # 最新のコミット情報をREADMEに追加
             commit_hash8=${GITHUB_SHA::8}
             commit_link="[${commit_hash8}](https://github.com/${GITHUB_REPOSITORY}/tree/${commit_hash8})"
-            echo -e "> [!Note]"
-            echo -e "> **Latest Commit:** ${commit_link}"
-            echo -e "> **Tool Stack:** uv + just"
-            echo -e "> **Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
-            echo -e ""
+            echo "> [!Note]"
+            echo "> **Latest Commit:** ${commit_link}"
+            echo "> **Tool Stack:** uv + just"
+            echo "> **Generated:** $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
+            echo ""
 
-            # テスト対象外のファイルに関する注記を追加（ファイルの存在確認結果に基づく）
-            commit_hash=${GITHUB_SHA}
-            file_path_1="project_a/staking/ton_whales_staking_dashboard.py"
-            file_path_2="staking/ton_whales_staking_dashboard.py"
-            file_link="https://github.com/${GITHUB_REPOSITORY}/blob/${commit_hash}/${file_path_2}"
-
+            # テスト対象外のファイルに関する注記を追加
             if [[ "${{ needs.check_file.outputs.file_exists }}" == "true" ]]; then
-              echo -e "> [!Important]"
-              echo -e "> **Excluded from Coverage:**"
-              echo -e "> The following file is intentionally excluded from test coverage:"
-              echo -e "> - [${file_path_1}](${file_link})"
-              echo -e "> "
-              echo -e "> This file contains complex external dependencies and is verified through manual and integration testing."
-              echo -e "> "
-            else
-              echo "<!-- Note: File ${file_path_1} not found. Skipping addition to README.md. -->" >&2
+              commit_hash=${GITHUB_SHA}
+              file_path="project_a/staking/ton_whales_staking_dashboard.py"
+              file_link="https://github.com/${GITHUB_REPOSITORY}/blob/${commit_hash}/staking/ton_whales_staking_dashboard.py"
+
+              echo "> [!Important]"
+              echo "> **Excluded from Coverage:**"
+              echo "> The following file is intentionally excluded from test coverage:"
+              echo "> - [${file_path}](${file_link})"
+              echo "> "
+              echo "> This file contains complex external dependencies and is verified through manual and integration testing."
+              echo ""
             fi
 
             echo "## 🔍 Coverage Reports by Environment"
             echo ""
 
-            # macOS、Ubuntu、Windowsの各OSとPythonバージョンごとにカバレッジレポートを追加
+            # 各OSとPythonバージョンごとにカバレッジレポートを追加
             for os in ${os_list}; do
               for version in ${python_versions_list}; do
                 # OS絵文字の選択
@@ -407,11 +258,9 @@ jobs:
                 echo ""
 
                 if [ -f "coverage-data-${os}-${version}/summary-report.md" ]; then
-                  # HTMLエンティティをデコードし、エスケープ文字を処理
-                  sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-${os}-${version}/summary-report.md" |
-                  sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
-                  sed '/^$/N;/^\n$/D' |
-                  sed -e 's/^"//' -e 's/"$//'
+                  # 簡単なHTMLエンティティのデコード
+                  sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\n/\n/g' "coverage-data-${os}-${version}/summary-report.md" |
+                  sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g'
                 else
                   echo "⚠️ No summary report found for ${os} - Python ${version}"
                 fi
@@ -425,28 +274,13 @@ jobs:
 
           } > README.md
 
-          # カバレッジレポート内のリンクを有効にするためにファイルパスを修正する
-          sed -i '
-            s|/blob/undefined/\([^"]*\)|/blob/'"${commit_hash}"'/\1|g;
-            s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
-            s|/blob/\([a-f0-9]*\)/project_a/README\.md|/blob/\1/README.md|g
-          ' README.md
-
-          echo "✅ README.md generated successfully"
-
       - name: Commit and push coverage branch
         shell: bash
         run: |
-          echo "📤 Committing and pushing to coverage branch..."
-
-          # Gitのユーザー設定とコミット、ブランチへのプッシュ
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-          # 変更があるかチェック
-          if git diff --quiet README.md; then
-            echo "ℹ️ No changes to commit"
-          else
+          if ! git diff --quiet README.md; then
             git add README.md
             git commit -m "📊 Update coverage for all environments
 
@@ -455,7 +289,6 @@ jobs:
             - Generated: $(date -u '+%Y-%m-%d %H:%M:%S UTC')"
 
             git push origin coverage
-            echo "✅ Coverage branch updated successfully"
           fi
 
   check_all_tests:
@@ -466,12 +299,9 @@ jobs:
         if: contains(needs.test.result, 'failure')
         run: |
           echo "::error::Some tests failed across multiple environments."
-          echo "::error::Failed test matrices: ${{ toJson(needs.test.result) }}"
-          echo "::warning::Please check the test results and fix any issues before merging."
           exit 1
 
       - name: All tests passed
         if: success()
         run: |
           echo "🎉 All tests passed successfully across all OS and Python version combinations!"
-          echo "✅ Multi-OS testing completed with uv + just"
