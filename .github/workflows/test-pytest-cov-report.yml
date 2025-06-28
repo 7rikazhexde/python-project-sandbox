@@ -60,9 +60,19 @@ jobs:
           enable-cache: true
 
       - name: Set up Python with uv
+        shell: bash
         run: |
+          # Windowsでのパス問題を回避するため、Python設定を安全に実行
+          echo "🐍 Setting up Python ${{ matrix.python-version }} with uv..."
           uv python install "${{ matrix.python-version }}"
           uv python pin "${{ matrix.python-version }}"
+
+          # Windowsの場合、仮想環境を明示的に再作成
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "🪟 Windows detected, ensuring clean virtual environment..."
+            rm -rf .venv || true
+            uv venv --python "${{ matrix.python-version }}"
+          fi
 
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
