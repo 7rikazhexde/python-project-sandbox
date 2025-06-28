@@ -44,6 +44,8 @@ jobs:
       - name: Set variables from JSON
         id: json2vars
         uses: 7rikazhexde/json2vars-setter@main
+        with:
+          json-file: .github/workflows/matrix.json
 
       - name: Debug output values
         run: |
@@ -333,21 +335,34 @@ jobs:
         id: check_status
         shell: bash
         run: |
+          # 基本的なサマリーのみ作成（HTMLタグを含む複雑な内容は避ける）
           {
-            echo "## Test Results Summary"
+            echo "## 📊 Test Results Summary"
             echo ""
-            echo "- **OS:** ${{ matrix.os }}"
-            echo "- **Python Version:** ${{ matrix.python-version }}"
-            echo "- **Coverage:** ${COVERAGE:-N/A}%"
-            echo "- **Status:** ${{ steps.pytest.outcome == 'success' && '✅ Passed' || '❌ Failed' }}"
+            echo "| Metric | Value |"
+            echo "|--------|-------|"
+            echo "| **OS** | ${{ matrix.os }} |"
+            echo "| **Python Version** | ${{ matrix.python-version }} |"
+            echo "| **Coverage** | ${COVERAGE:-N/A}% |"
+            echo "| **Status** | ${{ steps.pytest.outcome == 'success' && '✅ Passed' || '❌ Failed' }} |"
             echo ""
+            echo "### 📈 Coverage Information"
+            echo ""
+            if [ -n "${COVERAGE}" ] && [ "${COVERAGE}" != "N/A" ]; then
+              if [ "${COVERAGE}" -ge 90 ]; then
+                echo "🟢 **Excellent coverage: ${COVERAGE}%** - Above 90% threshold"
+              elif [ "${COVERAGE}" -ge 75 ]; then
+                echo "🟡 **Good coverage: ${COVERAGE}%** - Above 75%"
+              else
+                echo "🔴 **Low coverage: ${COVERAGE}%** - Below 75%"
+              fi
+            else
+              echo "ℹ️ Coverage information not available"
+            fi
+            echo ""
+            echo "---"
+            echo "**Note:** Detailed coverage report is available in the PR comments."
           } >> "$GITHUB_STEP_SUMMARY"
-
-          # カバレッジレポートを追加（エラーハンドリング付き）
-          if [ -n "${{ steps.coverageComment.outputs.summaryReport }}" ]; then
-            echo "### Coverage Details" >> "$GITHUB_STEP_SUMMARY"
-            echo '${{ steps.coverageComment.outputs.summaryReport }}' >> "$GITHUB_STEP_SUMMARY" || echo "Coverage report not available" >> "$GITHUB_STEP_SUMMARY"
-          fi
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
