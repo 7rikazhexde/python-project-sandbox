@@ -8,9 +8,8 @@ on:
       - 'project_a/**'
       - 'tests/**'
       - 'pyproject.toml'
-      - 'poetry.lock'
-      - 'requirements-dev.txt'
-      - 'requirements.txt'
+      - 'uv.lock'
+      - 'justfile'
   workflow_dispatch:
 
 jobs:
@@ -29,7 +28,7 @@ jobs:
 
       - name: Set variables from JSON
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@v1.0.1
+        uses: 7rikazhexde/json2vars-setter@main
         with:
           json-file: .github/json2vars-setter/matrix.json
 
@@ -85,49 +84,36 @@ jobs:
           echo "System date: $(date)"
           echo "TZ environment variable: ${TZ}"
           python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
-      - name: Install poetry
-        uses: snok/install-poetry@v1.4.1
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6
         with:
-          version: latest
-          virtualenvs-create: true
-          virtualenvs-in-project: true
+          version: "latest"
+          enable-cache: true
 
-      - name: Add Poetry to PATH (Windows)
+      - name: Install just (Linux/macOS)
+        if: runner.os != 'Windows'
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          else
+            brew install just
+          fi
+
+      - name: Install just (Windows)
         if: runner.os == 'Windows'
         shell: powershell
-        run: |
-          $poetryPath = "$env:USERPROFILE\.local\bin"
-          echo "$poetryPath" | Out-File -FilePath $env:GITHUB_PATH -Encoding utf8 -Append
-          echo "Added $poetryPath to PATH"
-
-      - name: Check poetry version
-        run: poetry --version
-
-      - name: Reset virtual environment
-        shell: bash
-        run: |
-          rm -rf .venv || true
-          poetry env remove --all || true
-          poetry env use python
-
-      - name: Update poetry lock file
-        shell: bash
-        run: |
-          rm -f poetry.lock
-          poetry lock
+        run: choco install just
 
       - name: install dependencies
-        run: poetry install
+        run: uv sync --extra dev
 
       - name: Run test
         id: pytest
         shell: bash
         #continue-on-error: true
-        # Mac / Linux
-        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | tee pytest-coverage.txt
-        # Windowss
-        # run: poetry run pytest --durations=0 --junitxml=pytest.xml --cov-report xml:coverage.xml --cov=project_a tests/ | Tee-Object -FilePath pytest-coverage.txt
-        run: poetry run task testcixml
+        run: just test-ci-xml
       - name: Pytest coverage comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.54
@@ -236,6 +222,19 @@ jobs:
                 else
                   echo "No summary report found for ${os} - ${version}"
                 fi
+                echo ""
+
+                echo "## Pytest Result Summary (os: ${os} / python-version: ${version})"
+                if [ -f "coverage-data-${os}-${version}/summary-report.md" ]; then
+                  sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-${os}-${version}/summary-report.md" |
+                  sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
+                  sed '/^$/N;/^\n$/D' |
+                  sed -e 's/^"//' -e 's/"$//' |
+                  grep -A 2 "| Tests | Skipped | Failures | Errors | Time |" || echo "No test results found"
+                else
+                  echo "No test results found for ${os} - ${version}"
+                fi
+                echo ""
                 echo ""
               done
             done
