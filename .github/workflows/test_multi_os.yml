@@ -196,7 +196,7 @@ jobs:
             # テスト対象外のファイルに関する注記を追加（ファイルの存在確認結果に基づく）
             commit_hash=${GITHUB_SHA}
             file_path_1="project_a/staking/ton_whales_staking_dashboard.py"
-            file_path_2="project_a/staking/ton_whales_staking_dashboard.py"
+            file_path_2="staking/ton_whales_staking_dashboard.py"
             file_link="https://github.com/${GITHUB_REPOSITORY}/blob/${commit_hash}/${file_path_2}"
 
             if [[ "${{ needs.check_file.outputs.file_exists }}" == "true" ]]; then
@@ -230,7 +230,7 @@ jobs:
                   sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
                   sed '/^$/N;/^\n$/D' |
                   sed -e 's/^"//' -e 's/"$//' |
-                  grep -A 10 "| Tests | Skipped | Failures | Errors | Time |" || echo "No test results found"
+                  grep -A 2 "| Tests | Skipped | Failures | Errors | Time |" || echo "No test results found"
                 else
                   echo "No test results found for ${os} - ${version}"
                 fi
