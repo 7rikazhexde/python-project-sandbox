@@ -223,19 +223,6 @@ jobs:
                   echo "No summary report found for ${os} - ${version}"
                 fi
                 echo ""
-
-                echo "## Pytest Result Summary (os: ${os} / python-version: ${version})"
-                if [ -f "coverage-data-${os}-${version}/summary-report.md" ]; then
-                  sed -e 's/^"//' -e 's/"$//' -e 's/\\"/"/g' -e 's/\\\\/\\/g' -e 's/\\n/\n/g' -e 's/\r$//' "coverage-data-${os}-${version}/summary-report.md" |
-                  sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
-                  sed '/^$/N;/^\n$/D' |
-                  sed -e 's/^"//' -e 's/"$//' |
-                  grep -A 10 "| Tests | Skipped | Failures | Errors | Time |" || echo "No test results found"
-                else
-                  echo "No test results found for ${os} - ${version}"
-                fi
-                echo ""
-                echo ""
               done
             done
           } > README.md
