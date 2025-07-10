@@ -230,7 +230,7 @@ jobs:
                   sed -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/&amp;/\&/g' |
                   sed '/^$/N;/^\n$/D' |
                   sed -e 's/^"//' -e 's/"$//' |
-                  grep -A 2 "| Tests | Skipped | Failures | Errors | Time |" || echo "No test results found"
+                  grep -A 10 "| Tests | Skipped | Failures | Errors | Time |" || echo "No test results found"
                 else
                   echo "No test results found for ${os} - ${version}"
                 fi
