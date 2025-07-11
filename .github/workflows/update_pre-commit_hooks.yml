@@ -53,23 +53,21 @@ jobs:
           uv python install "$python_version"
           uv python pin "$python_version"
 
-      - name: Install just task runner
+      - name: Install just (Linux/macOS)
+        if: runner.os != 'Windows'
         shell: bash
-        env:
-          RUNNER_OS: ${{ runner.os }}
         run: |
-          case "${RUNNER_OS}" in
-            "Linux")
-              curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to "${HOME}/.local/bin"
-              echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-              ;;
-            "macOS")
-              brew install just
-              ;;
-            "Windows")
-              choco install just
-              ;;
-          esac
+          if [ "${{ runner.os }}" = "Linux" ]; then
+            curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
+            echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+          else
+            brew install just
+          fi
+
+      - name: Install just (Windows)
+        if: runner.os == 'Windows'
+        shell: powershell
+        run: choco install just
 
       - name: Verify installations
         run: |
