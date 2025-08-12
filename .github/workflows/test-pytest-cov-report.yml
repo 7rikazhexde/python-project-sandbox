@@ -21,7 +21,7 @@ jobs:
       ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
 
@@ -51,7 +51,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
 
       - name: Install uv
         uses: astral-sh/setup-uv@v6
@@ -307,7 +307,7 @@ jobs:
       updated_reports: ${{ steps.check_and_deploy.outputs.updated_reports }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
 
@@ -323,7 +323,7 @@ jobs:
           uv python pin 3.12
 
       - name: Download pytest-cov artifacts
-        uses: actions/download-artifact@v4.3.0
+        uses: actions/download-artifact@v5.0.0
 
       - name: Setup Git
         run: |
