@@ -146,7 +146,7 @@ jobs:
           fi
 
       - name: Pytest coverage comment
-        uses: MishaKav/pytest-coverage-comment@v1.1.56
+        uses: MishaKav/pytest-coverage-comment@v1.1.57
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
