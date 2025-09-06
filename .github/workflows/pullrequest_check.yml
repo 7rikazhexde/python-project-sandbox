@@ -21,7 +21,7 @@ jobs:
 
       - name: Set variables from JSON
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@v1.0.1
+        uses: 7rikazhexde/json2vars-setter@v1.0.2
         with:
           json-file: .github/json2vars-setter/matrix.json
 
@@ -46,7 +46,7 @@ jobs:
         uses: actions/checkout@v5.0.0
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: ${{ matrix.python-version }}
 
