@@ -113,6 +113,7 @@ jobs:
 
       - name: Run tests with coverage
         shell: bash
+        id: pytest
         run: |
           if command -v just >/dev/null 2>&1; then
             just testcov
@@ -140,20 +141,41 @@ jobs:
         run: |
           COVERAGE=$(uv run coverage report --format=total)
           echo "Coverage: ${COVERAGE}%"
+          echo "COVERAGE=${COVERAGE}" >> "$GITHUB_ENV"
           if [ "${COVERAGE}" -lt 90 ]; then
             echo "::error::Coverage ${COVERAGE}% is below 90% threshold"
             exit 1
           fi
 
       - name: Pytest coverage comment
+        id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.57
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
           title: Coverage Report (${{ matrix.os }} / Python ${{ matrix.python-version }})
+          badge-title: coverage
+          hide-badge: false
+          hide-report: false
+          create-new-comment: true
+          hide-comment: false
+          report-only-changed-files: false
+          remove-link-from-badge: false
           junitxml-path: ./pytest.xml
+          junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
+
+      - name: Check test results
+        if: steps.pytest.outcome == 'failure'
+        run: |
+          echo "Tests failed. This will be reported in the workflow summary."
+          echo "::warning::Tests failed on ${{ matrix.os }} with Python ${{ matrix.python-version }}"
+
+      - name: Write job summary
+        shell: bash
+        run: |
+          echo -e ${{ steps.coverageComment.outputs.summaryReport }} >> "$GITHUB_STEP_SUMMARY"
 
       - name: Upload coverage reports
         uses: actions/upload-artifact@v4
