@@ -65,7 +65,6 @@ jobs:
         id: cache-key
         shell: bash
         run: |
-          # Calculate 2-week period: Year + (WeekNumber / 2)
           YEAR=$(date +'%Y')
           WEEK_NUM=$(date +'%U')
           TWO_WEEK_PERIOD=$(( WEEK_NUM / 2 ))
@@ -79,7 +78,6 @@ jobs:
         with:
           path: |
             ~/.cargo/bin/just
-            ~/.cargo/bin/just.exe
             %USERPROFILE%\.cargo\bin\just.exe
           key: just-${{ runner.os }}-${{ steps.cache-key.outputs.key }}
           restore-keys: |
@@ -99,15 +97,12 @@ jobs:
         shell: bash
         run: |
           echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
-          export PATH="$HOME/.cargo/bin:$PATH"
-
+          just --version
           if [ "${{ steps.cache-just.outputs.cache-hit }}" = "true" ]; then
             echo "✅ Just loaded from cache"
           else
             echo "✅ Just newly installed"
           fi
-
-          just --version
 
       - name: Run tests with coverage
         shell: bash
@@ -122,14 +117,10 @@ jobs:
       - name: Generate required reports
         shell: bash
         run: |
-          # Coverage text report for PR comment
           uv run coverage report > pytest-coverage.txt
-
-          # Ensure XML reports exist
           if [ ! -f "coverage.xml" ]; then
             uv run coverage xml
           fi
-
           if [ ! -f "pytest.xml" ]; then
             uv run pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
           fi
