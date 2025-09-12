@@ -76,11 +76,18 @@ jobs:
         id: cargo-home
         shell: bash
         run: |
-          if [[ "${{ runner.os }}" == "Windows" ]]; then
-            echo "CARGO_HOME=C:/Users/runneradmin/.cargo" >> "$GITHUB_ENV"
-          else
-            echo "CARGO_HOME=$HOME/.cargo" >> "$GITHUB_ENV"
-          fi
+          case "${{ runner.os }}" in
+            "Windows")
+              echo "CARGO_HOME=C:/Users/runneradmin/.cargo" >> "$GITHUB_ENV"
+              ;;
+            "macOS"|"Linux")
+              echo "CARGO_HOME=$HOME/.cargo" >> "$GITHUB_ENV"
+              ;;
+            *)
+              echo "::error::Unsupported OS ${{ runner.os }}"
+              exit 1
+              ;;
+          esac
 
       - name: Cache cargo registry + git + bin
         id: cache-cargo
