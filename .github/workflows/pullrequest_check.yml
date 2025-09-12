@@ -67,7 +67,7 @@ jobs:
         run: |
           case "${{ runner.os }}" in
             "Windows")
-              printf "CARGO_HOME=C:\\Users\\runneradmin\\.cargo\n" >> "$GITHUB_ENV"
+              echo "CARGO_HOME=/c/Users/runneradmin/.cargo" >> "$GITHUB_ENV"
               ;;
             "macOS"|"Linux")
               echo "CARGO_HOME=$HOME/.cargo" >> "$GITHUB_ENV"
@@ -99,9 +99,9 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ env.CARGO_HOME }}\bin
-            ${{ env.CARGO_HOME }}\registry
-            ${{ env.CARGO_HOME }}\git
+            ${{ env.CARGO_HOME }}/bin
+            ${{ env.CARGO_HOME }}/registry
+            ${{ env.CARGO_HOME }}/git
           key: cargo-${{ runner.os }}-just-${{ steps.cache-key.outputs.key }}
           restore-keys: |
             cargo-${{ runner.os }}-just-
