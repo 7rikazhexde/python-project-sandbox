@@ -72,29 +72,42 @@ jobs:
           echo "key=$CACHE_KEY" >> "$GITHUB_OUTPUT"
           echo "Generated 2-week cache key: $CACHE_KEY"
 
+      - name: Set cargo home path
+        id: cargo-home
+        shell: bash
+        run: |
+          if [[ "${{ runner.os }}" == "Windows" ]]; then
+            echo "CARGO_HOME=C:/Users/runneradmin/.cargo" >> "$GITHUB_ENV"
+          else
+            echo "CARGO_HOME=$HOME/.cargo" >> "$GITHUB_ENV"
+          fi
+
       - name: Cache cargo registry + git + bin
         id: cache-cargo
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/bin
-            ~/.cargo/registry
-            ~/.cargo/git
+            ${{ env.CARGO_HOME }}/bin
+            ${{ env.CARGO_HOME }}/registry
+            ${{ env.CARGO_HOME }}/git
           key: cargo-${{ runner.os }}-just-${{ steps.cache-key.outputs.key }}
           restore-keys: |
             cargo-${{ runner.os }}-just-
 
-      - name: Install just (if not cached)
+      - name: Install just (latest if not cached)
         shell: bash
         run: |
-          echo "${HOME}/.cargo/bin" >> "$GITHUB_PATH"
+          echo "${{ env.CARGO_HOME }}/bin" >> "$GITHUB_PATH"
+
           if command -v just >/dev/null 2>&1; then
             echo "✅ Just already available (from cache)"
           else
-            echo "🔧 Installing just..."
+            echo "🔧 Installing just (latest)..."
             cargo install just --locked
             echo "✅ Just installed"
           fi
+
+          just --version
 
       - name: Setup PATH and verify just
         shell: bash
