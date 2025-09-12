@@ -61,12 +61,48 @@ jobs:
         run: |
           uv sync --extra dev
 
-      - name: Install just task runner
+      - name: Generate 2-week cache key
+        id: cache-key
         shell: bash
         run: |
-          echo "🦀 Installing just via cargo (cross-platform)..."
+          # Calculate 2-week period: Year + (WeekNumber / 2)
+          YEAR=$(date +'%Y')
+          WEEK_NUM=$(date +'%U')
+          TWO_WEEK_PERIOD=$(( WEEK_NUM / 2 ))
+          CACHE_KEY="${YEAR}-${TWO_WEEK_PERIOD}"
+          echo "key=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+          echo "Generated 2-week cache key: $CACHE_KEY"
+
+      - name: Cache just binary
+        id: cache-just
+        uses: actions/cache@v4
+        with:
+          path: ~/.cargo/bin/just
+          key: just-${{ runner.os }}-${{ steps.cache-key.outputs.key }}
+          restore-keys: |
+            just-${{ runner.os }}-
+
+      - name: Install just (if not cached)
+        if: steps.cache-just.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          echo "🦀 Installing just via cargo (cache miss)..."
           cargo install just
-          echo "✅ just installed successfully"
+          echo "✅ Just installed successfully via cargo"
+
+      - name: Setup PATH and verify just
+        shell: bash
+        run: |
+          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          export PATH="$HOME/.cargo/bin:$PATH"
+
+          if [ "${{ steps.cache-just.outputs.cache-hit }}" = "true" ]; then
+            echo "✅ Just loaded from cache"
+          else
+            echo "✅ Just newly installed"
+          fi
+
+          just --version
 
       - name: Run tests with coverage
         shell: bash
