@@ -77,8 +77,8 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ~/.cargo/bin/just
-            %USERPROFILE%\.cargo\bin\just.exe
+            ${{ env.HOME }}/.cargo/bin/just
+            ${{ env.HOME }}/.cargo/bin/just.exe
           key: just-${{ runner.os }}-${{ steps.cache-key.outputs.key }}
           restore-keys: |
             just-${{ runner.os }}-
@@ -87,16 +87,42 @@ jobs:
         if: steps.cache-just.outputs.cache-hit != 'true'
         shell: bash
         run: |
+          mkdir -p "${{ env.HOME }}/.cargo/bin"
           if [ "${{ runner.os }}" = "Windows" ]; then
             choco install just -y
+            if [ ! -f "${{ env.HOME }}/.cargo/bin/just.exe" ]; then
+              echo "::error::Failed to find just.exe after installation in ${{ env.HOME }}/.cargo/bin"
+              exit 1
+            fi
+            echo "✅ Just installed at ${{ env.HOME }}/.cargo/bin/just.exe"
           else
             cargo install just
+            if [ ! -f "${{ env.HOME }}/.cargo/bin/just" ]; then
+              echo "::error::Failed to find just after installation in ${{ env.HOME }}/.cargo/bin"
+              exit 1
+            fi
+            echo "✅ Just installed at ${{ env.HOME }}/.cargo/bin/just"
           fi
 
       - name: Setup PATH and verify just
         shell: bash
         run: |
-          echo "$HOME/.cargo/bin" >> "$GITHUB_PATH"
+          echo "${{ env.HOME }}/.cargo/bin" >> "$GITHUB_PATH"
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            if [ -f "${{ env.HOME }}/.cargo/bin/just.exe" ]; then
+              echo "✅ Found just.exe at ${{ env.HOME }}/.cargo/bin"
+            else
+              echo "::error::just.exe not found at ${{ env.HOME }}/.cargo/bin"
+              exit 1
+            fi
+          else
+            if [ -f "${{ env.HOME }}/.cargo/bin/just" ]; then
+              echo "✅ Found just at ${{ env.HOME }}/.cargo/bin"
+            else
+              echo "::error::just not found at ${{ env.HOME }}/.cargo/bin"
+              exit 1
+            fi
+          fi
           just --version
           if [ "${{ steps.cache-just.outputs.cache-hit }}" = "true" ]; then
             echo "✅ Just loaded from cache"
