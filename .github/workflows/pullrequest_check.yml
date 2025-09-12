@@ -77,7 +77,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: |
-            ${{ runner.os == 'Windows' && '%USERPROFILE%\.cargo\bin\just.exe' || '~/.cargo/bin/just' }}
+            ${{ env.HOME }}/.cargo/bin/just*
           key: just-${{ runner.os }}-${{ steps.cache-key.outputs.key }}
           restore-keys: |
             just-${{ runner.os }}-
@@ -86,51 +86,13 @@ jobs:
         if: steps.cache-just.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          CARGO_BIN="$HOME/.cargo/bin"
-          mkdir -p "$CARGO_BIN"
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            choco install just -y --no-progress
-            if [ -f "C:/ProgramData/chocolatey/lib/just/tools/just.exe" ]; then
-              mv "C:/ProgramData/chocolatey/lib/just/tools/just.exe" "$CARGO_BIN/just.exe"
-              echo "✅ Moved just.exe to $CARGO_BIN/just.exe"
-            else
-              echo "::error::Failed to find just.exe at C:/ProgramData/chocolatey/lib/just/tools/just.exe"
-              exit 1
-            fi
-            if [ ! -f "$CARGO_BIN/just.exe" ]; then
-              echo "::error::Failed to find just.exe after moving to $CARGO_BIN"
-              exit 1
-            fi
-            echo "✅ Just installed at $CARGO_BIN/just.exe"
-          else
-            cargo install just
-            if [ ! -f "$CARGO_BIN/just" ]; then
-              echo "::error::Failed to find just after installation in $CARGO_BIN"
-              exit 1
-            fi
-            echo "✅ Just installed at $CARGO_BIN/just"
-          fi
+          cargo install just
+          echo "✅ Just installed"
 
       - name: Setup PATH and verify just
         shell: bash
         run: |
-          CARGO_BIN="$HOME/.cargo/bin"
-          echo "$CARGO_BIN" >> "$GITHUB_PATH"
-          if [ "${{ runner.os }}" = "Windows" ]; then
-            if [ -f "$CARGO_BIN/just.exe" ]; then
-              echo "✅ Found just.exe at $CARGO_BIN"
-            else
-              echo "::error::just.exe not found at $CARGO_BIN"
-              exit 1
-            fi
-          else
-            if [ -f "$CARGO_BIN/just" ]; then
-              echo "✅ Found just at $CARGO_BIN"
-            else
-              echo "::error::just not found at $CARGO_BIN"
-              exit 1
-            fi
-          fi
+          echo "${{ env.HOME }}/.cargo/bin" >> "$GITHUB_PATH"
           just --version
           if [ "${{ steps.cache-just.outputs.cache-hit }}" = "true" ]; then
             echo "✅ Just loaded from cache"
@@ -142,11 +104,7 @@ jobs:
         shell: bash
         id: pytest
         run: |
-          if command -v just >/dev/null 2>&1; then
-            just testcov
-          else
-            uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
-          fi
+          just testcov || uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
 
       - name: Generate required reports
         shell: bash
@@ -185,7 +143,7 @@ jobs:
           report-only-changed-files: false
           remove-link-from-badge: false
           junitxml-path: ./pytest.xml
-          jupyterxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
+          junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
