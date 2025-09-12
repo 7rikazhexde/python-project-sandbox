@@ -86,18 +86,23 @@ jobs:
         if: steps.cache-just.outputs.cache-hit != 'true'
         shell: bash
         run: |
+          CARGO_BIN="$HOME/.cargo/bin"
+          mkdir -p "$CARGO_BIN"
           if [ "${{ runner.os }}" = "Windows" ]; then
-            CARGO_BIN="$HOME/.cargo/bin"
-            mkdir -p "$CARGO_BIN"
             choco install just -y --no-progress
+            if [ -f "C:/ProgramData/chocolatey/lib/just/tools/just.exe" ]; then
+              mv "C:/ProgramData/chocolatey/lib/just/tools/just.exe" "$CARGO_BIN/just.exe"
+              echo "✅ Moved just.exe to $CARGO_BIN/just.exe"
+            else
+              echo "::error::Failed to find just.exe at C:/ProgramData/chocolatey/lib/just/tools/just.exe"
+              exit 1
+            fi
             if [ ! -f "$CARGO_BIN/just.exe" ]; then
-              echo "::error::Failed to find just.exe after installation in $CARGO_BIN"
+              echo "::error::Failed to find just.exe after moving to $CARGO_BIN"
               exit 1
             fi
             echo "✅ Just installed at $CARGO_BIN/just.exe"
           else
-            CARGO_BIN="$HOME/.cargo/bin"
-            mkdir -p "$CARGO_BIN"
             cargo install just
             if [ ! -f "$CARGO_BIN/just" ]; then
               echo "::error::Failed to find just after installation in $CARGO_BIN"
@@ -180,7 +185,7 @@ jobs:
           report-only-changed-files: false
           remove-link-from-badge: false
           junitxml-path: ./pytest.xml
-          junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
+          jupyterxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
           github-token: ${{ secrets.GITHUB_TOKEN }}
         continue-on-error: true
 
