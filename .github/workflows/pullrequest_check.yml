@@ -87,8 +87,27 @@ jobs:
         shell: bash
         run: |
           echo "🦀 Installing just via cargo (cache miss)..."
-          cargo install just
-          echo "✅ Just installed successfully via cargo"
+          echo "OS: ${{ runner.os }}"
+          echo "Cache hit: ${{ steps.cache-just.outputs.cache-hit }}"
+
+          if cargo install just; then
+            echo "✅ Just installed successfully via cargo"
+
+            # Debug: Show what was actually installed
+            if [ "${{ runner.os }}" = "Windows" ]; then
+              ls -la ~/.cargo/bin/just* 2>/dev/null || echo "No just files found"
+              echo "Windows cargo bin contents:"
+              for file in ~/.cargo/bin/*just*; do
+                [ -f "$file" ] && ls -la "$file" || echo "No just found in cargo bin"
+                break
+              done
+            else
+              ls -la ~/.cargo/bin/just* 2>/dev/null || echo "No just files found"
+            fi
+          else
+            echo "❌ Failed to install just via cargo"
+            exit 1
+          fi
 
       - name: Setup PATH and verify just
         shell: bash
