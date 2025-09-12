@@ -47,7 +47,7 @@ repos:
         args: ["--config", ".markdownlint.json", "README.md"]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.12.12
+    rev: v0.13.0
     hooks:
       - id: ruff
         args: ["--fix","project_a"]
