@@ -85,6 +85,16 @@ jobs:
           restore-keys: |
             just-${{ runner.os }}-
 
+      - name: Install just (if not cached)
+        if: steps.cache-just.outputs.cache-hit != 'true'
+        shell: bash
+        run: |
+          if [ "${{ runner.os }}" = "Windows" ]; then
+            choco install just -y
+          else
+            cargo install just
+          fi
+
       - name: Setup PATH and verify just
         shell: bash
         run: |
