@@ -72,29 +72,36 @@ jobs:
           echo "key=$CACHE_KEY" >> "$GITHUB_OUTPUT"
           echo "Generated 2-week cache key: $CACHE_KEY"
 
-      - name: Cache just binary
-        id: cache-just
+      - name: Cache cargo registry + git + bin
+        id: cache-cargo
         uses: actions/cache@v4
         with:
           path: |
-            ${{ env.HOME }}/.cargo/bin/just*
-          key: just-${{ runner.os }}-${{ steps.cache-key.outputs.key }}
+            ~/.cargo/bin
+            ~/.cargo/registry
+            ~/.cargo/git
+          key: cargo-${{ runner.os }}-just-${{ steps.cache-key.outputs.key }}
           restore-keys: |
-            just-${{ runner.os }}-
+            cargo-${{ runner.os }}-just-
 
       - name: Install just (if not cached)
-        if: steps.cache-just.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          cargo install just
-          echo "✅ Just installed"
+          echo "${HOME}/.cargo/bin" >> "$GITHUB_PATH"
+          if command -v just >/dev/null 2>&1; then
+            echo "✅ Just already available (from cache)"
+          else
+            echo "🔧 Installing just..."
+            cargo install just --locked
+            echo "✅ Just installed"
+          fi
 
       - name: Setup PATH and verify just
         shell: bash
         run: |
-          echo "${{ env.HOME }}/.cargo/bin" >> "$GITHUB_PATH"
+          echo "${HOME}/.cargo/bin" >> "$GITHUB_PATH"
           just --version
-          if [ "${{ steps.cache-just.outputs.cache-hit }}" = "true" ]; then
+          if [ "${{ steps.cache-cargo.outputs.cache-hit }}" = "true" ] && command -v just > /dev/null; then
             echo "✅ Just loaded from cache"
           else
             echo "✅ Just newly installed"
