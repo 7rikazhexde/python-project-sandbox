@@ -61,77 +61,90 @@ jobs:
         run: |
           uv sync --extra dev
 
-      - name: Install just task runner
+      - name: Set cargo home path
+        id: cargo-home
         shell: bash
-        env:
-          RUNNER_OS: ${{ runner.os }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
-          case "${RUNNER_OS}" in
-            "Linux")
-              echo "🐧 Installing just on Linux..."
-              # GitHub Actionsのトークンを使用してAPI制限を回避
-              if [ -n "$GITHUB_TOKEN" ]; then
-                echo "Using GitHub token for API access..."
-                release_info=$(curl -H "Authorization: token $GITHUB_TOKEN" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  -s "https://api.github.com/repos/casey/just/releases/latest")
-                download_url=$(echo "$release_info" | grep -o '"browser_download_url": "[^"]*x86_64-unknown-linux-musl.tar.gz"' | cut -d'"' -f4)
-              else
-                # フォールバック: 最新の安定版を直接指定
-                echo "Using fallback download method..."
-                download_url="https://github.com/casey/just/releases/download/1.34.0/just-1.34.0-x86_64-unknown-linux-musl.tar.gz"
-              fi
-
-              if [ -n "$download_url" ]; then
-                echo "📥 Downloading just from: $download_url"
-                mkdir -p "${HOME}/.local/bin"
-                cd /tmp
-                curl -L "$download_url" | tar xz
-                mv just "${HOME}/.local/bin/"
-                chmod +x "${HOME}/.local/bin/just"
-                echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-                echo "✅ just installed successfully"
-              else
-                echo "❌ Failed to get download URL for just"
-                exit 1
-              fi
-              ;;
-            "macOS")
-              echo "🍎 Installing just on macOS..."
-              brew install just
-              ;;
+          case "${{ runner.os }}" in
             "Windows")
-              echo "🪟 Installing just on Windows..."
-              choco install just
+              echo "CARGO_HOME=/c/Users/runneradmin/.cargo" >> "$GITHUB_ENV"
+              ;;
+            "macOS"|"Linux")
+              echo "CARGO_HOME=$HOME/.cargo" >> "$GITHUB_ENV"
               ;;
             *)
-              echo "❓ Unknown OS: ${RUNNER_OS}"
+              echo "::error::Unsupported OS ${{ runner.os }}"
               exit 1
               ;;
           esac
+
+      - name: Ensure cargo directories exist
+        shell: bash
+        run: |
+          mkdir -p "${CARGO_HOME}/bin" "${CARGO_HOME}/registry" "${CARGO_HOME}/git"
+
+      - name: Generate 2-week cache key
+        id: cache-key
+        shell: bash
+        run: |
+          YEAR=$(date +'%Y')
+          WEEK_NUM=$(date +'%U')
+          TWO_WEEK_PERIOD=$(( WEEK_NUM / 2 ))
+          CACHE_KEY="${YEAR}-${TWO_WEEK_PERIOD}"
+          echo "key=$CACHE_KEY" >> "$GITHUB_OUTPUT"
+          echo "Generated 2-week cache key: $CACHE_KEY"
+
+      - name: Cache cargo registry + git + bin
+        id: cache-cargo
+        uses: actions/cache@v4
+        with:
+          path: |
+            ${{ env.CARGO_HOME }}/bin
+            ${{ env.CARGO_HOME }}/registry
+            ${{ env.CARGO_HOME }}/git
+          key: cargo-${{ runner.os }}-just-${{ steps.cache-key.outputs.key }}
+          restore-keys: |
+            cargo-${{ runner.os }}-just-
+
+      - name: Install just (latest if not cached)
+        shell: bash
+        run: |
+          echo "${CARGO_HOME}/bin" >> "$GITHUB_PATH"
+
+          if command -v just >/dev/null 2>&1; then
+            echo "✅ Just already available (from cache)"
+          else
+            echo "🔧 Installing just (latest)..."
+            cargo install just --locked
+            echo "✅ Just installed"
+          fi
+
+          just --version
+
+      - name: Setup PATH and verify just
+        shell: bash
+        run: |
+          echo "${HOME}/.cargo/bin" >> "$GITHUB_PATH"
+          just --version
+          if [ "${{ steps.cache-cargo.outputs.cache-hit }}" = "true" ] && command -v just > /dev/null; then
+            echo "✅ Just loaded from cache"
+          else
+            echo "✅ Just newly installed"
+          fi
 
       - name: Run tests with coverage
         shell: bash
         id: pytest
         run: |
-          if command -v just >/dev/null 2>&1; then
-            just testcov
-          else
-            uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
-          fi
+          just testcov || uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
 
       - name: Generate required reports
         shell: bash
         run: |
-          # Coverage text report for PR comment
           uv run coverage report > pytest-coverage.txt
-
-          # Ensure XML reports exist
           if [ ! -f "coverage.xml" ]; then
             uv run coverage xml
           fi
-
           if [ ! -f "pytest.xml" ]; then
             uv run pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
           fi
