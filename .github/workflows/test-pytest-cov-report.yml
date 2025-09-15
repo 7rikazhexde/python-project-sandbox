@@ -112,6 +112,7 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
+          uv venv .venv --python python
           uv sync --extra dev
 
       # ======================================================================

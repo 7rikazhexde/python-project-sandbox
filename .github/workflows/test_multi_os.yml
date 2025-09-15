@@ -144,8 +144,11 @@ jobs:
         with:
           enable-cache: false
 
-      - name: install dependencies
-        run: uv sync --extra dev
+      - name: Install dependencies
+        shell: bash
+        run: |
+          uv venv .venv --python python
+          uv sync --extra dev
 
       # ======================================================================
       # Rust環境とキャッシュ
