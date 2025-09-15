@@ -22,7 +22,7 @@ test-testmon:
     uv run pytest --testmon
 
 test-coverage:
-    uv run pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
+    uv run python -m pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
 
 # カスタムHTMLディレクトリを指定可能なカバレッジテスト
 test-coverage-custom htmldir="htmlcov":
