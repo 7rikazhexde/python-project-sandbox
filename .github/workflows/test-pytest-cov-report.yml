@@ -163,7 +163,7 @@ jobs:
             temp_htmlcov="temp_htmlcov_$(date +%s)"
 
             # justコマンドを修正してカスタムHTMLディレクトリを使用
-            uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report="html:${temp_htmlcov}" --cov-report=xml project_a tests/
+            uv run python -m pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report="html:${temp_htmlcov}" --cov-report=xml project_a tests/
 
             # 生成されたHTMLカバレッジレポートを適切な場所に移動
             if [ -d "${temp_htmlcov}" ]; then
@@ -175,12 +175,12 @@ jobs:
             else
               echo "⚠️ ${temp_htmlcov} directory not found, falling back to direct generation..."
               # justで生成されなかった場合のフォールバック
-              uv run pytest --cov=project_a --cov-report="html:${coverage_path}" project_a tests/
+              uv run python -m pytest --cov=project_a --cov-report="html:${coverage_path}" project_a tests/
             fi
           else
             echo "📊 Using direct uv run for coverage report generation..."
             # 直接pytestでカバレッジレポートを生成
-            uv run pytest --cov=project_a --cov-report="html:${coverage_path}" project_a tests/
+            uv run python -m pytest --cov=project_a --cov-report="html:${coverage_path}" project_a tests/
           fi
 
           # 生成されたファイルの確認
