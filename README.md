@@ -4,28 +4,32 @@ An experimental project to test out various tools.
 
 [![Pytest_Coverages_Summary](https://img.shields.io/badge/Pytest_Coverages_Summary-gray?logo=python&logoColor=white)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary) [![Pytest_Reports](https://img.shields.io/badge/Pytest_Reports-gray?logo=python&logoColor=white)](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report)
 
-## Tabale of contents
+## Table of Contents
 
 - [python-project-sandbox](#python-project-sandbox)
-  - [Tabale of contents](#tabale-of-contents)
+  - [Table of Contents](#table-of-contents)
   - [Pytest Coverages Summary](#pytest-coverages-summary)
   - [Pytest Reports](#pytest-reports)
   - [Install](#install)
-    - [For Poetry](#for-poetry)
-      - [Production environment](#production-environment)
+    - [Using uv (Recommended)](#using-uv-recommended)
+      - [Production Environment](#production-environment)
       - [Development Environment](#development-environment)
-    - [For venv using pyptoject.toml / project](#for-venv-using-pyptojecttoml--project)
-      - [Production environment](#production-environment-1)
+    - [Using pip with pyproject.toml](#using-pip-with-pyprojecttoml)
+      - [Production Environment](#production-environment-1)
       - [Development Environment](#development-environment-1)
-    - [For venv](#for-venv)
-      - [Production environment](#production-environment-2)
+    - [Using requirements.txt](#using-requirementstxt)
+      - [Production Environment](#production-environment-2)
       - [Development Environment](#development-environment-2)
+  - [Development Tools](#development-tools)
+    - [just (Task Runner)](#just-task-runner)
+    - [Available Commands](#available-commands)
   - [pre-commit](#pre-commit)
     - [Overview](#overview)
     - [Usage](#usage)
-  - [post-commit](#post-commit)
-    - [Overview](#overview-1)
-    - [Usage](#usage-1)
+  - [Development Environment Setup](#development-environment-setup)
+  - [Testing](#testing)
+  - [Code Quality](#code-quality)
+  - [CI/CD](#cicd)
 
 ## [Pytest Coverages Summary](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary)
 
@@ -37,23 +41,33 @@ This repository deploys [pytest-html](https://github.com/7rikazhexde/python-proj
 
 ## Install
 
-### For Poetry
+### Using uv (Recommended)
 
-#### Production environment
+This project uses [uv](https://docs.astral.sh/uv/) for fast Python package management.
+
+#### Production Environment
 
 ```bash
-poetry install --only main
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies
+uv sync
 ```
 
 #### Development Environment
 
 ```bash
-poetry install --with dev
+# Install uv if not already installed
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Install dependencies including development tools
+uv sync --extra dev
 ```
 
-### For venv using pyptoject.toml / project
+### Using pip with pyproject.toml
 
-#### Production environment
+#### Production Environment
 
 ```bash
 pip install .
@@ -65,9 +79,9 @@ pip install .
 pip install ".[dev]"
 ```
 
-### For venv
+### Using requirements.txt
 
-#### Production environment
+#### Production Environment
 
 ```bash
 pip install -r requirements.txt
@@ -79,124 +93,177 @@ pip install -r requirements.txt
 pip install -r requirements.txt && pip install -r requirements-dev.txt
 ```
 
+## Development Tools
+
+### just (Task Runner)
+
+This project uses [just](https://github.com/casey/just) as a task runner for common development tasks.
+
+Install just:
+
+```bash
+# On macOS
+brew install just
+
+# On Linux
+curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
+
+# On Windows
+choco install just
+```
+
+### Available Commands
+
+```bash
+# List all available commands
+just --list
+
+# Common development commands
+just install          # Install dependencies
+just testcov          # Run tests with coverage
+just testhtml         # Generate HTML test report
+just lint             # Run code linting
+just format           # Format code
+just type-check       # Run type checking
+just check            # Run all quality checks
+just clean            # Clean up generated files
+
+# Comprehensive testing
+just test-ci-full     # Run comprehensive CI tests
+just report-all       # Generate all types of reports
+just health-check     # Run complete project health check
+```
+
 ## pre-commit
 
-This project is using [pre-commit](https://github.com/pre-commit/pre-commit) via poetry.
+This project uses [pre-commit](https://github.com/pre-commit/pre-commit) for automated code quality checks.
 
 ### Overview
 
-1. Using Static Analysis Tools
+1. **Static Analysis Tools**
 
-   - [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks): Syntax check of each file.
-   - [poetry](https://python-poetry.org/docs/pre-commit-hooks/#usage): Syntax checking and generation of dependency files for Poetry configuration information.
-   - [markdownlint-cli](https://github.com/igorshubovych/markdownlint-cli): Syntax checking of markdown files.
-   - [ruff](https://pypi.org/project/ruff/): Code lint and format for Python.
-   - [mypy](https://pypi.org/project/mypy/): Type checking with type annotations for Python.
+   - [pre-commit-hooks](https://github.com/pre-commit/pre-commit-hooks): Syntax check of each file
+   - [markdownlint-cli](https://github.com/igorshubovych/markdownlint-cli): Syntax checking of markdown files
+   - [ruff](https://pypi.org/project/ruff/): Code linting and formatting for Python
+   - [mypy](https://pypi.org/project/mypy/): Type checking with type annotations for Python
 
-2. Run update pyproject.toml version up script
+2. **Automated Version Management**
 
 > [!NOTE]
-> This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/python-project-sandbox/blob/main/.github/workflows/update-version-and-release.yml).\
-> Please check the workflow for details.
-
-- [update_pyproject_version.py](ci/update_pyproject_version.py)
-
-- example
-
-  ```toml
-  [tool.poetry]
-  name = "python-project-sandbox"
-  version = "0.1.19" # Automatic increase
-  description = "An experimental project to test out various tools."
-  authors = ["7rikaz"]
-  license = "MIT"
-  readme = "README.md"
-  ```
+> Version updates are handled by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/python-project-sandbox/blob/main/.github/workflows/update-version-and-release.yml).
 
 ### Usage
 
 > [!NOTE]
-> If you are creating a pre-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.\
-> Also, pre-commit is applied to staged files. Note that if it is not staged, it will be Skipped.
-> First, please run poetry run pre-commit run --all-files to make sure that the operation is OK.
+> If you are creating a pre-commit script with reference to this project, please ensure that the `.pre-commit-config.yaml` and `pyproject.toml` are set up correctly.
+>
+> Pre-commit is applied to staged files. Note that unstaged files will be skipped.
+>
+> First, run `uv run pre-commit run --all-files` to verify everything works correctly.
 
-Set pre-commit
-
-The following command will create `.git/hooks/pre-commit`.
+**Set up pre-commit:**
 
 ```bash
-poetry run pre-commit install
+# Install dependencies
+uv sync --extra dev
+
+# Install pre-commit hooks
+uv run pre-commit install
 ```
 
-Add all files that have changed
+**Development workflow:**
 
 ```bash
+# Add changed files
 git add -A
-```
 
-git commit
-
-example:
-
-```bash
+# Commit (pre-commit hooks will run automatically)
 git commit -m "feat(search): add fuzzy search to search bar
 
-This commit adds fuzzy search functionality to the search bar component. Fuzzy search allows users to find search results even if they make spelling mistakes or typos. This feature will enhance the user experience and make it easier to find what they are looking for.
+This commit adds fuzzy search functionality to the search bar component.
+Fuzzy search allows users to find search results even with spelling mistakes.
 
 Closes #1234"
 ```
 
-If you want to test locally
+**Test pre-commit locally:**
 
 ```bash
-poetry run pre-commit run --all-files
+uv run pre-commit run --all-files
 ```
 
-## post-commit
+**Alternative using just:**
 
-> [!NOTE]
-> This hook is available, but has been superseded by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/python-project-sandbox/blob/main/.github/workflows/update-version-and-release.yml). Please check the workflow for details.
+```bash
+just pre-commit
+```
 
-### Overview
+## Development Environment Setup
 
-For this project, use .git/hooks/post-commit to reference the version of pyproject.toml and create a git tag. Then push the main branch and tag.
-If you are committing to a project for the first time, create a post-commit script.
+**Quick setup:**
 
-### Usage
+```bash
+# Install dependencies and set up pre-commit
+just setup
+```
 
-> [!NOTE]
-> post-commit depends on the version of the pre-commit script and pyproject.toml.\
-> If you are creating a post-commit script with reference to this project, please make sure that the .pre-commit-config.yaml and pyproject.toml are set up correctly.\
-> First, please run .git/hooks/post-commit to make sure that the operation is OK.
+**Manual setup:**
 
-1. Set create post-commit
+```bash
+# Install dependencies
+uv sync --extra dev
 
-   Execute the following command to create post-commit.
+# Install pre-commit hooks
+uv run pre-commit install
 
-   ```bash
-   cd scripts
-   chmod +x create_post-commit.sh
-   ./create_post-commit.sh
-   ```
+# Verify setup
+just health-check
+```
 
-   > [!NOTE]
-   > If post-commit does not exist, create a new post-commit and add execute permission (chmod +x).
-   > If post-commit exists, create it as post-commit.second.
-   > If you want to use it, merge or rename it to pre-sommit.
-   > Execution privileges are not attached to post-commit.second, so grant them as necessary.
+## Testing
 
-1. After the entire commit process
+**Run tests with coverage:**
 
-   After the entire commit process is complete, refer to [update_pyproject_version.py](ci/update_pyproject_version.py) to update and push the git tag.
+```bash
+just testcov
+```
 
-   ```bash
-   $ git tag
-   v0.1.8
-   v0.1.9 # git add from ["poetry"]["version"]
-   ```
+**Generate comprehensive reports:**
 
-   If you want to test locally
+```bash
+just report-all
+```
 
-   ```bash
-   .git/hooks/post-commit
-   ```
+**Run tests for specific changes:**
+
+```bash
+just testmon
+```
+
+## Code Quality
+
+**Run all quality checks:**
+
+```bash
+just check
+```
+
+**Individual tools:**
+
+```bash
+just lint          # Linting with ruff
+just format        # Code formatting
+just type-check    # Type checking with mypy
+just security-check # Security analysis
+```
+
+## CI/CD
+
+This project uses GitHub Actions for continuous integration and deployment:
+
+- **PR Check**: Runs tests across multiple OS and Python versions
+- **Coverage Reports**: Generates and deploys coverage reports to GitHub Pages
+- **HTML Reports**: Generates and deploys test reports to GitHub Pages
+- **Automated Releases**: Handles version updates and releases
+
+View workflows in [.github/workflows/](.github/workflows/).
