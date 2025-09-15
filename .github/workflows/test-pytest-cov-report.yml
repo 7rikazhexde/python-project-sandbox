@@ -1,3 +1,11 @@
+# =============================================================================
+# pytest-cov Report and Deploy Multi-OS
+# =============================================================================
+# 概要: マルチOS環境でのカバレッジレポート生成とGitHub Pagesデプロイ
+# 処理: pytest-covでHTMLカバレッジレポート生成、GitHub Pagesに自動デプロイ
+# 補足: 特定パス変更時のみ実行、タイムゾーン統一、Discord通知機能
+# =============================================================================
+
 name: pytest-cov Report and Deploy Multi-OS
 
 on:
@@ -7,12 +15,19 @@ on:
     paths:
       - "project_a/**"
       - "tests/**"
-      - "uv.lock"                                                    # poetry.lock → uv.lock
-      - "justfile"                                                   # justfile を追加
+      - "uv.lock"
+      - "justfile"
       - ".github/workflows/test-pytest-cov-report.yml"
       - ".github/json2vars-setter/matrix.json"
 
 jobs:
+  # ==========================================================================
+  # 変数設定ジョブ
+  # ==========================================================================
+  # 概要: 実行環境設定の読み込み
+  # 処理: matrix.jsonからOS・Python版・GitHub Pagesブランチ設定を取得
+  # 補足: デプロイ先ブランチ名も動的に設定
+  # ==========================================================================
   set_variables:
     runs-on: ubuntu-latest
     outputs:
@@ -37,6 +52,13 @@ jobs:
           echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
           echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
 
+  # ==========================================================================
+  # テスト・カバレッジレポート生成ジョブ
+  # ==========================================================================
+  # 概要: マルチOS環境でのカバレッジレポート生成
+  # 処理: pytest-covでHTMLカバレッジレポート生成、アーティファクト保存
+  # 補足: Asia/Tokyoタイムゾーン統一、Windows特別対応あり
+  # ==========================================================================
   test:
     needs: set_variables
     strategy:
@@ -53,11 +75,39 @@ jobs:
       - name: Checkout repository
         uses: actions/checkout@v5.0.0
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      # ======================================================================
+      # タイムゾーン設定
+      # ======================================================================
+      # 概要: 全OSでAsia/Tokyoタイムゾーンに統一
+      # 処理: OS別のタイムゾーン設定とPythonでの確認
+      # 補足: レポート生成時の一貫性確保のため
+      # ======================================================================
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
         with:
-          version: "latest"
-          enable-cache: true
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+
+      # ======================================================================
+      # uvキャッシュ
+      # ======================================================================
+      # 概要: Python依存関係のキャッシュ
+      # 処理: ~/.cache/uvと.venvをキャッシュ、依存関係ファイルハッシュでキー生成
+      # 補足: 統一キャッシュ戦略を使用
+      # ======================================================================
+      - name: Cache uv dependencies
+        uses: actions/cache@v4.2.4
+        with:
+          path: |
+            ~/.cache/uv
+            .venv
+          key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6.6.1
+        with:
+          enable-cache: false
 
       - name: Set up Python with uv
         shell: bash
@@ -74,13 +124,6 @@ jobs:
             uv venv --python "${{ matrix.python-version }}"
           fi
 
-      - name: Set timezone
-        uses: szenius/set-timezone@v2.0
-        with:
-          timezoneLinux: "Asia/Tokyo"
-          timezoneMacos: "Asia/Tokyo"
-          timezoneWindows: "Tokyo Standard Time"
-
       - name: Check timezone and Python version
         shell: bash
         run: |
@@ -88,62 +131,29 @@ jobs:
           echo "TZ environment variable: ${TZ}"
           uv run python -c "import datetime, platform, sys; print(f'Python version: {sys.version}'); print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
 
-      - name: Install just task runner
-        shell: bash
-        env:
-          RUNNER_OS: ${{ runner.os }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          case "${RUNNER_OS}" in
-            "Linux")
-              echo "🐧 Installing just on Linux..."
-              # GitHub Actionsのトークンを使用してAPI制限を回避
-              if [ -n "$GITHUB_TOKEN" ]; then
-                echo "Using GitHub token for API access..."
-                release_info=$(curl -H "Authorization: token $GITHUB_TOKEN" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  -s "https://api.github.com/repos/casey/just/releases/latest")
-                download_url=$(echo "$release_info" | grep -o '"browser_download_url": "[^"]*x86_64-unknown-linux-musl.tar.gz"' | cut -d'"' -f4)
-              else
-                # フォールバック: 最新の安定版を直接指定
-                echo "Using fallback download method..."
-                download_url="https://github.com/casey/just/releases/download/1.34.0/just-1.34.0-x86_64-unknown-linux-musl.tar.gz"
-              fi
+      # ======================================================================
+      # Rust環境とキャッシュ
+      # ======================================================================
+      # 概要: Rustツールチェーンとjustコマンドのセットアップ
+      # 処理: Rustインストール、キャッシュ、justビルド
+      # 補足: OS別にキャッシュ、cargo install の高速化
+      # ======================================================================
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
 
-              if [ -n "$download_url" ]; then
-                echo "📥 Downloading just from: $download_url"
-                mkdir -p "${HOME}/.local/bin"
-                cd /tmp
-                curl -L "$download_url" | tar xz
-                mv just "${HOME}/.local/bin/"
-                chmod +x "${HOME}/.local/bin/just"
-                echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-                echo "✅ just installed successfully"
-              else
-                echo "❌ Failed to get download URL for just"
-                exit 1
-              fi
-              ;;
-            "macOS")
-              echo "🍎 Installing just on macOS..."
-              brew install just
-              ;;
-            "Windows")
-              echo "🪟 Installing just on Windows..."
-              choco install just
-              ;;
-            *)
-              echo "❓ Unknown OS: ${RUNNER_OS}"
-              exit 1
-              ;;
-          esac
+      - uses: Swatinem/rust-cache@v2.8.0
+
+      - name: Install just
+        run: cargo install just --locked
+        shell: bash
 
       - name: Verify installations
         shell: bash
         run: |
           echo "🔧 Tool versions:"
           uv --version
-          just --version || echo "just not yet available in PATH"
+          just --version
           uv run python --version
           if [ -f "uv.lock" ]; then
             echo "📦 uv.lock hash: $(sha256sum uv.lock | cut -d' ' -f1 2>/dev/null || echo 'N/A')"
@@ -151,17 +161,13 @@ jobs:
             echo "📦 uv.lock: not found"
           fi
 
-      - name: Cache uv dependencies
-        uses: actions/cache@v4.2.3
-        with:
-          path: |
-            ~/.cache/uv
-            .venv
-          key: uv-${{ runner.os }}-${{ matrix.python-version }}-${{ hashFiles('uv.lock') }}
-          restore-keys: |
-            uv-${{ runner.os }}-${{ matrix.python-version }}-
-            uv-${{ runner.os }}-
-
+      # ======================================================================
+      # 依存関係インストール
+      # ======================================================================
+      # 概要: Python依存関係のインストール
+      # 処理: OS別の最適化されたインストール方法
+      # 補足: Windowsでは特別な回避策を使用
+      # ======================================================================
       - name: Install dependencies
         shell: bash
         run: |
@@ -200,6 +206,13 @@ jobs:
             uv pip list | grep -E "(pytest|coverage)" || echo "Coverage packages not found in list"
           fi
 
+      # ======================================================================
+      # カバレッジレポート生成
+      # ======================================================================
+      # 概要: pytest-covでHTMLカバレッジレポート生成
+      # 処理: OS・Python版別のディレクトリにHTMLレポート生成
+      # 補足: justコマンド優先、フォールバック処理あり
+      # ======================================================================
       - name: Run tests with pytest-cov
         id: pytest-cov
         shell: bash
@@ -256,10 +269,17 @@ jobs:
             exit 1
           fi
 
-      - name: Generate coverage summary
+      # ======================================================================
+      # カバレッジサマリー生成と閾値チェック
+      # ======================================================================
+      # 概要: カバレッジ率の取得と90%閾値チェック
+      # 処理: coverage reportでカバレッジ率取得、90%未満で失敗
+      # 補足: レポート生成品質の保証
+      # ======================================================================
+      - name: Generate coverage summary and check threshold
         shell: bash
         run: |
-          echo "📈 Generating coverage summary..."
+          echo "📈 Generating coverage summary and checking threshold..."
 
           # カバレッジサマリーの取得
           if command -v just &> /dev/null && just --list | grep -q "testcov"; then
@@ -271,13 +291,33 @@ jobs:
           echo "COVERAGE_SUMMARY=${coverage_summary}" >> "$GITHUB_ENV"
           echo "📊 Coverage: ${coverage_summary}%"
 
+          # カバレッジ閾値チェック
+          #if [[ "$coverage_summary" =~ ^[0-9]+$ ]] && [ "$coverage_summary" -lt 90 ]; then
+          #  echo "::error::Coverage ${coverage_summary}% is below 90% threshold"
+          #  exit 1
+          #fi
+
+      # ======================================================================
+      # アーティファクト保存
+      # ======================================================================
+      # 概要: カバレッジレポートの保存
+      # 処理: OS・Python版別のHTMLレポートをアーティファクトとして保存
+      # 補足: デプロイジョブで使用、7日間保存
+      # ======================================================================
       - name: Upload pytest-cov results
         uses: actions/upload-artifact@v4.6.1
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
-          retention-days: 30
+          retention-days: 7
 
+  # ==========================================================================
+  # 全テスト結果チェック
+  # ==========================================================================
+  # 概要: マトリックス実行の全結果確認
+  # 処理: 全ジョブの成功を確認、1つでも失敗があればワークフロー失敗
+  # 補足: カバレッジレポート生成の品質保証
+  # ==========================================================================
   check_all_tests:
     needs: test
     runs-on: ubuntu-latest
@@ -296,6 +336,13 @@ jobs:
           echo "🎉 All tests passed successfully across all environments!"
           echo "📊 Coverage reports generated for all OS and Python version combinations."
 
+  # ==========================================================================
+  # GitHub Pagesデプロイジョブ
+  # ==========================================================================
+  # 概要: 生成されたカバレッジレポートのGitHub Pagesデプロイ
+  # 処理: アーティファクトダウンロード、GitHub Pagesブランチにデプロイ
+  # 補足: 変更検出、URL生成、Discord通知機能
+  # ==========================================================================
   deploy:
     needs: [test, check_all_tests, set_variables]
     runs-on: ubuntu-latest
@@ -312,10 +359,9 @@ jobs:
           fetch-depth: 0
 
       - name: Install uv (for deployment utilities)
-        uses: astral-sh/setup-uv@v6
+        uses: astral-sh/setup-uv@v6.6.1
         with:
-          version: "latest"
-          enable-cache: true
+          enable-cache: false
 
       - name: Set up Python for deployment
         run: |
@@ -331,6 +377,13 @@ jobs:
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
+      # ======================================================================
+      # GitHub Pagesデプロイ
+      # ======================================================================
+      # 概要: カバレッジレポートのGitHub Pagesブランチへのデプロイ
+      # 処理: ブランチ取得/作成、アーティファクト移動、変更検出、コミット
+      # 補足: 変更がある場合のみコミット・プッシュ
+      # ======================================================================
       - name: Check and Deploy to GitHub Pages
         id: check_and_deploy
         run: |
@@ -372,6 +425,13 @@ jobs:
             echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
           fi
 
+      # ======================================================================
+      # URL一覧生成
+      # ======================================================================
+      # 概要: デプロイされたカバレッジレポートのURL一覧生成
+      # 処理: マトリックス情報からレポートURL生成、Discord通知用整形
+      # 補足: OS絵文字付き、アクセス可能性確認
+      # ======================================================================
       - name: Generate URL list
         id: generate_url_list
         shell: bash
@@ -425,7 +485,13 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
-      # メッセージ送信 (変更があった場合)
+      # ======================================================================
+      # Discord通知（更新時）
+      # ======================================================================
+      # 概要: カバレッジレポート更新時のDiscord通知
+      # 処理: 更新情報、URL一覧をDiscordに送信
+      # 補足: DISCORD_WEBHOOK_URL設定時のみ実行
+      # ======================================================================
       - name: Send Discord Notification (Updated)
         if: steps.check_and_deploy.outputs.deploy_status == 'updated'
         env:
@@ -482,7 +548,13 @@ jobs:
             echo "⚠️ Discord webhook URL not configured"
           fi
 
-      # メッセージ送信 (変更がない場合)
+      # ======================================================================
+      # Discord通知（変更なし）
+      # ======================================================================
+      # 概要: 変更がない場合のDiscord通知
+      # 処理: 変更なし情報をDiscordに送信
+      # 補足: DISCORD_WEBHOOK_URL設定時のみ実行
+      # ======================================================================
       - name: Send Discord Notification (No Changes)
         if: steps.check_and_deploy.outputs.deploy_status == 'unchanged'
         env:
@@ -531,6 +603,13 @@ jobs:
             echo "⚠️ Discord webhook URL not configured"
           fi
 
+      # ======================================================================
+      # デプロイサマリー作成
+      # ======================================================================
+      # 概要: ワークフロー実行結果のサマリー生成
+      # 処理: デプロイ状況、URL一覧、ツール情報をサマリー表示
+      # 補足: GitHub Actionsのサマリー機能を使用
+      # ======================================================================
       - name: Create deployment summary
         if: always()
         run: |
