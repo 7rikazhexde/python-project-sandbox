@@ -102,14 +102,13 @@ This project uses [just](https://github.com/casey/just) as a task runner for com
 Install just:
 
 ```bash
-# On macOS
-brew install just
+# Using cargo (recommended - consistent with CI/CD)
+cargo install just --locked
 
-# On Linux
-curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
-
-# On Windows
-choco install just
+# Alternative platform-specific methods:
+# macOS: brew install just
+# Linux: curl --proto '=https' --tlsv1.2 -sSf https://just.systems/install.sh | bash -s -- --to ~/.local/bin
+# Windows: choco install just
 ```
 
 ### Available Commands
