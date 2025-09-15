@@ -50,11 +50,19 @@ jobs:
         with:
           python-version: ${{ matrix.python-version }}
 
-      - name: Install uv
+      - name: Install uv with smart caching
         uses: astral-sh/setup-uv@v6.6.1
         with:
           version: "latest"
           enable-cache: true
+          # 依存関係ファイルのハッシュベースでキャッシュキーを生成
+          # こうすることで依存関係が変わった時のみ新しいキャッシュを作成
+          cache-suffix: ${{ hashFiles('**/pyproject.toml', '**/uv.lock', '**/requirements*.txt') }}
+          cache-dependency-glob: |
+            **/pyproject.toml
+            **/uv.lock
+            **/requirements*.txt
+            justfile
 
       - name: Install dependencies
         shell: bash
@@ -66,6 +74,9 @@ jobs:
           toolchain: stable
 
       - uses: Swatinem/rust-cache@v2.8.0
+        with:
+          # Rustツールチェーンとプロジェクトファイルのハッシュでキャッシュ
+          shared-key: ${{ runner.os }}-${{ hashFiles('justfile') }}
 
       - name: Install just
         run: cargo install just --locked
@@ -143,7 +154,7 @@ jobs:
             htmlcov/
             pytest.xml
             pytest-coverage.txt
-          retention-days: 30
+          retention-days: 7
 
   check_all_tests:
     needs: test
