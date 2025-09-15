@@ -1,15 +1,12 @@
-name: Version Update and Release
+# =============================================================================
+# Version Update and Release Workflow
+# =============================================================================
+# 概要: バージョン更新とGitHubリリースの自動作成
+# 処理: pyproject.tomlバージョン更新、タグ作成、チェンジログ生成、リリース作成
+# 補足: 手動実行のみ、patch/minor/major選択可能
+# =============================================================================
 
-# Workflow Process Flow:
-# 1. Trigger Conditions:
-#    - Manual execution (workflow_dispatch)
-# 2. Environment Setup (Ubuntu, Python, uv)
-# 3. Retrieve the current version from pyproject.toml
-# 4. Update to the new version (patch, minor, or major) using uv
-# 5. Commit and push the changes
-# 6. Create and push a new tag
-# 7. Generate the changelog
-# 8. Create a GitHub release
+name: Version Update and Release
 
 on:
   workflow_dispatch:
@@ -25,6 +22,13 @@ on:
         - major
 
 jobs:
+  # ==========================================================================
+  # バージョン更新・リリースジョブ
+  # ==========================================================================
+  # 概要: セマンティックバージョニングによるバージョン更新とリリース
+  # 処理: バージョン計算、pyproject.toml更新、タグ作成、リリース作成
+  # 補足: tomlkitとpackagingライブラリを使用した自動バージョン管理
+  # ==========================================================================
   update-version-and-release:
     runs-on: ubuntu-latest
     steps:
@@ -34,11 +38,25 @@ jobs:
           fetch-depth: 0
           token: ${{ secrets.PAT_FOR_PUSHES }}
 
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+      # ======================================================================
+      # uvキャッシュ
+      # ======================================================================
+      # 概要: Python依存関係のキャッシュ
+      # 処理: ~/.cache/uvと.venvをキャッシュ、依存関係ファイルハッシュでキー生成
+      # 補足: 統一キャッシュ戦略を使用
+      # ======================================================================
+      - name: Cache uv dependencies
+        uses: actions/cache@v4.2.4
         with:
-          version: "latest"
-          enable-cache: true
+          path: |
+            ~/.cache/uv
+            .venv
+          key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6.6.1
+        with:
+          enable-cache: false
 
       - name: Set up Python with uv
         run: |
@@ -46,6 +64,13 @@ jobs:
           uv python install 3.12
           uv python pin 3.12
 
+      # ======================================================================
+      # バージョン管理ツールインストール
+      # ======================================================================
+      # 概要: pyproject.tomlバージョン管理に必要なライブラリインストール
+      # 処理: tomlkit、packagingライブラリの追加と依存関係同期
+      # 補足: バージョン計算とTOML操作に使用
+      # ======================================================================
       - name: Install version management tool
         run: |
           echo "📦 Installing version management dependencies..."
@@ -59,6 +84,13 @@ jobs:
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
 
+      # ======================================================================
+      # 現在バージョン取得
+      # ======================================================================
+      # 概要: pyproject.tomlから現在のバージョンを取得
+      # 処理: tomlkitでpyproject.tomlを解析、バージョン情報を抽出
+      # 補足: 次のバージョン計算の基準として使用
+      # ======================================================================
       - name: Get current version
         id: current_version
         run: |
@@ -72,6 +104,13 @@ jobs:
           echo "Current version: $current_version"
           echo "version=$current_version" >> "$GITHUB_OUTPUT"
 
+      # ======================================================================
+      # 新バージョン計算
+      # ======================================================================
+      # 概要: セマンティックバージョニングによる新バージョン計算
+      # 処理: 現在バージョンと更新タイプから新バージョンを算出
+      # 補足: packaging.versionを使用した正確なバージョン管理
+      # ======================================================================
       - name: Calculate new version
         id: new_version
         run: |
@@ -99,6 +138,13 @@ jobs:
           echo "New version: $new_version"
           echo "version=$new_version" >> "$GITHUB_OUTPUT"
 
+      # ======================================================================
+      # pyproject.tomlバージョン更新
+      # ======================================================================
+      # 概要: pyproject.tomlファイルのバージョン情報更新
+      # 処理: tomlkitでTOMLファイルを操作、新バージョンを設定
+      # 補足: TOML形式とコメントを保持して更新
+      # ======================================================================
       - name: Update version in pyproject.toml
         run: |
           echo "📝 Updating version in pyproject.toml..."
@@ -132,6 +178,13 @@ jobs:
           uv lock
           echo "✅ uv.lock updated"
 
+      # ======================================================================
+      # 変更のコミット・プッシュ
+      # ======================================================================
+      # 概要: バージョン更新をGitリポジトリにコミット・プッシュ
+      # 処理: pyproject.tomlとuv.lockの変更をコミット、リモートにプッシュ
+      # 補足: 変更がない場合はスキップ
+      # ======================================================================
       - name: Commit and push changes
         run: |
           echo "📤 Committing and pushing changes..."
@@ -146,6 +199,13 @@ jobs:
             echo "✅ Changes committed and pushed"
           fi
 
+      # ======================================================================
+      # タグ作成・プッシュ
+      # ======================================================================
+      # 概要: 新バージョンのGitタグ作成とプッシュ
+      # 処理: v{version}形式のタグを作成、リモートにプッシュ
+      # 補足: リリース作成の前提条件
+      # ======================================================================
       - name: Create and push new tag
         run: |
           echo "🏷️ Creating and pushing tag..."
@@ -153,6 +213,13 @@ jobs:
           git push --tags
           echo "✅ Tag v${{ steps.new_version.outputs.version }} created and pushed"
 
+      # ======================================================================
+      # チェンジログ生成
+      # ======================================================================
+      # 概要: 前バージョンから現在までの変更履歴生成
+      # 処理: git logでコミット履歴を取得、チェンジログ形式で整形
+      # 補足: リリースノートに使用
+      # ======================================================================
       - name: Generate changelog
         id: changelog
         run: |
@@ -180,6 +247,13 @@ jobs:
             echo "EOF"
           } >> "$GITHUB_OUTPUT"
 
+      # ======================================================================
+      # GitHubリリース作成
+      # ======================================================================
+      # 概要: GitHubリリースの自動作成
+      # 処理: softprops/action-gh-releaseでリリース作成、詳細情報を設定
+      # 補足: タグ、チェンジログ、バージョン情報を含む
+      # ======================================================================
       - name: Create Release
         uses: softprops/action-gh-release@v2.3.3
         with:
@@ -209,6 +283,13 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
 
+      # ======================================================================
+      # サマリー作成
+      # ======================================================================
+      # 概要: ワークフロー実行結果のサマリー生成
+      # 処理: バージョン情報、実行アクション、リンクをサマリー表示
+      # 補足: GitHub Actionsのサマリー機能を使用
+      # ======================================================================
       - name: Create summary
         run: |
           {

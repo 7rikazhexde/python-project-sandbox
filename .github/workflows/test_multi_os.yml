@@ -1,3 +1,11 @@
+# =============================================================================
+# Test Multi-OS Workflow
+# =============================================================================
+# 概要: メインブランチへのプッシュ時のマルチOS・マルチPythonテスト実行
+# 処理: テスト実行、カバレッジ測定、READMEの自動更新、カバレッジブランチへの結果保存
+# 補足: 特定パス変更時のみ実行、手動実行可能、キャッシュ統一により高速化
+# =============================================================================
+
 name: Test Multi-OS
 
 on:
@@ -13,6 +21,13 @@ on:
   workflow_dispatch:
 
 jobs:
+  # ==========================================================================
+  # 変数設定ジョブ
+  # ==========================================================================
+  # 概要: 実行環境設定の読み込み
+  # 処理: matrix.jsonからOS・Python版設定を取得
+  # 補足: バージョンアップとskip ciメッセージを除外
+  # ==========================================================================
   set_variables:
     if: ( !startsWith(github.event.head_commit.message, 'Bump version') && !startsWith(github.event.head_commit.message, '[skip ci]') )
     runs-on: ubuntu-latest
@@ -38,6 +53,13 @@ jobs:
           echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
           echo "ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}"
 
+  # ==========================================================================
+  # ファイル存在確認ジョブ
+  # ==========================================================================
+  # 概要: 特定ファイルの存在確認
+  # 処理: ton_whales_staking_dashboard.pyの存在をチェック
+  # 補足: README生成時の除外ファイル表示制御に使用
+  # ==========================================================================
   check_file:
     needs: set_variables
     runs-on: ubuntu-latest
@@ -54,6 +76,13 @@ jobs:
             echo "file_exists=false" >> "$GITHUB_OUTPUT"
           fi
 
+  # ==========================================================================
+  # メインテストジョブ
+  # ==========================================================================
+  # 概要: クロスプラットフォーム・クロスバージョンテスト
+  # 処理: 3OS × 3Python版でテスト実行、タイムゾーン設定、カバレッジ測定
+  # 補足: マトリックス戦略により9つの組み合わせで並列実行、Asia/Tokyo固定
+  # ==========================================================================
   test:
     needs: [set_variables, check_file]
     strategy:
@@ -68,86 +97,114 @@ jobs:
       pull-requests: write
     steps:
       - uses: actions/checkout@v5.0.0
+
       - name: Set up Python
         uses: actions/setup-python@v6
         with:
           python-version: ${{matrix.python-version}}
+
+      # ======================================================================
+      # タイムゾーン設定
+      # ======================================================================
+      # 概要: 全OSでAsia/Tokyoタイムゾーンに統一
+      # 処理: OS別のタイムゾーン設定とPythonでの確認
+      # 補足: テスト結果の一貫性確保のため
+      # ======================================================================
       - name: Set timezone
         uses: szenius/set-timezone@v2.0
         with:
           timezoneLinux: "Asia/Tokyo"
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
+
       - name: Check timezone
         shell: bash
         run: |
           echo "System date: $(date)"
           echo "TZ environment variable: ${TZ}"
           python -c "import datetime, platform; print(f'Python timezone: {datetime.datetime.now().astimezone().tzinfo}'); print(f'OS: {platform.system()}')"
-      - name: Install uv
-        uses: astral-sh/setup-uv@v6
+
+      # ======================================================================
+      # uvキャッシュ
+      # ======================================================================
+      # 概要: Python依存関係のキャッシュ
+      # 処理: ~/.cache/uvと.venvをキャッシュ、依存関係ファイルハッシュでキー生成
+      # 補足: 全OS・Python版で統一キャッシュを使用
+      # ======================================================================
+      - name: Cache uv dependencies
+        uses: actions/cache@v4.2.4
         with:
-          version: "latest"
-          enable-cache: true
+          path: |
+            ~/.cache/uv
+            .venv
+          key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
-      - name: Install just task runner
-        shell: bash
-        env:
-          RUNNER_OS: ${{ runner.os }}
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          case "${RUNNER_OS}" in
-            "Linux")
-              echo "🐧 Installing just on Linux..."
-              # GitHub Actionsのトークンを使用してAPI制限を回避
-              if [ -n "$GITHUB_TOKEN" ]; then
-                echo "Using GitHub token for API access..."
-                release_info=$(curl -H "Authorization: token $GITHUB_TOKEN" \
-                  -H "Accept: application/vnd.github.v3+json" \
-                  -s "https://api.github.com/repos/casey/just/releases/latest")
-                download_url=$(echo "$release_info" | grep -o '"browser_download_url": "[^"]*x86_64-unknown-linux-musl.tar.gz"' | cut -d'"' -f4)
-              else
-                # フォールバック: 最新の安定版を直接指定
-                echo "Using fallback download method..."
-                download_url="https://github.com/casey/just/releases/download/1.34.0/just-1.34.0-x86_64-unknown-linux-musl.tar.gz"
-              fi
-
-              if [ -n "$download_url" ]; then
-                echo "📥 Downloading just from: $download_url"
-                mkdir -p "${HOME}/.local/bin"
-                cd /tmp
-                curl -L "$download_url" | tar xz
-                mv just "${HOME}/.local/bin/"
-                chmod +x "${HOME}/.local/bin/just"
-                echo "${HOME}/.local/bin" >> "${GITHUB_PATH}"
-                echo "✅ just installed successfully"
-              else
-                echo "❌ Failed to get download URL for just"
-                exit 1
-              fi
-              ;;
-            "macOS")
-              echo "🍎 Installing just on macOS..."
-              brew install just
-              ;;
-            "Windows")
-              echo "🪟 Installing just on Windows..."
-              choco install just
-              ;;
-            *)
-              echo "❓ Unknown OS: ${RUNNER_OS}"
-              exit 1
-              ;;
-          esac
+      - name: Install uv
+        uses: astral-sh/setup-uv@v6.6.1
+        with:
+          enable-cache: false
 
       - name: install dependencies
         run: uv sync --extra dev
 
+      # ======================================================================
+      # Rust環境とキャッシュ
+      # ======================================================================
+      # 概要: Rustツールチェーンとjustコマンドのセットアップ
+      # 処理: Rustインストール、キャッシュ、justビルド
+      # 補足: OS別にキャッシュ、cargo install の高速化
+      # ======================================================================
+      - uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: stable
+
+      - uses: Swatinem/rust-cache@v2.8.0
+
+      - name: Install just
+        run: cargo install just --locked
+        shell: bash
+
+      - name: Verify just
+        run: just --version
+        shell: bash
+
+      # ======================================================================
+      # テスト実行
+      # ======================================================================
+      # 概要: テスト実行とカバレッジ測定
+      # 処理: justコマンドでCI用テスト実行（XML出力付き）
+      # 補足: カバレッジレポートを複数形式で生成
+      # ======================================================================
       - name: Run test
         id: pytest
         shell: bash
-        #continue-on-error: true
         run: just test-ci-xml
+
+      # ======================================================================
+      # カバレッジ閾値チェック
+      # ======================================================================
+      # 概要: カバレッジ90%閾値の強制
+      # 処理: coverage reportでカバレッジ率を取得し90%未満で失敗
+      # 補足: このチェックに失敗するとワークフロー全体が失敗
+      # ======================================================================
+      #- name: Check coverage threshold
+      #  shell: bash
+      #  run: |
+      #    COVERAGE=$(uv run coverage report --format=total)
+      #    echo "Coverage: ${COVERAGE}%"
+      #    echo "COVERAGE=${COVERAGE}" >> "$GITHUB_ENV"
+      #    if [ "${COVERAGE}" -lt 90 ]; then
+      #      echo "::error::Coverage ${COVERAGE}% is below 90% threshold"
+      #      exit 1
+      #    fi
+
+      # ======================================================================
+      # カバレッジコメント生成
+      # ======================================================================
+      # 概要: カバレッジレポートの生成
+      # 処理: MishaKav/pytest-coverage-commentでレポート生成
+      # 補足: コメント投稿は無効、レポートデータのみ生成
+      # ======================================================================
       - name: Pytest coverage comment
         id: coverageComment
         uses: MishaKav/pytest-coverage-comment@v1.1.57
@@ -165,14 +222,24 @@ jobs:
           junitxml-path: ./pytest.xml
           junitxml-title: "Pytest Result Summary (os: ${{ matrix.os }} / python-version: ${{ matrix.python-version }})"
           github-token: ${{ secrets.GITHUB_TOKEN }}
+
       - name: Check test results
         if: steps.pytest.outcome == 'failure'
         run: |
           echo "Tests failed. This will prevent merging the pull request."
           exit 1
+
       - name: Save summary report
         run: |
           echo '${{ steps.coverageComment.outputs.summaryReport }}' > summary-report.md
+
+      # ======================================================================
+      # アーティファクト保存
+      # ======================================================================
+      # 概要: テスト結果の保存
+      # 処理: カバレッジレポート、HTMLレポート、JUnitXML、サマリーレポートを保存
+      # 補足: マトリックス毎に個別保存、README生成で使用
+      # ======================================================================
       - name: Upload coverage data
         uses: actions/upload-artifact@v4.6.1
         with:
@@ -183,6 +250,13 @@ jobs:
             pytest.xml
             summary-report.md
 
+  # ==========================================================================
+  # README更新ジョブ
+  # ==========================================================================
+  # 概要: カバレッジブランチのREADME自動生成・更新
+  # 処理: 全マトリックス結果を統合してREADME生成、coverageブランチにプッシュ
+  # 補足: 孤立ブランチとして管理、ファイル存在確認結果を反映
+  # ==========================================================================
   update_readme:
     needs: [set_variables, check_file, test]
     runs-on: ubuntu-latest
@@ -193,8 +267,10 @@ jobs:
       - uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
+
       - name: Download all artifacts
         uses: actions/download-artifact@v5.0.0
+
       - name: Update README in coverage branch
         run: |
           # GitHub Actionsの変数形式で設定
@@ -267,6 +343,7 @@ jobs:
             s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
             s|/blob/\([a-f0-9]*\)/project_a/README\.md|/blob/\1/README.md|g
           ' README.md
+
       - name: Commit and push
         run: |
           # Gitのユーザー設定とコミット、ブランチへのプッシュ
@@ -276,6 +353,13 @@ jobs:
           git commit -m "Update coverage for all environments"
           git push origin coverage
 
+  # ==========================================================================
+  # 全テスト結果チェック
+  # ==========================================================================
+  # 概要: マトリックス実行の全結果確認
+  # 処理: 全ジョブの成功を確認、1つでも失敗があればワークフロー失敗
+  # 補足: README更新完了後の最終チェック
+  # ==========================================================================
   check_all_tests:
     needs: [set_variables, check_file, test, update_readme]
     runs-on: ubuntu-latest
