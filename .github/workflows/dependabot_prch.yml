@@ -142,7 +142,7 @@ jobs:
           fi
 
           if [ ! -f "pytest.xml" ]; then
-            uv run pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
+            uv run python -m pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
           fi
 
       # ======================================================================
