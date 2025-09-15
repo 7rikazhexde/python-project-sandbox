@@ -4,13 +4,13 @@ default:
 
 # テスト関連コマンド
 test-coverage-verbose:
-    uv run pytest -s -vv --cov=. --cov-branch --cov-report term-missing --cov-report html
+    uv run python -m pytest -s -vv --cov=. --cov-branch --cov-report term-missing --cov-report html
 
 test-html-report:
-    uv run pytest --html=htmlcov/report_page.html --self-contained-html --css=css/style.css --capture=no project_a tests/
+    uv run python -m pytest --html=htmlcov/report_page.html --self-contained-html --css=css/style.css --capture=no project_a tests/
 
 test-html-report-custom htmldir="htmlcov":
-    uv run pytest --html={{htmldir}}/report_page.html --self-contained-html --css=css/style.css --capture=no project_a tests/
+    uv run python -m pytest --html={{htmldir}}/report_page.html --self-contained-html --css=css/style.css --capture=no project_a tests/
 
 test-ci-xml:
     uv run python scripts/run_tests.py --report xml
@@ -19,19 +19,19 @@ test-ci-term:
     uv run python scripts/run_tests.py --report term
 
 test-testmon:
-    uv run pytest --testmon
+    uv run python -m pytest --testmon
 
 test-coverage:
-    uv run pytest --cov=. --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
+    uv run python -m pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
 
 # カスタムHTMLディレクトリを指定可能なカバレッジテスト
 test-coverage-custom htmldir="htmlcov":
-    uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report="html:{{htmldir}}" --cov-report=xml project_a tests/
+    uv run python -m pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report="html:{{htmldir}}" --cov-report=xml project_a tests/
 
 # CI/CD用の包括的なテストコマンド
 test-ci-full:
     @echo "🧪 Running comprehensive CI tests..."
-    uv run pytest --junitxml=pytest.xml --cov=project_a --cov-report=xml:coverage.xml --cov-report=term-missing project_a tests/ | tee pytest-coverage.txt
+    uv run python -m pytest --junitxml=pytest.xml --cov=project_a --cov-report=xml:coverage.xml --cov-report=term-missing project_a tests/ | tee pytest-coverage.txt
     @echo "✅ CI tests completed successfully"
 
 # 短縮エイリアス
@@ -133,7 +133,7 @@ lint-all: lint lint-workflows lint-shell lint-markdown
 report-all:
     @echo "📊 Generating comprehensive test reports..."
     rm -rf htmlcov/ pytest.xml coverage.xml pytest-coverage.txt || true
-    uv run pytest --cov=project_a --cov-branch --cov-report=html --cov-report=xml --cov-report=term-missing --html=htmlcov/test_report.html --self-contained-html --css=css/style.css --junitxml=pytest.xml project_a tests/ | tee pytest-coverage.txt
+    uv run python -m pytest --cov=project_a --cov-branch --cov-report=html --cov-report=xml --cov-report=term-missing --html=htmlcov/test_report.html --self-contained-html --css=css/style.css --junitxml=pytest.xml project_a tests/ | tee pytest-coverage.txt
     @echo ""
     @echo "📁 Reports generated:"
     @echo "  📈 Coverage HTML: htmlcov/index.html"
@@ -150,7 +150,7 @@ report-all:
 test-performance:
     @echo "⚡ Running performance tests..."
     @if uv pip list | grep -q pytest-benchmark; then \
-        uv run pytest --benchmark-only project_a tests/; \
+        uv run python -m pytest --benchmark-only project_a tests/; \
     else \
         echo "ℹ️ pytest-benchmark not installed. Skipping performance tests."; \
         echo "   Install with: uv add --dev pytest-benchmark"; \

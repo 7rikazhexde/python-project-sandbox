@@ -91,6 +91,7 @@ jobs:
       - name: Install dependencies
         shell: bash
         run: |
+          uv venv .venv --python python
           uv sync --extra dev
 
       # ======================================================================
@@ -128,7 +129,7 @@ jobs:
           if command -v just >/dev/null 2>&1; then
             just testcov
           else
-            uv run pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
+            uv run python -m pytest --cov=project_a --cov-branch --cov-report=term-missing --cov-report=html --cov-report=xml project_a tests/
           fi
 
       - name: Generate required reports
@@ -141,7 +142,7 @@ jobs:
           fi
 
           if [ ! -f "pytest.xml" ]; then
-            uv run pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
+            uv run python -m pytest --junitxml=pytest.xml project_a tests/ --tb=no -q
           fi
 
       # ======================================================================
