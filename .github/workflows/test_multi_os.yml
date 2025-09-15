@@ -181,7 +181,7 @@ jobs:
       - name: Run test
         id: pytest
         shell: bash
-        run: just test-ci-xml
+        run: just test-ci-full
 
       # ======================================================================
       # カバレッジ閾値チェック
