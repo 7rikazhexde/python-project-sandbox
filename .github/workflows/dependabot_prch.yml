@@ -76,7 +76,7 @@ jobs:
       # 補足: 依存関係更新時は自動的に新しいキャッシュが作成される
       # ======================================================================
       - name: Cache uv dependencies
-        uses: actions/cache@v4.2.4
+        uses: actions/cache@v4.3.0
         with:
           path: |
             ~/.cache/uv
