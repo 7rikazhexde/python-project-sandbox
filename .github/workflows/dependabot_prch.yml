@@ -84,7 +84,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.1.1
+        uses: astral-sh/setup-uv@v7.1.2
         with:
           enable-cache: false
 
@@ -208,7 +208,7 @@ jobs:
       # 補足: 7日間保存、Dependabot専用の命名規則
       # ======================================================================
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         if: always()
         with:
           name: dependabot-coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}

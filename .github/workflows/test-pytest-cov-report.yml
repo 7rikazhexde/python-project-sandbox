@@ -105,7 +105,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.1.1
+        uses: astral-sh/setup-uv@v7.1.2
         with:
           enable-cache: false
 
@@ -235,7 +235,7 @@ jobs:
       # 補足: デプロイジョブで使用、7日間保存
       # ======================================================================
       - name: Upload pytest-cov results
-        uses: actions/upload-artifact@v4.6.1
+        uses: actions/upload-artifact@v5
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
@@ -289,7 +289,7 @@ jobs:
           fetch-depth: 0
 
       - name: Install uv (for deployment utilities)
-        uses: astral-sh/setup-uv@v7.1.1
+        uses: astral-sh/setup-uv@v7.1.2
         with:
           enable-cache: false
 
@@ -299,7 +299,7 @@ jobs:
           uv python pin 3.12
 
       - name: Download pytest-cov artifacts
-        uses: actions/download-artifact@v5.0.0
+        uses: actions/download-artifact@v6.0.0
 
       - name: Setup Git
         run: |
