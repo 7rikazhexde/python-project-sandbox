@@ -1,15 +1,17 @@
 name: Update README for ghpages
 
 # ワークフローの処理の流れ:
-# 1. Covワークフローが完了すると起動
+# 1. HTML/Covワークフローのいずれかが完了すると起動（計2回トリガー）
 # 2. 先頭で両方のワークフロー(HTML/Cov)が成功しているか確認
 # 3. 両方成功している場合のみREADME更新を実行
 # 4. 実際にデプロイされたレポートのディレクトリ構造から動的にREADMEを生成
+# 注: 1回目で更新、2回目は"No changes"でスキップされる
 
 on:
   workflow_run:
     workflows:
-      - "pytest-cov Report and Deploy Multi-OS"  # covワークフロー完了時のみトリガー
+      - "pytest-html Report and Deploy Multi-OS"
+      - "pytest-cov Report and Deploy Multi-OS"
     types:
       - completed
     branches:
