@@ -1,45 +1,26 @@
 name: pytest-html Report and Deploy Multi-OS
 
-# ワークフローの処理の流れ:
-# 1. トリガー条件:
-#    - pytest-testmonワークフローの完了後にrepository_dispatchイベントで起動
-# 2. 複数の環境（OS、Pythonバージョン）でのセットアップ
-#    - ペイロードで指定されたOS、Pythonバージョンで実行
-# 3. テスト実行の要否確認
-#    - testmonの更新情報JSONに基づき実行要否を判定
-#    - 実行対象外の場合はスキップフラグを設定
-# 4. HTMLレポートの生成
-#    - テスト実行対象の環境でpytest-htmlを実行
-#    - OS、Pythonバージョンごとに個別のレポートを生成
-# 5. HTMLレポートのアップロード
-#    - 生成されたレポートをGitHub Actionsの成果物としてアップロード
-# 6. GitHub Pagesへのデプロイ
-#    - アップロードされたレポートをghpages_pytest-testmonブランチにデプロイ
-#    - 変更の有無を確認し、変更があった場合のみ更新を実行
-# 7. レポートURLの生成
-#    - デプロイしたレポートのURLリストを作成
-#    - テスト実行/スキップの状態に応じて適切なメッセージを付加
-# 8. Discord通知の送信
-#    - デプロイ状態に応じたメッセージを作成
-#    - 変更があった場合はURLリストを含めて通知
-
+# workflow_runトリガーを使用してtestmonワークフロー完了後に自動実行
 on:
-  repository_dispatch:
+  workflow_run:
+    workflows: ["pytest-testmon Deploy Multi-OS"]
     types:
-      - run-pytest-html
+      - completed
+    branches:
+      - test/pytest-testmon-workflow
+  workflow_dispatch:  # 手動実行も可能
 
 jobs:
   test-and-report:
+    # testmonワークフローが成功した場合のみ実行
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     strategy:
       matrix:
-        os: ${{ github.event.client_payload.os }}
-        python-version: ${{ github.event.client_payload.python_versions }}
+        os: [ubuntu-latest]
+        python-version: ['3.12']
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
-    outputs:
-      ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
-      skip_tests: ${{ steps.check_tests.outputs.skip_tests }}
     permissions:
       contents: write
       pull-requests: write
@@ -48,20 +29,6 @@ jobs:
         uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
-
-      - name: Set GHPAGES_BRANCH from client_payload
-        id: set-ghpages-branch
-        shell: bash
-        run: |
-          echo "Raw ghpage_branch value: ${{ github.event.client_payload.ghpage_branch }}"
-
-          # 配列の最初の要素を取得
-          ghpages_branch="${{ github.event.client_payload.ghpage_branch[0] }}"
-
-          echo "Extracted ghpages_branch: ${ghpages_branch}"
-
-          # GITHUB_OUTPUTに出力
-          echo "ghpages_branch=${ghpages_branch}" >> "$GITHUB_OUTPUT"
 
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
@@ -75,55 +42,21 @@ jobs:
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
 
-      - name: Check if tests should be executed
-        id: check_tests
-        run: |
-         python3 .github/check_exclude_testmon.py
-        env:
-          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
-          CURRENT_OS: '${{ matrix.os }}'
-          CURRENT_PYTHON_VERSION: '${{ matrix.python-version }}'
-
-      - name: Stop workflow if tests are skipped
-        if: steps.check_tests.outputs.skip_tests == 'true'
-        run: |
-          echo "Tests are skipped for OS=${{ matrix.os }}, Python=${{ matrix.python-version }}."
-
       - name: Install poetry
-        if: steps.check_tests.outputs.skip_tests != 'true'
         run: |
           pip install poetry
           echo "Poetry version: $(poetry --version)"
 
       - name: Cache dependencies
-        if: steps.check_tests.outputs.skip_tests != 'true'
         uses: actions/cache@v4.2.0
         with:
           path: ~/.cache/pypoetry
           key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
 
       - name: Install dependencies
-        if: steps.check_tests.outputs.skip_tests != 'true'
         run: poetry install
 
-      - name: Fetch testmon data
-        if: steps.check_tests.outputs.skip_tests != 'true'
-        shell: bash
-        run: |
-          echo "Fetching testmon data..."
-          git fetch origin "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}":"${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" || true
-          testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" -- "${testmon_path}/.testmondata" || true
-          if [ -f "${testmon_path}/.testmondata" ]; then
-            echo "Testmon data found. Moving to current directory."
-            mv "${testmon_path}/.testmondata" ".testmondata"
-          else
-            echo "No testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
-          fi
-        continue-on-error: true
-
       - name: Run tests with pytest-html
-        if: steps.check_tests.outputs.skip_tests != 'true'
         id: pytest-html
         shell: bash
         run: |
@@ -132,42 +65,23 @@ jobs:
           poetry run pytest --html="${report_path}/report_page.html" --css=css/style.css
 
       - name: Upload pytest-html results
-        if: steps.check_tests.outputs.skip_tests != 'true'
         uses: actions/upload-artifact@v4.4.3
         with:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: test_results/${{ matrix.os }}/python/${{ matrix.python-version }}
-
-  check_all_tests:
-    if: needs.test-and-report.outputs.skip_tests != 'true'
-    needs: test-and-report
-    runs-on: ubuntu-latest
-    steps:
-      - name: Check test results
-        if: contains(needs.test-and-report.result, 'failure')
-        run: |
-          echo "Some tests failed. Please check the test results and fix any issues before merging."
-          exit 1
+          retention-days: 7
 
   deploy:
-    if: needs.test-and-report.outputs.skip_tests != 'true' && needs.check_all_tests.result == 'success'
-    needs: [test-and-report, check_all_tests]
+    needs: test-and-report
     runs-on: ubuntu-latest
     permissions:
       contents: write
       actions: write
-    outputs:
-      deploy_status: ${{ steps.check_and_deploy.outputs.deploy_status }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
-
-      - name: Set up Python
-        uses: actions/setup-python@v5.3.0
-        with:
-          python-version: '3.12'
 
       - name: Download pytest-html artifacts
         uses: actions/download-artifact@v4.1.8
@@ -177,193 +91,39 @@ jobs:
           git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
           git config --local user.name "github-actions[bot]"
 
-      - name: Check and Deploy to GitHub Pages
-        id: check_and_deploy
-        env:
-          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
+      - name: Deploy to GitHub Pages
+        id: deploy
         run: |
-          git fetch origin "${{ needs.test-and-report.outputs.ghpages_branch }}":"${{ needs.test-and-report.outputs.ghpages_branch }}" || git checkout -b "${{ needs.test-and-report.outputs.ghpages_branch }}"
-          git checkout "${{ needs.test-and-report.outputs.ghpages_branch }}"
-          git pull origin "${{ needs.test-and-report.outputs.ghpages_branch }}" --rebase
+          ghpages_branch="ghpages_pytest-testmon"
+
+          git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
+          git checkout "${ghpages_branch}"
+          git pull origin "${ghpages_branch}" --rebase || true
 
           changes_made=false
-          os_list="${{ join(github.event.client_payload.os, ' ') }}"
-          python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
 
-          # テスト対象を確認するためのPythonスクリプトを実行
-          for os in ${os_list}; do
-            for python_version in ${python_versions_list}; do
-              export CURRENT_OS="${os}"
-              export CURRENT_PYTHON_VERSION="${python_version}"
-              python3 .github/check_exclude_testmon.py
-
-              # skip_tests が true の場合はそのOSとPythonバージョンをスキップ
-              if [ "${TEST_SHOULD_BE_SKIPPED}" = "true" ]; then
-                echo "Skipping deployment for OS=${os}, Python=${python_version} as it is excluded."
-                continue
-              fi
+          for artifact_dir in test-results-*; do
+            if [ -d "$artifact_dir" ] && [ -f "${artifact_dir}/report_page.html" ]; then
+              # ディレクトリ名からOSとPythonバージョンを抽出
+              os=$(echo "$artifact_dir" | sed -E 's/test-results-([^-]+(-[^-]+)?)-python-.*/\1/')
+              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
 
               html_path="pytest-html-report/${os}/python/${python_version}"
+
+              echo "Processing ${os} with Python ${python_version}..."
               mkdir -p "${html_path}"
-
-              # テスト結果のHTMLファイルが存在するか確認
-              artifact_path="test-results-${os}-python-${python_version}"
-              if [ -f "${artifact_path}/report_page.html" ]; then
-                # HTMLファイルに差分があるかどうかを確認
-                if [ ! -f "${html_path}/report_page.html" ] || ! diff "${artifact_path}/report_page.html" "${html_path}/report_page.html" > /dev/null; then
-                  echo "Changes detected for ${os} with Python ${python_version}, updating..."
-                  mv "${artifact_path}/report_page.html" "${html_path}/"
-
-                  # assets ディレクトリも存在する場合はコピー
-                  if [ -d "${artifact_path}/assets" ]; then
-                    rm -rf "${html_path}/assets"
-                    cp -r "${artifact_path}/assets" "${html_path}/"
-                  fi
-                  git add "${html_path}"
-                  changes_made=true
-                else
-                  echo "No changes for ${os} with Python ${python_version}, skipping..."
-                fi
-              else
-                echo "No pytest-html report found for ${os} with Python ${python_version}"
-              fi
-            done
+              rm -rf "${html_path}"
+              cp -r "${artifact_dir}" "${html_path}"
+              git add "${html_path}"
+              changes_made=true
+            fi
           done
 
-          # 変更があった場合のみコミットとプッシュを行う
           if [ "${changes_made}" = true ]; then
             git commit -m "Update pytest-html reports on GitHub Pages"
-            # コミットとプッシュが失敗した場合の対処
-            if ! git push origin "${{ needs.test-and-report.outputs.ghpages_branch }}"; then
-              git pull origin "${{ needs.test-and-report.outputs.ghpages_branch }}" --rebase
-              git push origin "${{ needs.test-and-report.outputs.ghpages_branch }}"
-            fi
+            git push origin "${ghpages_branch}"
             echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
           else
             echo "No changes to commit"
             echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
           fi
-
-      - name: Generate URL list
-        id: generate_url_list
-        env:
-          UPDATED_TESTMON_JSON: '${{ toJson(github.event.client_payload.updated_testmon_json) }}'
-        run: |
-          IFS='/' read -ra REPO_INFO <<< "${GITHUB_REPOSITORY}"
-          REPO_OWNER="${REPO_INFO[0]}"
-          REPO_NAME="${REPO_INFO[1]}"
-          URL_LIST=""
-          os_list="${{ join(github.event.client_payload.os, ' ') }}"
-          python_versions_list="${{ join(github.event.client_payload.python_versions, ' ') }}"
-
-          # テスト対象のOSとPythonバージョンごとにチェックしてURLリストを生成
-          for os in ${os_list}; do
-            for python_version in ${python_versions_list}; do
-              export CURRENT_OS="${os}"
-              export CURRENT_PYTHON_VERSION="${python_version}"
-              python3 .github/check_exclude_testmon.py
-
-              # 環境ファイルから最新の値を読み込む
-              if [ -f "${GITHUB_ENV}" ]; then
-                # shellcheck disable=SC1090,SC1091
-                # GitHub Actionsの環境ファイルを読み込むため、動的なsourceを許可
-                source "${GITHUB_ENV}"
-              fi
-
-              # skip_tests が true ならばURLをスキップ
-              if [ "${TEST_SHOULD_BE_SKIPPED}" = "true" ]; then
-                echo "Skipping URL generation for OS=${os}, Python=${python_version} as it is excluded."
-                continue
-              else
-                # 対象の場合はURLリストに追加
-                report_url="pytest-html-report/${os}/python/${python_version}"
-                URL_LIST="${URL_LIST}${report_url}:\n\
-                https://${REPO_OWNER}.github.io/${REPO_NAME}/${report_url}/report_page.html\n\n"
-              fi
-            done
-          done
-
-          {
-            echo "url_list<<EOF"
-            echo -e "${URL_LIST}"
-            echo "EOF"
-          } >> "$GITHUB_OUTPUT"
-
-      # メッセージ送信 (変更があった場合)
-      - name: Send Discord Notification (Updated)
-        if: steps.check_and_deploy.outputs.deploy_status == 'updated'
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          # ワークフローの詳細ページURL
-          workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          # URLリストの整形
-          formatted_urls="${{ steps.generate_url_list.outputs.url_list }}"
-
-          # メッセージの作成
-          message="### Deployment Status: Updated ✅
-
-          ### Workflow Information
-          **Name:** ${{ github.workflow }}
-          **Run:** [View Details]($workflow_url)
-
-          **HTML Test Reports**
-          ${formatted_urls}"
-
-          timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          json_payload=$(jq -n \
-            --arg title "${{ github.workflow }} - Deploy Status" \
-            --arg description "$message" \
-            --argjson color 65280 \
-            --arg timestamp "$timestamp" \
-            '{
-              "embeds": [
-                {
-                  "title": $title,
-                  "description": $description,
-                  "color": $color,
-                  "timestamp": $timestamp
-                }
-              ]
-            }')
-
-          curl -X POST -H "Content-Type: application/json" \
-            -d "$json_payload" \
-            "$DISCORD_WEBHOOK_URL"
-
-      # メッセージ送信 (変更がない場合)
-      - name: Send Discord Notification (No Changes)
-        if: steps.check_and_deploy.outputs.deploy_status == 'unchanged'
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          workflow_url="${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
-
-          message="## Deployment Status: No Changes ℹ️
-
-          ### Workflow Information
-          **Name:** ${{ github.workflow }}
-          **Run:** [View Details]($workflow_url)
-
-          No changes were detected in the HTML test reports."
-          timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
-          json_payload=$(jq -n \
-            --arg title "${{ github.workflow }} - Deploy Status" \
-            --arg description "$message" \
-            --argjson color 16711680 \
-            --arg timestamp "$timestamp" \
-            '{
-              "embeds": [
-                {
-                  "title": $title,
-                  "description": $description,
-                  "color": $color,
-                  "timestamp": $timestamp
-                }
-              ]
-            }')
-
-          curl -X POST -H "Content-Type: application/json" \
-            -d "$json_payload" \
-            "$DISCORD_WEBHOOK_URL"
