@@ -29,6 +29,7 @@ on:
       - test_pytest-testmon_deploy_multi_os
   push:
     branches:
+      - main
       - test/pytest-testmon-workflow
     paths:
       - 'project_a/**'

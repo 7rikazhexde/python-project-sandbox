@@ -3,7 +3,8 @@ name: Use Send Payload Action to Pytest Testmon
 on:
   push:
     branches:
-      - 'test/pytest-testmon-workflow'  # テスト用ブランチでのみ実行
+      - main
+      - 'test/pytest-testmon-workflow'
     paths:
       - 'project_a/**'
       - 'tests/**'
