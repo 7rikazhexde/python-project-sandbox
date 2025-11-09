@@ -147,7 +147,7 @@ jobs:
       # ======================================================================
       # フェーズ3: 環境識別子の設定 + テスト実行
       # ======================================================================
-      - name: Run tests with testmon and generate reports
+      - name: Run tests with testmon
         id: pytest-testmon
         shell: bash
         run: |
@@ -156,16 +156,8 @@ jobs:
           ENV_ID="${{ matrix.os }}-py${{ matrix.python-version }}"
           echo "Environment ID: $ENV_ID"
 
-          # レポート用ディレクトリを準備
-          html_report_path="test_results/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          cov_report_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          mkdir -p "${html_report_path}" "${cov_report_path}"
-
-          # testmon + HTML + Coverage レポートを一度に生成
-          output=$(uv run pytest --testmon --testmon-env "$ENV_ID" \
-            --html="${html_report_path}/report_page.html" --css=css/style.css \
-            --cov=project_a --cov-report="html:${cov_report_path}" \
-            -v)
+          # testmonで増分テスト実行
+          output=$(uv run pytest --testmon --testmon-env "$ENV_ID" -v)
           echo "${output}"
 
           {
@@ -181,6 +173,26 @@ jobs:
            echo "Tests executed. Proceeding with report deployment."
            echo "tests_executed=true" >> "$GITHUB_OUTPUT"
           fi
+
+      # ======================================================================
+      # レポート生成（テストが実行された場合のみ、全テストを実行）
+      # ======================================================================
+      - name: Generate HTML and Coverage reports
+        if: steps.pytest-testmon.outputs.tests_executed == 'true'
+        shell: bash
+        run: |
+          echo "Generating full test reports..."
+          html_report_path="test_results/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          cov_report_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          mkdir -p "${html_report_path}" "${cov_report_path}"
+
+          # レポート用に全テストを実行（testmon無し）
+          uv run pytest \
+            --html="${html_report_path}/report_page.html" --css=css/style.css \
+            --cov=project_a --cov-report="html:${cov_report_path}" \
+            -v
+
+          echo "✓ Reports generated successfully"
 
       # ======================================================================
       # フェーズ1: デバッグ情報 - テスト実行後
