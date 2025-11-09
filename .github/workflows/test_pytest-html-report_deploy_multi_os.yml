@@ -15,7 +15,7 @@ jobs:
       versions_python: ${{ steps.json2vars.outputs.versions_python }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
 
@@ -44,12 +44,12 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
 
       - name: Set up Python
-        uses: actions/setup-python@v5.3.0
+        uses: actions/setup-python@v6.0.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -94,7 +94,7 @@ jobs:
           uv run pytest --testmon --testmon-env "$ENV_ID" --html="${report_path}/report_page.html" --css=css/style.css
 
       - name: Upload pytest-html results
-        uses: actions/upload-artifact@v4.4.3
+        uses: actions/upload-artifact@v5.0.0
         with:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: test_results/${{ matrix.os }}/python/${{ matrix.python-version }}
@@ -108,12 +108,12 @@ jobs:
       actions: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4.2.2
+        uses: actions/checkout@v5.0.0
         with:
           fetch-depth: 0
 
       - name: Download pytest-html artifacts
-        uses: actions/download-artifact@v4.1.8
+        uses: actions/download-artifact@v6.0.0
 
       - name: Setup Git
         run: |

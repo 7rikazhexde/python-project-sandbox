@@ -99,7 +99,7 @@ jobs:
       - uses: actions/checkout@v5.0.0
 
       - name: Set up Python
-        uses: actions/setup-python@v6
+        uses: actions/setup-python@v6.0.0
         with:
           python-version: ${{matrix.python-version}}
 
@@ -210,7 +210,7 @@ jobs:
       # ======================================================================
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.1.57
+        uses: MishaKav/pytest-coverage-comment@v1.1.59
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
@@ -244,7 +244,7 @@ jobs:
       # 補足: マトリックス毎に個別保存、README生成で使用
       # ======================================================================
       - name: Upload coverage data
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v5.0.0
         with:
           name: coverage-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: |
