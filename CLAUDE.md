@@ -43,7 +43,7 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 
 以下のワークフローは既に本番稼働しており、`ghpages`ブランチにデプロイしています:
 
-```
+```text
 .github/workflows/
 ├── test-pytest-cov-report.yml      # カバレッジレポート生成・デプロイ (ghpagesブランチ)
 └── test-pytest-html-report.yml     # HTMLテストレポート生成・デプロイ (ghpagesブランチ)
@@ -53,7 +53,7 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 
 以下のワークフローはテスト・検証用で、`repository_dispatch`イベントで起動されます:
 
-```
+```text
 .github/workflows/test_workflow/
 ├── test_pytest-testmon_deploy_multi_os.yml     # testmonデータ管理
 ├── test_pytest-html-report_deploy_multi_os.yml # HTMLレポート生成（testmonベース）
@@ -83,7 +83,8 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 #### 1. test_pytest-testmon_deploy_multi_os.yml
 
 **現在の処理フロー:**
-```
+
+```text
 1. ghpagesブランチから.testmondataを取得
 2. pytest --testmonを実行
 3. .testmondataをアーティファクトとしてアップロード
@@ -92,6 +93,7 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 ```
 
 **必要な修正:**
+
 - [ ] ghpagesブランチ → ghpages_pytest-testmonブランチに変更
 - [ ] SQLite WALチェックポイントの追加（最重要）
 - [ ] 環境識別子の明示的設定（`--testmon-env`）
@@ -101,12 +103,14 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 #### 2. test_pytest-html-report_deploy_multi_os.yml
 
 **必要な修正:**
+
 - [ ] ghpagesブランチ → ghpages_pytest-testmonブランチに変更
 - [ ] testmonデータ取得元の変更
 
 #### 3. test_pytest-cov-report_deploy_multi_os.yml
 
 **必要な修正:**
+
 - [ ] ghpagesブランチ → ghpages_pytest-testmonブランチに変更
 - [ ] testmonデータ取得元の変更
 
@@ -115,6 +119,7 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 ### フェーズ1: デバッグ情報の追加
 
 テスト実行前後で以下の情報を出力:
+
 - データベースファイルの存在確認
 - データベースバージョン（`PRAGMA user_version`）
 - 環境レコード数
@@ -266,16 +271,19 @@ testmon_ignore_dependencies = [
 ## 参考資料
 
 ### ドキュメント
+
 - [pytest-testmon公式ドキュメント](https://testmon.org)
 - [SQLite WALモード](https://www.sqlite.org/wal.html)
 - [GitHub Actions キャッシュ](https://docs.github.com/ja/actions/using-workflows/caching-dependencies-to-speed-up-workflows)
 
 ### プロジェクト内ドキュメント
+
 - `TESTMON_ANALYSIS_AND_FIX_PLAN.md` - 詳細な問題分析と改善案
 - `.github/workflows/test-pytest-cov-report.yml` - 既存カバレッジワークフロー
 - `.github/workflows/test-pytest-html-report.yml` - 既存HTMLレポートワークフロー
 
 ### 外部リンク
+
 - [GitHub Issue #236](https://github.com/tarpas/pytest-testmon/issues/236) - 同様の問題報告
 
 ## マイルストーン

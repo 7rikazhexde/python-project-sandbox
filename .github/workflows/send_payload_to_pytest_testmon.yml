@@ -3,16 +3,17 @@ name: Use Send Payload Action to Pytest Testmon
 on:
   push:
     branches:
-      - 'main'
+      - 'test/pytest-testmon-workflow'  # テスト用ブランチでのみ実行
     paths:
       - 'project_a/**'
       - 'tests/**'
       - 'poetry.lock'
-      - '.github/workflows/test_pytest-testmon_deploy_multi_os'
+      - '.github/workflows/test_pytest-testmon_deploy_multi_os.yml'
       - '.github/workflows/test_pytest-cov-report_deploy_multi_os.yml'
       - '.github/workflows/test_pytest-html-report_deploy_multi_os.yml'
       - '.github/workflows/matrix.json'
       - '.github/workflows/send_payload_to_pytest_testmon.yml'
+  workflow_dispatch:  # 手動実行も可能にする
 
 jobs:
   test-and-send-dispatch:
@@ -32,9 +33,9 @@ jobs:
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
           event_type: 'test_pytest-testmon_deploy_multi_os'
-          ghpages_branch: 'ghpages'  # 省略可能
-          os_list: '[ubuntu-latest,macos-13,windows-latest]'
-          version_list: '[3.12,3.13]'
+          ghpages_branch: 'ghpages_pytest-testmon'  # テスト用ブランチを指定
+          os_list: '[ubuntu-latest]'  # 最初は1つのOSでテスト
+          version_list: '[3.12]'  # 最初は1つのバージョンでテスト
           custom_param: 'custom_param_test_val'  # 省略可能
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
