@@ -147,7 +147,7 @@ jobs:
       # ======================================================================
       # フェーズ3: 環境識別子の設定 + テスト実行
       # ======================================================================
-      - name: Run tests with testmon
+      - name: Run tests with testmon and generate reports
         id: pytest-testmon
         shell: bash
         run: |
@@ -156,7 +156,16 @@ jobs:
           ENV_ID="${{ matrix.os }}-py${{ matrix.python-version }}"
           echo "Environment ID: $ENV_ID"
 
-          output=$(uv run pytest --testmon --testmon-env "$ENV_ID" -v)
+          # レポート用ディレクトリを準備
+          html_report_path="test_results/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          cov_report_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          mkdir -p "${html_report_path}" "${cov_report_path}"
+
+          # testmon + HTML + Coverage レポートを一度に生成
+          output=$(uv run pytest --testmon --testmon-env "$ENV_ID" \
+            --html="${html_report_path}/report_page.html" --css=css/style.css \
+            --cov=project_a --cov-report="html:${cov_report_path}" \
+            -v)
           echo "${output}"
 
           {
@@ -166,10 +175,10 @@ jobs:
           } >> "$GITHUB_OUTPUT"
 
           if echo "${output}" | grep -q "collected 0 items"; then
-           echo "No tests executed. Skipping deployment and further workflows."
+           echo "No tests executed. Skipping report deployment."
            echo "tests_executed=false" >> "$GITHUB_OUTPUT"
           else
-           echo "Tests executed. Proceeding with deployment and further workflows."
+           echo "Tests executed. Proceeding with report deployment."
            echo "tests_executed=true" >> "$GITHUB_OUTPUT"
           fi
 
@@ -241,8 +250,7 @@ jobs:
           ls -la "${testmon_path}"
 
       # ======================================================================
-      # アーティファクトアップロード（無条件）
-      # フェーズ4: テストが実行されなくてもデータを保持するため常にアップロード
+      # アーティファクトアップロード
       # ======================================================================
       - name: Upload testmon data
         uses: actions/upload-artifact@v4.4.3
@@ -253,6 +261,24 @@ jobs:
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 1
+
+      # テストが実行された場合のみHTMLレポートをアップロード
+      - name: Upload pytest-html results
+        uses: actions/upload-artifact@v4.4.3
+        if: steps.pytest-testmon.outputs.tests_executed == 'true'
+        with:
+          name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: test_results/${{ matrix.os }}/python/${{ matrix.python-version }}
+          retention-days: 7
+
+      # テストが実行された場合のみCoverageレポートをアップロード
+      - name: Upload pytest-cov results
+        uses: actions/upload-artifact@v4.4.3
+        if: steps.pytest-testmon.outputs.tests_executed == 'true'
+        with:
+          name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
+          retention-days: 7
 
   deploy-testmon:
     needs: test-and-deploy-testmon
@@ -321,3 +347,95 @@ jobs:
           git checkout "${ghpages_branch}"
           echo "Deployed testmon data files:"
           find . -name ".testmondata"
+
+  deploy-reports:
+    needs: test-and-deploy-testmon
+    if: contains(needs.test-and-deploy-testmon.result, 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Download pytest-html artifacts
+        uses: actions/download-artifact@v4.1.8
+        continue-on-error: true
+
+      - name: Setup Git
+        run: |
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy HTML and Coverage reports to GitHub Pages
+        id: deploy_reports
+        run: |
+          ghpages_branch="ghpages"
+
+          git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
+          git checkout "${ghpages_branch}"
+          git pull origin "${ghpages_branch}" --rebase || true
+
+          changes_made=false
+
+          # pytest-htmlレポートのデプロイ
+          for artifact_dir in test-results-*; do
+            if [ -d "$artifact_dir" ] && [ -f "${artifact_dir}/report_page.html" ]; then
+              os=$(echo "$artifact_dir" | sed -E 's/test-results-([^-]+(-[^-]+)?)-python-.*/\1/')
+              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
+
+              html_path="pytest-html-report/${os}/python/${python_version}"
+
+              echo "Processing pytest-html for ${os} with Python ${python_version}..."
+              mkdir -p "${html_path}"
+              rm -rf "${html_path}"
+              cp -r "${artifact_dir}" "${html_path}"
+              git add "${html_path}"
+              changes_made=true
+            fi
+          done
+
+          # pytest-covレポートのデプロイ
+          for artifact_dir in coverage-results-*; do
+            if [ -d "$artifact_dir" ]; then
+              os=$(echo "$artifact_dir" | sed -E 's/coverage-results-([^-]+(-[^-]+)?)-python-.*/\1/')
+              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
+
+              coverage_path="pytest-cov-report/${os}/python/${python_version}"
+
+              echo "Processing pytest-cov for ${os} with Python ${python_version}..."
+              mkdir -p "${coverage_path}"
+              rm -rf "${coverage_path}"
+              mv "${artifact_dir}" "${coverage_path}"
+              git add "${coverage_path}"
+              changes_made=true
+            fi
+          done
+
+          if [ "${changes_made}" = true ]; then
+            git commit -m "Update pytest-html and pytest-cov reports on GitHub Pages"
+
+            # Push with retry
+            max_retries=3
+            retry_count=0
+            while [ $retry_count -lt $max_retries ]; do
+              if git push origin "${ghpages_branch}"; then
+                echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+                break
+              else
+                retry_count=$((retry_count + 1))
+                if [ $retry_count -lt $max_retries ]; then
+                  echo "Push failed, retrying ($retry_count/$max_retries)..."
+                  git pull origin "${ghpages_branch}" --rebase
+                else
+                  echo "Push failed after $max_retries retries"
+                  exit 1
+                fi
+              fi
+            done
+          else
+            echo "No changes to commit (no tests were executed)"
+            echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
+          fi

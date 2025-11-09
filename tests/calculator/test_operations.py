@@ -42,3 +42,4 @@ def test_divide() -> None:
     assert divide(7, -7) == -1
     assert divide(100, -2) == -50
     assert divide(100, -100) == -1
+    assert divide(50, 10) == 5

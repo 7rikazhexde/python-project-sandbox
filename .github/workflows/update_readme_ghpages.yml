@@ -10,8 +10,7 @@ name: Update README for ghpages
 on:
   workflow_run:
     workflows:
-      - "pytest-html Report and Deploy Multi-OS"
-      - "pytest-cov Report and Deploy Multi-OS"
+      - "pytest-testmon Deploy Multi-OS"
     types:
       - completed
     branches:
@@ -20,61 +19,8 @@ on:
   workflow_dispatch:  # 手動実行も可能
 
 jobs:
-  check-prerequisites:
-    runs-on: ubuntu-latest
-    outputs:
-      should_update: ${{ steps.check.outputs.should_update }}
-    steps:
-      - name: Check both workflows completed successfully
-        id: check
-        uses: actions/github-script@v7
-        with:
-          script: |
-            const branch = context.payload.workflow_run?.head_branch || 'main';
-            console.log(`Checking workflows for branch: ${branch}`);
-
-            // 最近のワークフロー実行を取得
-            const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              branch: branch,
-              per_page: 50
-            });
-
-            // HTML/Covワークフローの最新の成功実行を探す
-            const htmlRun = workflowRuns.data.workflow_runs.find(run =>
-              run.name === 'pytest-html Report and Deploy Multi-OS' &&
-              run.conclusion === 'success' &&
-              run.status === 'completed'
-            );
-
-            const covRun = workflowRuns.data.workflow_runs.find(run =>
-              run.name === 'pytest-cov Report and Deploy Multi-OS' &&
-              run.conclusion === 'success' &&
-              run.status === 'completed'
-            );
-
-            const htmlCompleted = !!htmlRun;
-            const covCompleted = !!covRun;
-
-            console.log(`HTML workflow completed: ${htmlCompleted}`);
-            console.log(`Cov workflow completed: ${covCompleted}`);
-
-            if (htmlRun) console.log(`HTML run: ${htmlRun.html_url}`);
-            if (covRun) console.log(`Cov run: ${covRun.html_url}`);
-
-            const shouldUpdate = htmlCompleted && covCompleted;
-            core.setOutput('should_update', shouldUpdate.toString());
-
-            if (!shouldUpdate) {
-              console.log('⚠️ Not all prerequisite workflows have completed successfully. Skipping README update.');
-            } else {
-              console.log('✅ All prerequisite workflows completed successfully. Proceeding with README update.');
-            }
-
   update-readme:
-    needs: check-prerequisites
-    if: needs.check-prerequisites.outputs.should_update == 'true'
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -88,8 +34,10 @@ jobs:
       - name: Generate README
         run: |
           # 実際にデプロイされているレポートからPythonバージョンを取得
+          # 数字で始まるバージョン番号のみを抽出（assets, pythonなどのディレクトリを除外）
           if [ -d "pytest-html-report" ]; then
-            python_versions=$(find pytest-html-report -type d -path "*/python/*" -printf '%f\n' 2>/dev/null | sort -V -u)
+            python_versions=$(find pytest-html-report -type d -path "*/python/*" -printf '%f\n' 2>/dev/null | \
+              grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$' | sort -V -u)
           else
             echo "⚠️ pytest-html-report directory not found"
             python_versions=""

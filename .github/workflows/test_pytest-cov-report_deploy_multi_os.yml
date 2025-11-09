@@ -1,14 +1,10 @@
-name: pytest-cov Report and Deploy Multi-OS
+name: pytest-cov Report and Deploy Multi-OS (DISABLED)
 
-# workflow_runトリガーを使用してtestmonワークフロー完了後に自動実行
+# このワークフローは無効化されています
+# testmonワークフロー内でHTML/Covレポート生成が統合されました
+# 参照: test_pytest-testmon_deploy_multi_os.yml
 on:
-  workflow_run:
-    workflows: ["pytest-testmon Deploy Multi-OS"]
-    types:
-      - completed
-    branches:
-      - main
-  workflow_dispatch:  # 手動実行も可能
+  workflow_dispatch:  # 手動実行のみ可能
 
 jobs:
   set_variables:
