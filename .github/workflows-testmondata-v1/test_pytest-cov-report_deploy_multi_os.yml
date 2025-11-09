@@ -76,10 +76,10 @@ jobs:
       - name: Fetch previous testmon data
         shell: bash
         run: |
-          echo "Fetching previous testmon data from ghpages..."
-          git fetch origin "ghpages":"ghpages" || true
+          echo "Fetching previous testmon data from ghpages_pytest-testmon..."
+          git fetch origin "ghpages_pytest-testmon":"ghpages_pytest-testmon" || true
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout "ghpages" -- "${testmon_path}/.testmondata" || true
+          git checkout "ghpages_pytest-testmon" -- "${testmon_path}/.testmondata" || true
           if [ -f "${testmon_path}/.testmondata" ]; then
             echo "Previous testmon data found. Moving to current directory."
             mv "${testmon_path}/.testmondata" ".testmondata"
@@ -127,7 +127,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         run: |
-          ghpages_branch="ghpages"
+          ghpages_branch="ghpages_pytest-testmon"
 
           git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
           git checkout "${ghpages_branch}"

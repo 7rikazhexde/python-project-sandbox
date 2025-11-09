@@ -1,4 +1,4 @@
-name: pytest-cov Report and Deploy Multi-OS
+name: pytest-html Report and Deploy Multi-OS
 
 # workflow_runトリガーを使用してtestmonワークフロー完了後に自動実行
 on:
@@ -34,7 +34,7 @@ jobs:
           echo "os: ${{ steps.json2vars.outputs.os }}"
           echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
 
-  test-and-coverage:
+  test-and-report:
     needs: set_variables
     strategy:
       matrix:
@@ -76,10 +76,10 @@ jobs:
       - name: Fetch previous testmon data
         shell: bash
         run: |
-          echo "Fetching previous testmon data from ghpages..."
-          git fetch origin "ghpages":"ghpages" || true
+          echo "Fetching previous testmon data from ghpages_pytest-testmon..."
+          git fetch origin "ghpages_pytest-testmon":"ghpages_pytest-testmon" || true
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout "ghpages" -- "${testmon_path}/.testmondata" || true
+          git checkout "ghpages_pytest-testmon" -- "${testmon_path}/.testmondata" || true
           if [ -f "${testmon_path}/.testmondata" ]; then
             echo "Previous testmon data found. Moving to current directory."
             mv "${testmon_path}/.testmondata" ".testmondata"
@@ -88,24 +88,24 @@ jobs:
             echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
           fi
 
-      - name: Run tests with pytest-cov
-        id: pytest-cov
+      - name: Run tests with pytest-html
+        id: pytest-html
         shell: bash
         run: |
-          coverage_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          mkdir -p "${coverage_path}"
+          report_path="test_results/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          mkdir -p "${report_path}"
           ENV_ID="${{ matrix.os }}-py${{ matrix.python-version }}"
-          uv run pytest --testmon --testmon-env "$ENV_ID" --cov=project_a --cov-report="html:${coverage_path}"
+          uv run pytest --testmon --testmon-env "$ENV_ID" --html="${report_path}/report_page.html" --css=css/style.css
 
-      - name: Upload pytest-cov results
+      - name: Upload pytest-html results
         uses: actions/upload-artifact@v4.4.3
         with:
-          name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
-          path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
+          name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: test_results/${{ matrix.os }}/python/${{ matrix.python-version }}
           retention-days: 7
 
   deploy:
-    needs: test-and-coverage
+    needs: test-and-report
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -116,7 +116,7 @@ jobs:
         with:
           fetch-depth: 0
 
-      - name: Download pytest-cov artifacts
+      - name: Download pytest-html artifacts
         uses: actions/download-artifact@v4.1.8
 
       - name: Setup Git
@@ -127,7 +127,7 @@ jobs:
       - name: Deploy to GitHub Pages
         id: deploy
         run: |
-          ghpages_branch="ghpages"
+          ghpages_branch="ghpages_pytest-testmon"
 
           git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
           git checkout "${ghpages_branch}"
@@ -135,23 +135,25 @@ jobs:
 
           changes_made=false
 
-          for artifact_dir in coverage-results-*; do
-            if [ -d "$artifact_dir" ]; then
-              os=$(echo "$artifact_dir" | sed -E 's/coverage-results-([^-]+(-[^-]+)?)-python-.*/\1/')
+          for artifact_dir in test-results-*; do
+            if [ -d "$artifact_dir" ] && [ -f "${artifact_dir}/report_page.html" ]; then
+              # ディレクトリ名からOSとPythonバージョンを抽出
+              os=$(echo "$artifact_dir" | sed -E 's/test-results-([^-]+(-[^-]+)?)-python-.*/\1/')
               python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
 
-              coverage_path="pytest-cov-report/${os}/python/${python_version}"
+              html_path="pytest-html-report/${os}/python/${python_version}"
 
-              mkdir -p "${coverage_path}"
-              rm -rf "${coverage_path}"
-              mv "${artifact_dir}" "${coverage_path}"
-              git add "${coverage_path}"
+              echo "Processing ${os} with Python ${python_version}..."
+              mkdir -p "${html_path}"
+              rm -rf "${html_path}"
+              cp -r "${artifact_dir}" "${html_path}"
+              git add "${html_path}"
               changes_made=true
             fi
           done
 
           if [ "${changes_made}" = true ]; then
-            git commit -m "Update pytest-cov reports on GitHub Pages"
+            git commit -m "Update pytest-html reports on GitHub Pages"
 
             # Push with retry (他のワークフローとの競合に対応)
             max_retries=3

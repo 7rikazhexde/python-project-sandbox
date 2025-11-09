@@ -100,7 +100,7 @@ jobs:
         shell: bash
         run: |
           echo "Fetching previous testmon data..."
-          ghpages_branch="ghpages"
+          ghpages_branch="ghpages_pytest-testmon"
           git fetch origin "${ghpages_branch}":"${ghpages_branch}" || true
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
           git checkout "${ghpages_branch}" -- "${testmon_path}/.testmondata" || true
@@ -279,7 +279,7 @@ jobs:
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         run: |
-          ghpages_branch="ghpages"
+          ghpages_branch="ghpages_pytest-testmon"
 
           echo "Deploying testmon data to ${ghpages_branch}..."
           git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
@@ -317,7 +317,7 @@ jobs:
       - name: List deployed files
         if: always()
         run: |
-          ghpages_branch="ghpages"
+          ghpages_branch="ghpages_pytest-testmon"
           git checkout "${ghpages_branch}"
           echo "Deployed testmon data files:"
           find . -name ".testmondata"
