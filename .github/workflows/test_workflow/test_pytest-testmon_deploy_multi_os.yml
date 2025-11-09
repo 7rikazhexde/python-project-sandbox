@@ -98,12 +98,50 @@ jobs:
           fi
         continue-on-error: true
 
+      # ======================================================================
+      # フェーズ1: デバッグ情報 - テスト実行前
+      # ======================================================================
+      - name: Debug - Check testmon data before test
+        shell: bash
+        run: |
+          echo "=== Before Test Execution ==="
+          if [ -f .testmondata ]; then
+            echo "✓ .testmondata exists"
+            ls -lh .testmondata* || true
+
+            echo ""
+            echo "Database version:"
+            sqlite3 .testmondata "PRAGMA user_version;" || echo "Failed to read version"
+
+            echo ""
+            echo "Environment info:"
+            sqlite3 .testmondata "SELECT id, name, python_version FROM environment LIMIT 5;" || true
+
+            echo ""
+            echo "Test execution count:"
+            sqlite3 .testmondata "SELECT COUNT(*) FROM test_execution;" || true
+
+            echo ""
+            echo "File fingerprint count:"
+            sqlite3 .testmondata "SELECT COUNT(*) FROM file_fp;" || true
+          else
+            echo "⚠ .testmondata does NOT exist"
+          fi
+        continue-on-error: true
+
+      # ======================================================================
+      # フェーズ3: 環境識別子の設定 + テスト実行
+      # ======================================================================
       - name: Run tests with testmon
         id: pytest-testmon
         shell: bash
         run: |
           echo "Running tests with testmon..."
-          output=$(poetry run pytest --testmon -v)
+          # 環境識別子を明示的に設定
+          ENV_ID="${{ matrix.os }}-py${{ matrix.python-version }}"
+          echo "Environment ID: $ENV_ID"
+
+          output=$(poetry run pytest --testmon --testmon-env "$ENV_ID" -v)
           echo "${output}"
 
           {
@@ -120,6 +158,58 @@ jobs:
            echo "tests_executed=true" >> "$GITHUB_OUTPUT"
           fi
 
+      # ======================================================================
+      # フェーズ1: デバッグ情報 - テスト実行後
+      # ======================================================================
+      - name: Debug - Check testmon data after test
+        if: always()
+        shell: bash
+        run: |
+          echo "=== After Test Execution ==="
+          if [ -f .testmondata ]; then
+            echo "✓ .testmondata exists"
+            ls -lh .testmondata* || true
+
+            echo ""
+            echo "WAL files:"
+            ls -lh .testmondata-wal .testmondata-shm 2>/dev/null || echo "No WAL files"
+
+            echo ""
+            echo "Latest execution:"
+            sqlite3 .testmondata "SELECT * FROM execution ORDER BY id DESC LIMIT 1;" || true
+
+            echo ""
+            echo "Total test executions:"
+            sqlite3 .testmondata "SELECT COUNT(*) FROM test_execution;" || true
+          else
+            echo "⚠ .testmondata does NOT exist after test"
+          fi
+        continue-on-error: true
+
+      # ======================================================================
+      # フェーズ2: WALチェックポイントの実行
+      # ======================================================================
+      - name: Checkpoint testmon database
+        if: always()
+        shell: bash
+        run: |
+          if [ -f .testmondata ]; then
+            echo "Executing WAL checkpoint..."
+            sqlite3 .testmondata "PRAGMA wal_checkpoint(TRUNCATE);" || echo "WAL checkpoint failed"
+            echo "✓ WAL checkpoint completed"
+
+            # WALファイルを削除（既にメインファイルに統合済み）
+            rm -f .testmondata-wal .testmondata-shm
+            echo "✓ WAL files removed"
+
+            # ファイルサイズ確認
+            echo "Final .testmondata size:"
+            ls -lh .testmondata
+          else
+            echo "⚠ .testmondata not found, skipping WAL checkpoint"
+          fi
+        continue-on-error: true
+
       - name: Create testmon directory and move .testmondata
         shell: bash
         run: |
@@ -135,15 +225,19 @@ jobs:
           echo "Contents of ${testmon_path}:"
           ls -la "${testmon_path}"
 
+      # ======================================================================
+      # アーティファクトアップロード（無条件）
+      # フェーズ4: テストが実行されなくてもデータを保持するため常にアップロード
+      # ======================================================================
       - name: Upload testmon data
         uses: actions/upload-artifact@v4.4.3
+        if: always()
         with:
           name: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}
           path: testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}/.testmondata
           if-no-files-found: warn
           include-hidden-files: true
           retention-days: 1
-        if: steps.pytest-testmon.outputs.tests_executed == 'true'
 
   deploy-testmon:
     needs: test-and-deploy-testmon
