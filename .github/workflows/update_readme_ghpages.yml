@@ -158,10 +158,9 @@ jobs:
           fi
 
           git add README.md
-          git commit -m "docs: Update README with latest report links
-
-Generated from matrix.json configuration
-Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+          git commit -m "docs: Update README with latest report links" \
+            -m "Generated from matrix.json configuration" \
+            -m "Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
 
           # Push with retry
           max_retries=3
