@@ -100,18 +100,18 @@ jobs:
           echo "Python versions: ${python_versions}"
 
           # README.mdを生成
-          cat > README.md << 'EOF'
-# Pytest Report
-
-This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and [pytest-cov](https://pypi.org/project/pytest-cov/) reports to GitHub Pages.
-
-## pytest-html
-
-[![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml)
-
-| Python Version | ubuntu-latest | macos-latest | windows-latest |
-|----------------|---------------|----------|----------------|
-EOF
+          {
+            echo "# Pytest Report"
+            echo ""
+            echo "This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and [pytest-cov](https://pypi.org/project/pytest-cov/) reports to GitHub Pages."
+            echo ""
+            echo "## pytest-html"
+            echo ""
+            echo "[![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml)"
+            echo ""
+            echo "| Python Version | ubuntu-latest | macos-latest | windows-latest |"
+            echo "|----------------|---------------|----------|----------------|"
+          } > README.md
 
           # Pythonバージョンごとに行を追加
           for version in ${python_versions}; do
@@ -123,15 +123,15 @@ EOF
           done
 
           # pytest-covセクションを追加
-          cat >> README.md << 'EOF'
-
-## pytest-cov
-
-[![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml)
-
-| Python Version | ubuntu-latest | macos-latest | windows-latest |
-|----------------|---------------|----------|----------------|
-EOF
+          {
+            echo ""
+            echo "## pytest-cov"
+            echo ""
+            echo "[![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml)"
+            echo ""
+            echo "| Python Version | ubuntu-latest | macos-latest | windows-latest |"
+            echo "|----------------|---------------|----------|----------------|"
+          } >> README.md
 
           # Pythonバージョンごとに行を追加
           for version in ${python_versions}; do
