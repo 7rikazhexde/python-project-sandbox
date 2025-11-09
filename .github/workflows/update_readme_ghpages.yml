@@ -1,10 +1,11 @@
 name: Update README for ghpages
 
 # ワークフローの処理の流れ:
-# 1. HTML/Covワークフローのいずれかが完了すると起動
-# 2. 先頭で両方のワークフローが成功しているか確認
+# 1. HTML/Covワークフローのいずれかが完了すると起動（計2回トリガー）
+# 2. 先頭で両方のワークフロー(HTML/Cov)が成功しているか確認
 # 3. 両方成功している場合のみREADME更新を実行
-# 4. matrix.jsonから動的にREADMEを生成
+# 4. 実際にデプロイされたレポートのディレクトリ構造から動的にREADMEを生成
+# 注: 1回目で更新、2回目は"No changes"でスキップされる
 
 on:
   workflow_run:
@@ -84,20 +85,21 @@ jobs:
           ref: ghpages
           fetch-depth: 0
 
-      - name: Checkout main branch for matrix.json
-        uses: actions/checkout@v4.2.2
-        with:
-          ref: ${{ github.event.workflow_run.head_branch || 'main' }}
-          path: main-branch
-
       - name: Generate README
         run: |
-          # matrix.jsonからOS/Pythonバージョンを読み込み
-          os_list=$(jq -r '.os[]' main-branch/.github/json2vars-setter/matrix.json)
-          python_versions=$(jq -r '.versions.python[]' main-branch/.github/json2vars-setter/matrix.json | sed 's/\([0-9]\+\.[0-9]\+\)\..*/\1/')
+          # 実際にデプロイされているレポートからPythonバージョンを取得
+          if [ -d "pytest-html-report" ]; then
+            python_versions=$(find pytest-html-report -type d -path "*/python/*" -printf '%f\n' 2>/dev/null | sort -V -u)
+          else
+            echo "⚠️ pytest-html-report directory not found"
+            python_versions=""
+          fi
 
-          echo "OS list: ${os_list}"
-          echo "Python versions: ${python_versions}"
+          # 固定のOS順序
+          os_order="ubuntu-latest macos-latest windows-latest"
+
+          echo "Detected Python versions: ${python_versions}"
+          echo "OS order: ${os_order}"
 
           # README.mdを生成
           {
@@ -113,11 +115,15 @@ jobs:
             echo "|----------------|---------------|----------|----------------|"
           } > README.md
 
-          # Pythonバージョンごとに行を追加
+          # Pythonバージョンごとに行を追加（実際に存在するレポートのみ）
           for version in ${python_versions}; do
             echo -n "| ${version} " >> README.md
-            for os in ubuntu-latest macos-latest windows-latest; do
-              echo -n "| [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report/${os}/python/${version}/report_page.html) " >> README.md
+            for os in ${os_order}; do
+              if [ -f "pytest-html-report/${os}/python/${version}/report_page.html" ]; then
+                echo -n "| [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report/${os}/python/${version}/report_page.html) " >> README.md
+              else
+                echo -n "| N/A " >> README.md
+              fi
             done
             echo "|" >> README.md
           done
@@ -133,11 +139,15 @@ jobs:
             echo "|----------------|---------------|----------|----------------|"
           } >> README.md
 
-          # Pythonバージョンごとに行を追加
+          # Pythonバージョンごとに行を追加（実際に存在するレポートのみ）
           for version in ${python_versions}; do
             echo -n "| ${version} " >> README.md
-            for os in ubuntu-latest macos-latest windows-latest; do
-              echo -n "| [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report/${os}/python/${version}/index.html) " >> README.md
+            for os in ${os_order}; do
+              if [ -f "pytest-cov-report/${os}/python/${version}/index.html" ]; then
+                echo -n "| [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report/${os}/python/${version}/index.html) " >> README.md
+              else
+                echo -n "| N/A " >> README.md
+              fi
             done
             echo "|" >> README.md
           done
