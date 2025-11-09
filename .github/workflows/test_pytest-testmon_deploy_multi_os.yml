@@ -96,7 +96,7 @@ jobs:
 
       - name: Install dependencies
         run: |
-          uv sync
+          uv sync --extra dev
           echo "Installed dependencies:"
           uv pip list
 
