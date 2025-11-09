@@ -209,7 +209,7 @@ jobs:
         run: |
           if [ -f .testmondata ]; then
             echo "Executing WAL checkpoint..."
-            sqlite3 .testmondata "PRAGMA wal_checkpoint(TRUNCATE);" || echo "WAL checkpoint failed"
+            python -c "import sqlite3; conn = sqlite3.connect('.testmondata'); conn.execute('PRAGMA wal_checkpoint(TRUNCATE)'); conn.close()" || echo "WAL checkpoint failed"
             echo "✓ WAL checkpoint completed"
 
             # WALファイルを削除（既にメインファイルに統合済み）
