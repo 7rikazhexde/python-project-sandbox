@@ -63,6 +63,7 @@ jobs:
 
       - name: Set GHPAGES_BRANCH
         id: set-ghpages-branch
+        shell: bash
         run: |
           # repository_dispatchの場合はpayloadから、pushの場合はデフォルト値
           if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
@@ -84,15 +85,10 @@ jobs:
           timezoneWindows: "Tokyo Standard Time"
 
       - name: Install uv
-        run: |
-          curl -LsSf https://astral.sh/uv/install.sh | sh
-          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
-
-      - name: Cache dependencies
-        uses: actions/cache@v4.2.0
+        uses: astral-sh/setup-uv@v5
         with:
-          path: ~/.cache/uv
-          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
 
       - name: Install dependencies
         run: |
