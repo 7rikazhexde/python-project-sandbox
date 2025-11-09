@@ -83,22 +83,22 @@ jobs:
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
 
-      - name: Install poetry
+      - name: Install uv
         run: |
-          pip install poetry
-          echo "Poetry version: $(poetry --version)"
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Cache dependencies
         uses: actions/cache@v4.2.0
         with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
 
       - name: Install dependencies
         run: |
-          poetry install
+          uv sync
           echo "Installed dependencies:"
-          poetry show --tree
+          uv pip list
 
       - name: Fetch previous testmon data
         shell: bash
@@ -159,7 +159,7 @@ jobs:
           ENV_ID="${{ matrix.os }}-py${{ matrix.python-version }}"
           echo "Environment ID: $ENV_ID"
 
-          output=$(poetry run pytest --testmon --testmon-env "$ENV_ID" -v)
+          output=$(uv run pytest --testmon --testmon-env "$ENV_ID" -v)
           echo "${output}"
 
           {

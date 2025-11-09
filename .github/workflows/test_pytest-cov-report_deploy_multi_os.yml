@@ -7,6 +7,7 @@ on:
     types:
       - completed
     branches:
+      - main
       - test/pytest-testmon-workflow
   workflow_dispatch:  # 手動実行も可能
 
@@ -42,19 +43,19 @@ jobs:
           timezoneMacos: "Asia/Tokyo"
           timezoneWindows: "Tokyo Standard Time"
 
-      - name: Install poetry
+      - name: Install uv
         run: |
-          pip install poetry
-          echo "Poetry version: $(poetry --version)"
+          curl -LsSf https://astral.sh/uv/install.sh | sh
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
 
       - name: Cache dependencies
         uses: actions/cache@v4.2.0
         with:
-          path: ~/.cache/pypoetry
-          key: ${{ runner.os }}-poetry-${{ hashFiles('**/poetry.lock') }}
+          path: ~/.cache/uv
+          key: ${{ runner.os }}-uv-${{ hashFiles('**/uv.lock') }}
 
       - name: Install dependencies
-        run: poetry install
+        run: uv sync
 
       - name: Run tests with pytest-cov
         id: pytest-cov
@@ -62,7 +63,7 @@ jobs:
         run: |
           coverage_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
           mkdir -p "${coverage_path}"
-          poetry run pytest --cov=project_a --cov-report="html:${coverage_path}"
+          uv run pytest --cov=project_a --cov-report="html:${coverage_path}"
 
       - name: Upload pytest-cov results
         uses: actions/upload-artifact@v4.4.3
