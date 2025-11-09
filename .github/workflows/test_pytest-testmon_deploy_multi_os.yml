@@ -261,6 +261,8 @@ jobs:
     needs: test-and-deploy-testmon
     if: contains(needs.test-and-deploy-testmon.result, 'success')
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
@@ -293,8 +295,8 @@ jobs:
             if [ -d "$artifact_dir" ] && [ -f "${artifact_dir}/.testmondata" ]; then
               # ディレクトリ名からOSとPythonバージョンを抽出
               dir_name=$(basename "$artifact_dir")
-              os=$(echo "$dir_name" | sed -E 's/testmon-data_([^_]+(_[^_]+)?).*/\1/')
-              python_version=$(echo "$dir_name" | sed -E 's/.*_python_([^_]+)/\1/')
+              os=$(echo "$dir_name" | sed -E 's/testmon-data_([^_]+(-[^_]+)?)_python_.*/\1/')
+              python_version=$(echo "$dir_name" | sed -E 's/.*_python_([0-9.]+)/\1/')
 
               testmon_path="testmon-data/${os}/python/${python_version}"
 
