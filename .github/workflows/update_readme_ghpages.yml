@@ -1,0 +1,182 @@
+name: Update README for ghpages
+
+# ワークフローの処理の流れ:
+# 1. HTML/Covワークフローのいずれかが完了すると起動
+# 2. 先頭で両方のワークフローが成功しているか確認
+# 3. 両方成功している場合のみREADME更新を実行
+# 4. matrix.jsonから動的にREADMEを生成
+
+on:
+  workflow_run:
+    workflows:
+      - "pytest-html Report and Deploy Multi-OS"
+      - "pytest-cov Report and Deploy Multi-OS"
+    types:
+      - completed
+    branches:
+      - main
+      - test/pytest-testmon-workflow
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  check-prerequisites:
+    runs-on: ubuntu-latest
+    outputs:
+      should_update: ${{ steps.check.outputs.should_update }}
+    steps:
+      - name: Check both workflows completed successfully
+        id: check
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const branch = context.payload.workflow_run?.head_branch || 'main';
+            console.log(`Checking workflows for branch: ${branch}`);
+
+            // 最近のワークフロー実行を取得
+            const workflowRuns = await github.rest.actions.listWorkflowRunsForRepo({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              branch: branch,
+              per_page: 50
+            });
+
+            // HTML/Covワークフローの最新の成功実行を探す
+            const htmlRun = workflowRuns.data.workflow_runs.find(run =>
+              run.name === 'pytest-html Report and Deploy Multi-OS' &&
+              run.conclusion === 'success' &&
+              run.status === 'completed'
+            );
+
+            const covRun = workflowRuns.data.workflow_runs.find(run =>
+              run.name === 'pytest-cov Report and Deploy Multi-OS' &&
+              run.conclusion === 'success' &&
+              run.status === 'completed'
+            );
+
+            const htmlCompleted = !!htmlRun;
+            const covCompleted = !!covRun;
+
+            console.log(`HTML workflow completed: ${htmlCompleted}`);
+            console.log(`Cov workflow completed: ${covCompleted}`);
+
+            if (htmlRun) console.log(`HTML run: ${htmlRun.html_url}`);
+            if (covRun) console.log(`Cov run: ${covRun.html_url}`);
+
+            const shouldUpdate = htmlCompleted && covCompleted;
+            core.setOutput('should_update', shouldUpdate.toString());
+
+            if (!shouldUpdate) {
+              console.log('⚠️ Not all prerequisite workflows have completed successfully. Skipping README update.');
+            } else {
+              console.log('✅ All prerequisite workflows completed successfully. Proceeding with README update.');
+            }
+
+  update-readme:
+    needs: check-prerequisites
+    if: needs.check-prerequisites.outputs.should_update == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout ghpages_pytest-testmon branch
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ghpages_pytest-testmon
+          fetch-depth: 0
+
+      - name: Checkout main branch for matrix.json
+        uses: actions/checkout@v4.2.2
+        with:
+          ref: ${{ github.event.workflow_run.head_branch || 'main' }}
+          path: main-branch
+
+      - name: Generate README
+        run: |
+          # matrix.jsonからOS/Pythonバージョンを読み込み
+          os_list=$(jq -r '.os[]' main-branch/.github/json2vars-setter/matrix.json)
+          python_versions=$(jq -r '.versions.python[]' main-branch/.github/json2vars-setter/matrix.json | sed 's/\([0-9]\+\.[0-9]\+\)\..*/\1/')
+
+          echo "OS list: ${os_list}"
+          echo "Python versions: ${python_versions}"
+
+          # README.mdを生成
+          {
+            echo "# Pytest Report"
+            echo ""
+            echo "This repository deploys [pytest-html](https://pypi.org/project/pytest-html/) and [pytest-cov](https://pypi.org/project/pytest-cov/) reports to GitHub Pages."
+            echo ""
+            echo "## pytest-html"
+            echo ""
+            echo "[![pytest-html Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-html-report_deploy_multi_os.yml)"
+            echo ""
+            echo "| Python Version | ubuntu-latest | macos-latest | windows-latest |"
+            echo "|----------------|---------------|----------|----------------|"
+          } > README.md
+
+          # Pythonバージョンごとに行を追加
+          for version in ${python_versions}; do
+            echo -n "| ${version} " >> README.md
+            for os in ubuntu-latest macos-latest windows-latest; do
+              echo -n "| [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report/${os}/python/${version}/report_page.html) " >> README.md
+            done
+            echo "|" >> README.md
+          done
+
+          # pytest-covセクションを追加
+          {
+            echo ""
+            echo "## pytest-cov"
+            echo ""
+            echo "[![pytest-cov Report and Deploy Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_pytest-cov-report_deploy_multi_os.yml)"
+            echo ""
+            echo "| Python Version | ubuntu-latest | macos-latest | windows-latest |"
+            echo "|----------------|---------------|----------|----------------|"
+          } >> README.md
+
+          # Pythonバージョンごとに行を追加
+          for version in ${python_versions}; do
+            echo -n "| ${version} " >> README.md
+            for os in ubuntu-latest macos-latest windows-latest; do
+              echo -n "| [report-url](https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report/${os}/python/${version}/index.html) " >> README.md
+            done
+            echo "|" >> README.md
+          done
+
+          echo "" >> README.md
+
+          echo "✅ README.md generated successfully"
+          cat README.md
+
+      - name: Commit and push
+        run: |
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+          if git diff --quiet README.md; then
+            echo "No changes to README.md"
+            exit 0
+          fi
+
+          git add README.md
+          git commit -m "docs: Update README with latest report links" \
+            -m "Generated from matrix.json configuration" \
+            -m "Workflow run: ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}"
+
+          # Push with retry
+          max_retries=3
+          retry_count=0
+          while [ $retry_count -lt $max_retries ]; do
+            if git push origin ghpages_pytest-testmon; then
+              echo "✅ README.md updated successfully"
+              break
+            else
+              retry_count=$((retry_count + 1))
+              if [ $retry_count -lt $max_retries ]; then
+                echo "Push failed, retrying ($retry_count/$max_retries)..."
+                git pull origin ghpages_pytest-testmon --rebase
+              else
+                echo "❌ Push failed after $max_retries retries"
+                exit 1
+              fi
+            fi
+          done
