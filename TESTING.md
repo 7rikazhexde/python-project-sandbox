@@ -14,9 +14,9 @@ git branch
 ### 2. 必要なブランチの存在確認
 
 ```bash
-# ghpages_pytest-testmon ブランチが存在することを確認
-git branch -r | grep ghpages_pytest-testmon
-# origin/ghpages_pytest-testmon
+# ghpages ブランチが存在することを確認
+git branch -r | grep ghpages
+# origin/ghpages
 ```
 
 ## 動作確認手順
@@ -38,7 +38,7 @@ git push origin test/pytest-testmon-workflow
 ### 方法2: 手動トリガー（GitHub UI）
 
 1. GitHubリポジトリにアクセス
-   - https://github.com/7rikazhexde/python-project-sandbox
+   - <https://github.com/7rikazhexde/python-project-sandbox>
 
 2. "Actions" タブをクリック
 
@@ -60,20 +60,24 @@ gh workflow run send_payload_to_pytest_testmon.yml --ref test/pytest-testmon-wor
 ## ワークフロー実行の流れ
 
 ### 1. トリガーワークフロー
+
 **ワークフロー名**: `Use Send Payload Action to Pytest Testmon`
 
 実行内容:
+
 - `repository_dispatch` イベントを発行
 - ペイロード:
   - `event_type`: `test_pytest-testmon_deploy_multi_os`
-  - `ghpages_branch`: `ghpages_pytest-testmon`
+  - `ghpages_branch`: `ghpages`
   - `os_list`: `[ubuntu-latest]`
   - `version_list`: `[3.12]`
 
 ### 2. メインワークフロー
+
 **ワークフロー名**: `pytest-testmon Deploy Multi-OS`
 
 実行ジョブ:
+
 1. **test-and-deploy-testmon** (ubuntu-latest, Python 3.12)
    - 環境セットアップ
    - 前回の .testmondata 取得
@@ -85,13 +89,14 @@ gh workflow run send_payload_to_pytest_testmon.yml --ref test/pytest-testmon-wor
 
 2. **deploy-testmon**
    - アーティファクトダウンロード
-   - ghpages_pytest-testmon ブランチへデプロイ
+   - ghpages ブランチへデプロイ
 
 3. **trigger-other-workflows**
    - pytest-cov ワークフロートリガー
    - pytest-html ワークフロートリガー
 
 ### 3. 後続ワークフロー
+
 - **pytest-cov Report and Deploy Multi-OS**
 - **pytest-html Report and Deploy Multi-OS**
 
@@ -100,12 +105,14 @@ gh workflow run send_payload_to_pytest_testmon.yml --ref test/pytest-testmon-wor
 ### 初回実行時
 
 #### 1. デバッグ情報（テスト実行前）
+
 ```text
 === Before Test Execution ===
 ⚠ .testmondata does NOT exist
 ```
 
 #### 2. pytest-testmon 実行
+
 ```text
 Running tests with testmon...
 Environment ID: ubuntu-latest-py3.12
@@ -113,6 +120,7 @@ testmon: new DB, environment: ubuntu-latest-py3.12
 ```
 
 #### 3. デバッグ情報（テスト実行後）
+
 ```text
 === After Test Execution ===
 ✓ .testmondata exists
@@ -122,6 +130,7 @@ WAL files:
 ```
 
 #### 4. WALチェックポイント
+
 ```text
 Executing WAL checkpoint...
 ✓ WAL checkpoint completed
@@ -133,6 +142,7 @@ Final .testmondata size:
 ### 2回目実行時（成功の確認）
 
 #### 1. デバッグ情報（テスト実行前）
+
 ```text
 === Before Test Execution ===
 ✓ .testmondata exists
@@ -145,6 +155,7 @@ XX
 ```
 
 #### 2. pytest-testmon 実行（重要！）
+
 ```text
 Running tests with testmon...
 Environment ID: ubuntu-latest-py3.12
@@ -155,6 +166,7 @@ collected 0 items
 **✅ 成功の証**: `testmon: changed files: 0` が表示され、`new DB` が表示されない
 
 #### 3. テストが実行されない
+
 ```text
 No tests executed. Skipping deployment and further workflows.
 tests_executed=false
@@ -175,6 +187,7 @@ git push origin test/pytest-testmon-workflow
 ```
 
 期待されるログ:
+
 ```text
 testmon: changed files: 1, unchanged files: XX
 collected Y items (deselected Z items)
@@ -189,23 +202,27 @@ collected Y items (deselected Z items)
 **確認項目:**
 
 1. WALチェックポイントが実行されているか
+
    ```text
    ログで "✓ WAL checkpoint completed" を確認
    ```
 
 2. .testmondata が正しくアップロードされているか
+
    ```text
    ログで "File moved successfully" を確認
    ```
 
-3. ghpages_pytest-testmon ブランチに .testmondata が存在するか
+3. ghpages ブランチに .testmondata が存在するか
+
    ```bash
-   git fetch origin ghpages_pytest-testmon:ghpages_pytest-testmon
-   git checkout ghpages_pytest-testmon
+   git fetch origin ghpages:ghpages
+   git checkout ghpages
    ls -la testmon-data/ubuntu-latest/python/3.12/
    ```
 
 4. データベースバージョンの確認
+
    ```bash
    sqlite3 testmon-data/ubuntu-latest/python/3.12/.testmondata "PRAGMA user_version;"
    # 13 と表示されるべき
@@ -216,12 +233,14 @@ collected Y items (deselected Z items)
 **確認項目:**
 
 1. ブランチが正しいか
+
    ```bash
    git branch
    # * test/pytest-testmon-workflow
    ```
 
 2. ワークフローファイルの配置
+
    ```bash
    ls -la .github/workflows/send_payload_to_pytest_testmon.yml
    ls -la .github/workflows/test_pytest-testmon_deploy_multi_os.yml
@@ -234,6 +253,7 @@ collected Y items (deselected Z items)
 ### 問題3: "packages changed" が表示される
 
 **確認:**
+
 ```text
 The packages installed in your Python environment have been changed.
 All tests have to be re-executed.
@@ -242,11 +262,13 @@ All tests have to be re-executed.
 **対処法:**
 
 poetry.lock が変更されていないか確認:
+
 ```bash
 git diff origin/main poetry.lock
 ```
 
 必要に応じて `pyproject.toml` で依存パッケージを無視:
+
 ```toml
 [tool.pytest.ini_options]
 testmon_ignore_dependencies = [
@@ -259,13 +281,15 @@ testmon_ignore_dependencies = [
 ## 成功の確認チェックリスト
 
 ### ✅ 初回実行
+
 - [ ] ワークフローが正常に完了
 - [ ] "new DB" メッセージが表示される（正常）
 - [ ] WALチェックポイントが実行される
 - [ ] .testmondata がアップロードされる
-- [ ] ghpages_pytest-testmon にデプロイされる
+- [ ] ghpages にデプロイされる
 
 ### ✅ 2回目実行（変更なし）
+
 - [ ] ワークフローが正常に完了
 - [ ] "changed files: 0" と表示される
 - [ ] "new DB" が表示されない ⭐重要
@@ -273,6 +297,7 @@ testmon_ignore_dependencies = [
 - [ ] tests_executed=false になる
 
 ### ✅ 3回目実行（変更あり）
+
 - [ ] ワークフローが正常に完了
 - [ ] "changed files: 1" (または変更数) と表示される
 - [ ] 影響を受けるテストのみが実行される
@@ -286,6 +311,7 @@ testmon_ignore_dependencies = [
 1. **複数OS・Pythonバージョンでテスト**
 
    `send_payload_to_pytest_testmon.yml` を編集:
+
    ```yaml
    os_list: '[ubuntu-latest,macos-13,windows-latest]'
    version_list: '[3.12,3.13]'
@@ -294,6 +320,7 @@ testmon_ignore_dependencies = [
 2. **mainブランチへの適用**
 
    テストが成功したら、mainブランチでも動作するように設定:
+
    ```yaml
    on:
      push:

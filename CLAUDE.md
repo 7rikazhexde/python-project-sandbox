@@ -65,8 +65,8 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 ### 基本方針
 
 1. **既存ワークフローとの区別**
-   - 既存の`ghpages`ブランチは使用しない
-   - 新しく`ghpages_pytest-testmon`ブランチを作成してテスト
+   - `.github/workflow-master`に退避
+   - `ghpages`ブランチを使用してテスト
 
 2. **作業用ブランチ**
    - ブランチ名: `test/pytest-testmon-workflow`
@@ -94,7 +94,7 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 
 **必要な修正:**
 
-- [ ] ghpagesブランチ → ghpages_pytest-testmonブランチに変更
+- [ ] ghpagesブランチ → ghpagesブランチに変更
 - [ ] SQLite WALチェックポイントの追加（最重要）
 - [ ] 環境識別子の明示的設定（`--testmon-env`）
 - [ ] デバッグ情報の追加
@@ -104,14 +104,14 @@ TESTMON_ANALYSIS_AND_FIX_PLAN.mdの分析により、以下の原因が特定さ
 
 **必要な修正:**
 
-- [ ] ghpagesブランチ → ghpages_pytest-testmonブランチに変更
+- [ ] ghpagesブランチ → ghpagesブランチに変更
 - [ ] testmonデータ取得元の変更
 
 #### 3. test_pytest-cov-report_deploy_multi_os.yml
 
 **必要な修正:**
 
-- [ ] ghpagesブランチ → ghpages_pytest-testmonブランチに変更
+- [ ] ghpagesブランチ → ghpagesブランチに変更
 - [ ] testmonデータ取得元の変更
 
 ## 実装の詳細
@@ -165,14 +165,14 @@ OS × Pythonバージョンで環境を明確に識別:
 
 ### フェーズ4: ブランチ変更
 
-すべてのワークフローで`ghpages`を`ghpages_pytest-testmon`に変更:
+すべてのワークフローで`ghpages`を`ghpages`に変更:
 
 ```yaml
 # 例: test_pytest-testmon_deploy_multi_os.yml
 - name: Fetch previous testmon data
   run: |
-    git fetch origin ghpages_pytest-testmon:ghpages_pytest-testmon || true
-    git checkout ghpages_pytest-testmon -- "testmon-data/..."
+    git fetch origin ghpages:ghpages || true
+    git checkout ghpages -- "testmon-data/..."
 ```
 
 ## 検証手順
@@ -183,15 +183,15 @@ OS × Pythonバージョンで環境を明確に識別:
 git checkout -b test/pytest-testmon-workflow
 ```
 
-### 2. ghpages_pytest-testmonブランチの作成
+### 2. ghpagesブランチの作成
 
 ```bash
-git checkout --orphan ghpages_pytest-testmon
+git checkout --orphan ghpages
 git rm -rf .
 echo "# pytest-testmon data storage" > README.md
 git add README.md
-git commit -m "Initialize ghpages_pytest-testmon branch"
-git push origin ghpages_pytest-testmon
+git commit -m "Initialize ghpages branch"
+git push origin ghpages
 ```
 
 ### 3. ワークフローの修正と実行
@@ -206,18 +206,21 @@ git push origin ghpages_pytest-testmon
 ### 4. 確認ポイント
 
 **初回実行:**
-```
+
+```bash
 testmon: new DB, environment: ubuntu-latest-py3.12
 ```
 
 **2回目以降（変更なし）:**
-```
+
+```bash
 testmon: changed files: 0, unchanged files: X
 collected 0 items
 ```
 
 **変更後:**
-```
+
+```bash
 testmon: changed files: 1, unchanged files: X
 collected Y items (deselected Z items)
 ```
@@ -289,7 +292,7 @@ testmon_ignore_dependencies = [
 ## マイルストーン
 
 - [ ] 作業ブランチ`test/pytest-testmon-workflow`の作成
-- [ ] `ghpages_pytest-testmon`ブランチの作成
+- [ ] `ghpages`ブランチの作成
 - [ ] デバッグ情報の追加と初回実行
 - [ ] WALチェックポイントの実装
 - [ ] 環境識別子の設定
@@ -306,7 +309,7 @@ testmon_ignore_dependencies = [
    - 本番稼働中のワークフローは変更しない
 
 2. **テスト環境での実験**
-   - `ghpages_pytest-testmon`ブランチで独立してテスト
+   - `ghpages`ブランチで独立してテスト
    - 問題があれば容易にロールバック可能
 
 3. **段階的な実装**
@@ -321,7 +324,7 @@ testmon_ignore_dependencies = [
 
 1. このドキュメントの内容を確認
 2. 作業ブランチ`test/pytest-testmon-workflow`を作成
-3. `ghpages_pytest-testmon`ブランチを作成
+3. `ghpages`ブランチを作成
 4. フェーズ1（デバッグ情報追加）から開始
 5. 各フェーズの結果をログで確認しながら進める
 
