@@ -1,0 +1,323 @@
+name: pytest-testmon Deploy Multi-OS
+
+# ワークフローの処理の流れ:
+# 1. トリガー条件:
+#    - mainブランチへのpush
+#    - tests/**、project_a/**、poetry.lock、ワークフローファイル自体の変更
+# 2. 変数設定:
+#    - .github/json2vars-setter/matrix.jsonからOS・Pythonバージョンを読み込み
+# 3. GhPagesブランチから前回の.testmondataを取得
+#    - OS、Pythonバージョンごとに個別のパスから取得
+#    - 取得できない場合は新規作成として扱う
+# 4. pytest-testmonを使用してテスト実行
+#    - 取得した.testmondataを使用して差分テストを実行
+#    - テスト実行結果を確認し、実行の有無をフラグとして保持
+# 5. .testmondataファイルのアップロード
+#    - テストが実行された場合のみ、成果物としてアップロード
+# 6. GitHub Pagesへのデプロイ
+#    - アップロードされた.testmondataをGhPagesブランチにデプロイ
+#    - 変更の有無を確認し、変更があった場合のみ更新を実行
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'project_a/**'
+      - 'tests/**'
+      - 'uv.lock'
+      - '.github/workflows/test_pytest-testmon_deploy_multi_os.yml'
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  set_variables:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set variables from JSON
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@v1.0.2
+        with:
+          json-file: .github/json2vars-setter/matrix.json
+
+      - name: Debug output values
+        run: |
+          echo "os: ${{ steps.json2vars.outputs.os }}"
+          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
+
+  test-and-deploy-testmon:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+    runs-on: ${{ matrix.os }}
+    env:
+      TZ: "Asia/Tokyo"
+    permissions:
+      contents: write
+      pull-requests: write
+    outputs:
+      tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: |
+          uv sync --extra dev
+          echo "Installed dependencies:"
+          uv pip list
+
+      - name: Fetch previous testmon data
+        shell: bash
+        run: |
+          echo "Fetching previous testmon data..."
+          ghpages_branch="ghpages_pytest-testmon"
+          git fetch origin "${ghpages_branch}":"${ghpages_branch}" || true
+          testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          git checkout "${ghpages_branch}" -- "${testmon_path}/.testmondata" || true
+          if [ -f "${testmon_path}/.testmondata" ]; then
+            echo "Previous testmon data found. Moving to current directory."
+            mv "${testmon_path}/.testmondata" ".testmondata"
+            rm -rf "${testmon_path}"
+          else
+            echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
+          fi
+        continue-on-error: true
+
+      # ======================================================================
+      # フェーズ1: デバッグ情報 - テスト実行前
+      # ======================================================================
+      - name: Debug - Check testmon data before test
+        shell: bash
+        run: |
+          echo "=== Before Test Execution ==="
+          if [ -f .testmondata ]; then
+            echo "✓ .testmondata exists"
+            ls -lh .testmondata* || true
+
+            echo ""
+            echo "Database version:"
+            sqlite3 .testmondata "PRAGMA user_version;" || echo "Failed to read version"
+
+            echo ""
+            echo "Environment info:"
+            sqlite3 .testmondata "SELECT id, name, python_version FROM environment LIMIT 5;" || true
+
+            echo ""
+            echo "Test execution count:"
+            sqlite3 .testmondata "SELECT COUNT(*) FROM test_execution;" || true
+
+            echo ""
+            echo "File fingerprint count:"
+            sqlite3 .testmondata "SELECT COUNT(*) FROM file_fp;" || true
+          else
+            echo "⚠ .testmondata does NOT exist"
+          fi
+        continue-on-error: true
+
+      # ======================================================================
+      # フェーズ3: 環境識別子の設定 + テスト実行
+      # ======================================================================
+      - name: Run tests with testmon
+        id: pytest-testmon
+        shell: bash
+        run: |
+          echo "Running tests with testmon..."
+          # 環境識別子を明示的に設定
+          ENV_ID="${{ matrix.os }}-py${{ matrix.python-version }}"
+          echo "Environment ID: $ENV_ID"
+
+          output=$(uv run pytest --testmon --testmon-env "$ENV_ID" -v)
+          echo "${output}"
+
+          {
+            echo "testmon_output<<EOF"
+            echo "${output}"
+            echo "EOF"
+          } >> "$GITHUB_OUTPUT"
+
+          if echo "${output}" | grep -q "collected 0 items"; then
+           echo "No tests executed. Skipping deployment and further workflows."
+           echo "tests_executed=false" >> "$GITHUB_OUTPUT"
+          else
+           echo "Tests executed. Proceeding with deployment and further workflows."
+           echo "tests_executed=true" >> "$GITHUB_OUTPUT"
+          fi
+
+      # ======================================================================
+      # フェーズ1: デバッグ情報 - テスト実行後
+      # ======================================================================
+      - name: Debug - Check testmon data after test
+        if: always()
+        shell: bash
+        run: |
+          echo "=== After Test Execution ==="
+          if [ -f .testmondata ]; then
+            echo "✓ .testmondata exists"
+            ls -lh .testmondata* || true
+
+            echo ""
+            echo "WAL files:"
+            ls -lh .testmondata-wal .testmondata-shm 2>/dev/null || echo "No WAL files"
+
+            echo ""
+            echo "Latest execution:"
+            sqlite3 .testmondata "SELECT * FROM execution ORDER BY id DESC LIMIT 1;" || true
+
+            echo ""
+            echo "Total test executions:"
+            sqlite3 .testmondata "SELECT COUNT(*) FROM test_execution;" || true
+          else
+            echo "⚠ .testmondata does NOT exist after test"
+          fi
+        continue-on-error: true
+
+      # ======================================================================
+      # フェーズ2: WALチェックポイントの実行
+      # ======================================================================
+      - name: Checkpoint testmon database
+        if: always()
+        shell: bash
+        run: |
+          if [ -f .testmondata ]; then
+            echo "Executing WAL checkpoint..."
+            python -c "import sqlite3; conn = sqlite3.connect('.testmondata'); conn.execute('PRAGMA wal_checkpoint(TRUNCATE)'); conn.close()" || echo "WAL checkpoint failed"
+            echo "✓ WAL checkpoint completed"
+
+            # WALファイルを削除（既にメインファイルに統合済み）
+            rm -f .testmondata-wal .testmondata-shm
+            echo "✓ WAL files removed"
+
+            # ファイルサイズ確認
+            echo "Final .testmondata size:"
+            ls -lh .testmondata
+          else
+            echo "⚠ .testmondata not found, skipping WAL checkpoint"
+          fi
+        continue-on-error: true
+
+      - name: Create testmon directory and move .testmondata
+        shell: bash
+        run: |
+          echo "Creating testmon directory..."
+          testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          mkdir -p "${testmon_path}"
+          echo "Moving .testmondata file..."
+          if [ -f ".testmondata" ]; then
+            mv ".testmondata" "${testmon_path}/.testmondata" && echo "File moved successfully." || echo "Failed to move file."
+          else
+            echo "Warning: .testmondata file not found in root directory."
+          fi
+          echo "Contents of ${testmon_path}:"
+          ls -la "${testmon_path}"
+
+      # ======================================================================
+      # アーティファクトアップロード（無条件）
+      # フェーズ4: テストが実行されなくてもデータを保持するため常にアップロード
+      # ======================================================================
+      - name: Upload testmon data
+        uses: actions/upload-artifact@v4.4.3
+        if: always()
+        with:
+          name: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}
+          path: testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}/.testmondata
+          if-no-files-found: warn
+          include-hidden-files: true
+          retention-days: 1
+
+  deploy-testmon:
+    needs: test-and-deploy-testmon
+    if: contains(needs.test-and-deploy-testmon.result, 'success')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Download testmon data
+        uses: actions/download-artifact@v4.1.8
+        with:
+          path: downloaded-artifacts
+
+      - name: Setup Git
+        run: |
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy testmon data to GitHub Pages
+        id: deploy_testmon
+        run: |
+          ghpages_branch="ghpages_pytest-testmon"
+
+          echo "Deploying testmon data to ${ghpages_branch}..."
+          git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
+          git checkout "${ghpages_branch}"
+
+          changes_made=false
+
+          # アーティファクトディレクトリを処理
+          for artifact_dir in downloaded-artifacts/testmon-data_*; do
+            if [ -d "$artifact_dir" ] && [ -f "${artifact_dir}/.testmondata" ]; then
+              # ディレクトリ名からOSとPythonバージョンを抽出
+              dir_name=$(basename "$artifact_dir")
+              os=$(echo "$dir_name" | sed -E 's/testmon-data_([^_]+(-[^_]+)?)_python_.*/\1/')
+              python_version=$(echo "$dir_name" | sed -E 's/.*_python_([0-9.]+)/\1/')
+
+              testmon_path="testmon-data/${os}/python/${python_version}"
+
+              echo "Processing ${os} with Python ${python_version}..."
+              mkdir -p "${testmon_path}"
+              cp "${artifact_dir}/.testmondata" "${testmon_path}/.testmondata"
+              git add "${testmon_path}"
+              changes_made=true
+            fi
+          done
+
+          if [ "${changes_made}" = true ]; then
+            git commit -m "Update testmon data on GitHub Pages"
+            git push origin "${ghpages_branch}"
+            echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+          else
+            echo "No changes to commit"
+            echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: List deployed files
+        if: always()
+        run: |
+          ghpages_branch="ghpages_pytest-testmon"
+          git checkout "${ghpages_branch}"
+          echo "Deployed testmon data files:"
+          find . -name ".testmondata"

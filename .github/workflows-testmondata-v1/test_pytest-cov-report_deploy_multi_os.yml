@@ -1,0 +1,177 @@
+name: pytest-cov Report and Deploy Multi-OS
+
+# workflow_runトリガーを使用してtestmonワークフロー完了後に自動実行
+on:
+  workflow_run:
+    workflows: ["pytest-testmon Deploy Multi-OS"]
+    types:
+      - completed
+    branches:
+      - main
+  workflow_dispatch:  # 手動実行も可能
+
+jobs:
+  set_variables:
+    if: ${{ github.event.workflow_run.conclusion == 'success' || github.event_name == 'workflow_dispatch' }}
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set variables from JSON
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@v1.0.2
+        with:
+          json-file: .github/json2vars-setter/matrix.json
+
+      - name: Debug output values
+        run: |
+          echo "os: ${{ steps.json2vars.outputs.os }}"
+          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
+
+  test-and-coverage:
+    needs: set_variables
+    strategy:
+      matrix:
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
+    runs-on: ${{ matrix.os }}
+    env:
+      TZ: "Asia/Tokyo"
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v5.3.0
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      - name: Set timezone
+        uses: szenius/set-timezone@v2.0
+        with:
+          timezoneLinux: "Asia/Tokyo"
+          timezoneMacos: "Asia/Tokyo"
+          timezoneWindows: "Tokyo Standard Time"
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v5
+        with:
+          enable-cache: true
+          cache-dependency-glob: "uv.lock"
+
+      - name: Install dependencies
+        run: uv sync --extra dev
+
+      - name: Fetch previous testmon data
+        shell: bash
+        run: |
+          echo "Fetching previous testmon data from ghpages_pytest-testmon..."
+          git fetch origin "ghpages_pytest-testmon":"ghpages_pytest-testmon" || true
+          testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          git checkout "ghpages_pytest-testmon" -- "${testmon_path}/.testmondata" || true
+          if [ -f "${testmon_path}/.testmondata" ]; then
+            echo "Previous testmon data found. Moving to current directory."
+            mv "${testmon_path}/.testmondata" ".testmondata"
+            rm -rf "${testmon_path}"
+          else
+            echo "No previous testmon data found for ${{ matrix.os }} with Python ${{ matrix.python-version }}."
+          fi
+
+      - name: Run tests with pytest-cov
+        id: pytest-cov
+        shell: bash
+        run: |
+          coverage_path="htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}"
+          mkdir -p "${coverage_path}"
+          ENV_ID="${{ matrix.os }}-py${{ matrix.python-version }}"
+          uv run pytest --testmon --testmon-env "$ENV_ID" --cov=project_a --cov-report="html:${coverage_path}"
+
+      - name: Upload pytest-cov results
+        uses: actions/upload-artifact@v4.4.3
+        with:
+          name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
+          path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
+          retention-days: 7
+
+  deploy:
+    needs: test-and-coverage
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      actions: write
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Download pytest-cov artifacts
+        uses: actions/download-artifact@v4.1.8
+
+      - name: Setup Git
+        run: |
+          git config --local user.email "33836132+github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "github-actions[bot]"
+
+      - name: Deploy to GitHub Pages
+        id: deploy
+        run: |
+          ghpages_branch="ghpages_pytest-testmon"
+
+          git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
+          git checkout "${ghpages_branch}"
+          git pull origin "${ghpages_branch}" --rebase || true
+
+          changes_made=false
+
+          for artifact_dir in coverage-results-*; do
+            if [ -d "$artifact_dir" ]; then
+              os=$(echo "$artifact_dir" | sed -E 's/coverage-results-([^-]+(-[^-]+)?)-python-.*/\1/')
+              python_version=$(echo "$artifact_dir" | sed -E 's/.*-python-([^-]+)/\1/')
+
+              coverage_path="pytest-cov-report/${os}/python/${python_version}"
+
+              mkdir -p "${coverage_path}"
+              rm -rf "${coverage_path}"
+              mv "${artifact_dir}" "${coverage_path}"
+              git add "${coverage_path}"
+              changes_made=true
+            fi
+          done
+
+          if [ "${changes_made}" = true ]; then
+            git commit -m "Update pytest-cov reports on GitHub Pages"
+
+            # Push with retry (他のワークフローとの競合に対応)
+            max_retries=3
+            retry_count=0
+            while [ $retry_count -lt $max_retries ]; do
+              if git push origin "${ghpages_branch}"; then
+                echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+                break
+              else
+                retry_count=$((retry_count + 1))
+                if [ $retry_count -lt $max_retries ]; then
+                  echo "Push failed, retrying ($retry_count/$max_retries)..."
+                  git pull origin "${ghpages_branch}" --rebase
+                else
+                  echo "Push failed after $max_retries retries"
+                  exit 1
+                fi
+              fi
+            done
+          else
+            echo "No changes to commit"
+            echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
+          fi
