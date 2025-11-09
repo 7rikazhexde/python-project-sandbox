@@ -1,35 +1,35 @@
-# Testing Documentation
+# テストドキュメント
 
-## Overview
+## 概要
 
-This project uses pytest-testmon for incremental testing to reduce CI execution time while maintaining comprehensive test coverage reports on GitHub Pages.
+本プロジェクトでは、pytest-testmonによる増分テストを使用して、GitHub Pagesでテストカバレッジレポートを維持しながらCI実行時間を削減しています。
 
-## Workflow Architecture
+## ワークフロー構成
 
-### Main Workflow
+### メインワークフロー
 
-- **File**: `.github/workflows/test_pytest-testmon_deploy_multi_os.yml`
-- **Purpose**: Incremental testing with pytest-testmon and full report generation
-- **Trigger**: Push to main branch
+- **ファイル**: `.github/workflows/test_pytest-testmon_deploy_multi_os.yml`
+- **目的**: pytest-testmonによる増分テストと完全なレポート生成
+- **トリガー**: mainブランチへのpush
 
-### Supporting Workflows
+### サポートワークフロー
 
-- **README Update**: `.github/workflows/update_readme_ghpages.yml`
-  - Automatically generates test report links on ghpages branch
-  - Triggers after testmon workflow completes
+- **README更新**: `.github/workflows/update_readme_ghpages.yml`
+  - ghpagesブランチでテストレポートリンクを自動生成
+  - testmonワークフロー完了後にトリガー
 
-### Disabled Workflows
+### 無効化されたワークフロー
 
-- `test_pytest-html-report_deploy_multi_os.yml` (DISABLED)
-- `test_pytest-cov-report_deploy_multi_os.yml` (DISABLED)
+- `test_pytest-html-report_deploy_multi_os.yml` (無効)
+- `test_pytest-cov-report_deploy_multi_os.yml` (無効)
 
-These workflows were consolidated into the testmon workflow to prevent timing issues and ensure consistency.
+これらのワークフローは、タイミング問題を防ぎ一貫性を確保するため、testmonワークフローに統合されました。
 
-## Test Execution Behavior
+## テスト実行動作
 
-### 🎯 Initial Execution (No testmondata exists)
+### 🎯 初回実行時（testmondataが存在しない場合）
 
-#### Step 1: Run testmon
+#### ステップ1: testmonの実行
 
 ```bash
 testmon: new DB, environment: ubuntu-latest-py3.12.9
@@ -41,7 +41,7 @@ tests/calculator/test_operations.py::test_divide PASSED
 ✓ tests_executed=true
 ```
 
-#### Step 2: Generate full reports
+#### ステップ2: 完全なレポート生成
 
 ```bash
 Generate HTML and Coverage reports
@@ -51,31 +51,31 @@ All tests PASSED [100%]
 Coverage: 100%
 ```
 
-#### Step 3: Deploy
+#### ステップ3: デプロイ
 
-- `.testmondata` → uploaded to ghpages branch
-- HTML/Coverage reports → deployed to ghpages branch
-- README updated with report links
+- `.testmondata` → ghpagesブランチにアップロード
+- HTML/Coverageレポート → ghpagesブランチにデプロイ
+- レポートリンク付きREADME更新
 
-**Result**: CI time ~2 minutes, 100% coverage reports generated ✅
+**結果**: CI時間 約2分、カバレッジ100%のレポート生成 ✅
 
 ---
 
-### ✏️ Test Case Changes (Add/Delete/Modify)
+### ✏️ テストケース変更時（追加・削除・修正）
 
-Example: Adding `test_power` to test_operations.py
+例: test_operations.pyに`test_power`を追加
 
-#### Step 1: Run testmon
+#### ステップ1: testmonの実行
 
 ```bash
 testmon: changed files: tests/calculator/test_operations.py
 environment: ubuntu-latest-py3.12.9
 collected 5 items / 4 deselected / 1 selected
 tests/calculator/test_operations.py::test_power PASSED
-✓ tests_executed=true (new test detected)
+✓ tests_executed=true (新しいテストが検出された)
 ```
 
-#### Step 2: Generate full reports
+#### ステップ2: 完全なレポート生成
 
 ```bash
 pytest --html=... --cov=project_a ...
@@ -84,59 +84,59 @@ All 5 tests PASSED [100%]
 Coverage: 100%
 ```
 
-#### Step 3: Deploy
+#### ステップ3: デプロイ
 
-- Updated `.testmondata` → uploaded to ghpages
-- New HTML/Coverage reports → deployed to ghpages
-- README updated
+- 更新された`.testmondata` → ghpagesにアップロード
+- 新しいHTML/Coverageレポート → ghpagesにデプロイ
+- README更新
 
-**Result**: CI time ~2 minutes, all 5 tests executed, 100% coverage reports ✅
+**結果**: CI時間 約2分、全5テストが実行され、カバレッジ100%のレポート生成 ✅
 
 ---
 
-### 🚫 No Changes (testmondata is up-to-date)
+### 🚫 変更なし時（testmondataが最新の場合）
 
-#### Step 1: Run testmon
+#### ステップ1: testmonの実行
 
 ```bash
 testmon: changed files: 0, unchanged files: 16
 environment: ubuntu-latest-py3.12.9
 collected 0 items
 no tests ran in 0.02s
-✓ tests_executed=false (no changes)
+✓ tests_executed=false (変更なし)
 ```
 
-#### Step 2: Skip report generation
+#### ステップ2: レポート生成をスキップ
 
 ```bash
 Skipping report deployment (no tests executed)
 ```
 
-#### Step 3: Deploy testmondata only
+#### ステップ3: testmondataのみデプロイ
 
-- `.testmondata` → uploaded to ghpages (unchanged)
-- HTML/Coverage reports → **SKIPPED** (existing reports remain)
-- README update → **SKIPPED**
+- `.testmondata` → ghpagesにアップロード（変更なし）
+- HTML/Coverageレポート → **スキップ**（既存レポートが残る）
+- README更新 → **スキップ**
 
-**Result**: CI time ~10 seconds, no report generation (existing reports preserved) ✅
+**結果**: CI時間 約10秒、レポート生成なし（既存レポートが保持される） ✅
 
 ---
 
-### 🔧 Source Code Changes (Test code unchanged)
+### 🔧 ソースコード変更時（テストコードは変更なし）
 
-Example: Modifying add function in project_a/calculator/operations.py
+例: project_a/calculator/operations.pyのadd関数を修正
 
-#### Step 1: Run testmon
+#### ステップ1: testmonの実行
 
 ```bash
 testmon: changed files: project_a/calculator/operations.py
 environment: ubuntu-latest-py3.12.9
 collected 4 items / 3 deselected / 1 selected
 tests/calculator/test_operations.py::test_add PASSED
-✓ tests_executed=true (only related test_add executed)
+✓ tests_executed=true (関連するtest_addのみ実行)
 ```
 
-#### Step 2: Generate full reports
+#### ステップ2: 完全なレポート生成
 
 ```bash
 pytest --html=... --cov=project_a ...
@@ -145,41 +145,41 @@ All 4 tests PASSED [100%]
 Coverage: 100%
 ```
 
-#### Step 3: Deploy
+#### ステップ3: デプロイ
 
-- Updated `.testmondata` → uploaded to ghpages
-- New HTML/Coverage reports → deployed to ghpages
-- README updated
+- 更新された`.testmondata` → ghpagesにアップロード
+- 新しいHTML/Coverageレポート → ghpagesにデプロイ
+- README更新
 
-**Result**: CI time ~2 minutes, testmon runs 1 test, reports show all tests (100%) ✅
-
----
-
-## 📊 Performance Comparison
-
-| Scenario | Testmon Execution | Report Generation | CI Time | Coverage |
-|----------|------------------|-------------------|---------|----------|
-| Initial run | All tests (4) | All tests (4) | ~2 min | 100% |
-| Test changes | Incremental (1) | All tests (4) | ~2 min | 100% |
-| No changes | None (0) | **SKIPPED** | **~10 sec** 🚀 | N/A |
-| Source changes | Incremental (1) | All tests (4) | ~2 min | 100% |
+**結果**: CI時間 約2分、testmonは1テストのみ実行、レポートは全テストの結果(100%) ✅
 
 ---
 
-## 🎯 Benefits
+## 📊 パフォーマンス比較
 
-1. **Dramatic CI time reduction when no changes** (2 min → 10 sec)
-2. **Reports always show full test results (100% coverage)**
-3. **testmondata accumulates for accurate incremental testing**
-4. **GitHub Pages reports are always current and complete**
+| シナリオ | testmon実行 | レポート生成 | CI時間 | カバレッジ |
+|----------|-------------|-------------|---------|-----------|
+| 初回実行 | 全テスト(4件) | 全テスト(4件) | 約2分 | 100% |
+| テスト変更 | 増分(1件) | 全テスト(4件) | 約2分 | 100% |
+| 変更なし | なし(0件) | **スキップ** | **約10秒** 🚀 | N/A |
+| ソース変更 | 増分(1件) | 全テスト(4件) | 約2分 | 100% |
 
 ---
 
-## Technical Details
+## 🎯 メリット
 
-### Test Matrix
+1. **変更がない場合のCI時間が劇的に短縮**（2分 → 10秒）
+2. **レポートは常に全テストの結果を表示（カバレッジ100%）**
+3. **testmondataが蓄積され、正確な増分テストが可能**
+4. **GitHub Pagesのレポートは常に最新かつ完全**
 
-The workflow runs tests across multiple OS and Python versions:
+---
+
+## 技術詳細
+
+### テストマトリックス
+
+ワークフローは複数のOSとPythonバージョンでテストを実行します：
 
 ```yaml
 strategy:
@@ -188,64 +188,64 @@ strategy:
     python-version: [3.11.9, 3.12.9, 3.13.2]
 ```
 
-Each combination maintains its own `.testmondata` file:
+各組み合わせは独自の`.testmondata`ファイルを保持します：
 
 - `testmon-data/{os}/python/{version}/.testmondata`
 
-### Environment Identification
+### 環境識別
 
-Each test environment is uniquely identified:
+各テスト環境は一意に識別されます：
 
 ```bash
 ENV_ID="${{ matrix.os }}-py${{ matrix.python-version }}"
-# Example: ubuntu-latest-py3.12.9
+# 例: ubuntu-latest-py3.12.9
 ```
 
-This ensures testmon correctly tracks changes per environment.
+これにより、testmonが環境ごとに変更を正確に追跡できます。
 
-### Report Deployment
+### レポートデプロイ
 
-Reports are deployed to GitHub Pages (ghpages branch):
+レポートはGitHub Pages（ghpagesブランチ）にデプロイされます：
 
 - **pytest-html**: `pytest-html-report/{os}/python/{version}/report_page.html`
 - **pytest-cov**: `pytest-cov-report/{os}/python/{version}/index.html`
 - **testmondata**: `testmon-data/{os}/python/{version}/.testmondata`
 
-### README Generation
+### README生成
 
-The `update_readme_ghpages.yml` workflow automatically:
+`update_readme_ghpages.yml`ワークフローは自動的に以下を実行します：
 
-1. Scans deployed reports
-2. Extracts Python versions (regex: `^[0-9]+\.[0-9]+(\.[0-9]+)?$`)
-3. Generates markdown tables with report links
-4. Updates ghpages branch README
+1. デプロイされたレポートをスキャン
+2. Pythonバージョンを抽出（正規表現: `^[0-9]+\.[0-9]+(\.[0-9]+)?$`）
+3. レポートリンク付きのmarkdownテーブルを生成
+4. ghpagesブランチのREADMEを更新
 
 ---
 
-## Maintenance
+## メンテナンス
 
-### Clearing testmondata
+### testmondataのクリア
 
-To force a full test run (e.g., after major changes):
+大きな変更後に全テストを強制実行する場合：
 
 ```bash
-# Switch to ghpages branch
+# ghpagesブランチに切り替え
 git checkout ghpages
 
-# Remove all testmondata
+# すべてのtestmondataを削除
 rm -rf testmon-data/
 
-# Commit and push
+# コミット＆プッシュ
 git add -A
 git commit -m "chore: Clear testmondata to force full test execution"
 git push origin ghpages
 
-# Return to main and trigger workflow
+# mainに戻ってワークフローをトリガー
 git checkout main
 gh workflow run test_pytest-testmon_deploy_multi_os.yml
 ```
 
-### Manual Workflow Trigger
+### 手動ワークフロートリガー
 
 ```bash
 gh workflow run test_pytest-testmon_deploy_multi_os.yml
@@ -253,47 +253,47 @@ gh workflow run test_pytest-testmon_deploy_multi_os.yml
 
 ---
 
-## Viewing Reports
+## レポートの閲覧
 
-Reports are available on GitHub Pages:
+レポートはGitHub Pagesで利用可能です：
 
 - **pytest-html**: `https://{user}.github.io/{repo}/pytest-html-report/{os}/python/{version}/report_page.html`
 - **pytest-cov**: `https://{user}.github.io/{repo}/pytest-cov-report/{os}/python/{version}/index.html`
 
-Example:
+例：
 
 - <https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report/ubuntu-latest/python/3.12.9/report_page.html>
 - <https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report/ubuntu-latest/python/3.12.9/index.html>
 
 ---
 
-## Troubleshooting
+## トラブルシューティング
 
-### Empty Reports
+### 空のレポート
 
-**Symptom**: Report shows "No results found"
+**症状**: レポートに「No results found」と表示される
 
-**Cause**: testmondata detected no changes, so no tests ran and no reports were generated. The old empty report remains.
+**原因**: testmondataが変更を検出せず、テストが実行されなかったため、レポートが生成されなかった。古い空のレポートが残っている。
 
-**Solution**: Clear testmondata (see Maintenance section above)
+**解決策**: testmondataをクリアする（上記メンテナンスセクション参照）
 
-### Coverage Lower Than Expected
+### カバレッジが期待より低い
 
-**Symptom**: Coverage shows 2% instead of 100%
+**症状**: カバレッジが100%ではなく2%などと表示される
 
-**Cause**: This should not happen with the current implementation. If it does:
+**原因**: 現在の実装では発生しないはずです。発生した場合は：
 
-1. Check that "Generate HTML and Coverage reports" step runs without `--testmon` flag
-2. Verify `tests_executed=true` was set correctly
-3. Check workflow logs for errors
+1. "Generate HTML and Coverage reports"ステップが`--testmon`フラグなしで実行されているか確認
+2. `tests_executed=true`が正しく設定されているか確認
+3. ワークフローログでエラーを確認
 
-### "assets N/A" or "python N/A" in README
+### READMEに「assets N/A」や「python N/A」が表示される
 
-**Symptom**: Invalid entries in report table
+**症状**: レポートテーブルに無効なエントリが表示される
 
-**Cause**: README generation regex not filtering non-version directories
+**原因**: README生成の正規表現が非バージョンディレクトリをフィルタリングしていない
 
-**Solution**: Already fixed in `update_readme_ghpages.yml:95` with regex filter:
+**解決策**: `update_readme_ghpages.yml:95`で既に修正済み：
 
 ```bash
 grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$'
@@ -301,12 +301,12 @@ grep -E '^[0-9]+\.[0-9]+(\.[0-9]+)?$'
 
 ---
 
-## Related Files
+## 関連ファイル
 
-- `CLAUDE.md` - Project implementation plan and background
-- `TESTMON_ANALYSIS_AND_FIX_PLAN.md` - Detailed analysis of testmon issues
-- `.github/json2vars-setter/matrix.json` - Test matrix configuration
+- `CLAUDE.md` - プロジェクト実装計画と背景
+- `TESTMON_ANALYSIS_AND_FIX_PLAN.md` - testmon問題の詳細分析
+- `.github/json2vars-setter/matrix.json` - テストマトリックス設定
 
 ---
 
-**Last Updated**: 2025-11-09
+**最終更新**: 2025-11-09
