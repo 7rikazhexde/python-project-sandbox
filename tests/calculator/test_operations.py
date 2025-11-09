@@ -15,6 +15,7 @@ def test_add() -> None:
 def test_subtract() -> None:
     print("Running test_subtract()")
     assert subtract(5, 1) == 4
+    assert subtract(5, 2) == 3
     assert subtract(0, 0) == 0
     assert subtract(-2, -2) == 0
     assert subtract(-1, 4) == -5
