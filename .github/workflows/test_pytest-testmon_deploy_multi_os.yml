@@ -2,7 +2,7 @@ name: pytest-testmon Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - mainまたはtest/pytest-testmon-workflowブランチへのpush
+#    - mainブランチへのpush
 #    - tests/**、project_a/**、poetry.lock、ワークフローファイル自体の変更
 # 2. 変数設定:
 #    - .github/json2vars-setter/matrix.jsonからOS・Pythonバージョンを読み込み
@@ -22,11 +22,10 @@ on:
   push:
     branches:
       - main
-      - test/pytest-testmon-workflow
     paths:
       - 'project_a/**'
       - 'tests/**'
-      - 'poetry.lock'
+      - 'uv.lock'
       - '.github/workflows/test_pytest-testmon_deploy_multi_os.yml'
   workflow_dispatch:  # 手動実行も可能
 

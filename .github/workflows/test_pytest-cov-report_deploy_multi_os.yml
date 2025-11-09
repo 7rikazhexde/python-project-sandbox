@@ -8,7 +8,6 @@ on:
       - completed
     branches:
       - main
-      - test/pytest-testmon-workflow
   workflow_dispatch:  # 手動実行も可能
 
 jobs:
