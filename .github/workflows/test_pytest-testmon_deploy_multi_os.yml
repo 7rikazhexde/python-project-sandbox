@@ -2,9 +2,10 @@ name: pytest-testmon Deploy Multi-OS
 
 # ワークフローの処理の流れ:
 # 1. トリガー条件:
-#    - リポジトリディスパッチイベント（test_pytest-testmon_deploy_multi_os）により起動
-# 2. 複数の環境（OS、Pythonバージョン）でのセットアップ
-#    - client_payloadで指定されたOS、Pythonバージョンで実行
+#    - mainまたはtest/pytest-testmon-workflowブランチへのpush
+#    - tests/**、project_a/**、poetry.lock、ワークフローファイル自体の変更
+# 2. 変数設定:
+#    - .github/json2vars-setter/matrix.jsonからOS・Pythonバージョンを読み込み
 # 3. GhPagesブランチから前回の.testmondataを取得
 #    - OS、Pythonバージョンごとに個別のパスから取得
 #    - 取得できない場合は新規作成として扱う
@@ -16,17 +17,8 @@ name: pytest-testmon Deploy Multi-OS
 # 6. GitHub Pagesへのデプロイ
 #    - アップロードされた.testmondataをGhPagesブランチにデプロイ
 #    - 変更の有無を確認し、変更があった場合のみ更新を実行
-# 7. .testmondataの更新情報のJSON生成
-#    - 更新された環境（OS、Pythonバージョン）の情報を含むJSONを作成
-#    - 更新されなかった環境の情報も別途JSONとして作成
-# 8. 後続ワークフローのトリガー
-#    - 更新情報JSONを含むペイロードを作成
-#    - pytest-covとpytest-htmlワークフローをトリガー
 
 on:
-  repository_dispatch:
-    types:
-      - test_pytest-testmon_deploy_multi_os
   push:
     branches:
       - main
@@ -39,13 +31,34 @@ on:
   workflow_dispatch:  # 手動実行も可能
 
 jobs:
+  set_variables:
+    runs-on: ubuntu-latest
+    outputs:
+      os: ${{ steps.json2vars.outputs.os }}
+      versions_python: ${{ steps.json2vars.outputs.versions_python }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4.2.2
+        with:
+          fetch-depth: 0
+
+      - name: Set variables from JSON
+        id: json2vars
+        uses: 7rikazhexde/json2vars-setter@v1.0.2
+        with:
+          json-file: .github/json2vars-setter/matrix.json
+
+      - name: Debug output values
+        run: |
+          echo "os: ${{ steps.json2vars.outputs.os }}"
+          echo "versions_python: ${{ steps.json2vars.outputs.versions_python }}"
+
   test-and-deploy-testmon:
+    needs: set_variables
     strategy:
       matrix:
-        # pushトリガーの場合はこのデフォルト値を使用
-        # repository_dispatchの場合もこの値を指定すること
-        os: [ubuntu-latest, macos-latest, windows-latest]
-        python-version: ['3.11', '3.12']
+        os: ${{ fromJson(needs.set_variables.outputs.os) }}
+        python-version: ${{ fromJson(needs.set_variables.outputs.versions_python) }}
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"
@@ -54,23 +67,11 @@ jobs:
       pull-requests: write
     outputs:
       tests_executed: ${{ steps.pytest-testmon.outputs.tests_executed }}
-      ghpages_branch: ${{ steps.set-ghpages-branch.outputs.ghpages_branch }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v4.2.2
         with:
           fetch-depth: 0
-
-      - name: Set GHPAGES_BRANCH
-        id: set-ghpages-branch
-        shell: bash
-        run: |
-          # repository_dispatchの場合はpayloadから、pushの場合はデフォルト値
-          if [ "${{ github.event_name }}" = "repository_dispatch" ]; then
-            echo "ghpages_branch=${{ github.event.client_payload.ghpages_branch }}" >> "$GITHUB_OUTPUT"
-          else
-            echo "ghpages_branch=ghpages_pytest-testmon" >> "$GITHUB_OUTPUT"
-          fi
 
       - name: Set up Python
         uses: actions/setup-python@v5.3.0
@@ -100,9 +101,10 @@ jobs:
         shell: bash
         run: |
           echo "Fetching previous testmon data..."
-          git fetch origin "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}":"${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" || true
+          ghpages_branch="ghpages_pytest-testmon"
+          git fetch origin "${ghpages_branch}":"${ghpages_branch}" || true
           testmon_path="testmon-data/${{ matrix.os }}/python/${{ matrix.python-version }}"
-          git checkout "${{ steps.set-ghpages-branch.outputs.ghpages_branch }}" -- "${testmon_path}/.testmondata" || true
+          git checkout "${ghpages_branch}" -- "${testmon_path}/.testmondata" || true
           if [ -f "${testmon_path}/.testmondata" ]; then
             echo "Previous testmon data found. Moving to current directory."
             mv "${testmon_path}/.testmondata" ".testmondata"
@@ -278,7 +280,7 @@ jobs:
       - name: Deploy testmon data to GitHub Pages
         id: deploy_testmon
         run: |
-          ghpages_branch="${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}"
+          ghpages_branch="ghpages_pytest-testmon"
 
           echo "Deploying testmon data to ${ghpages_branch}..."
           git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
@@ -316,7 +318,7 @@ jobs:
       - name: List deployed files
         if: always()
         run: |
-          ghpages_branch="${{ needs.test-and-deploy-testmon.outputs.ghpages_branch }}"
+          ghpages_branch="ghpages_pytest-testmon"
           git checkout "${ghpages_branch}"
           echo "Deployed testmon data files:"
           find . -name ".testmondata"
