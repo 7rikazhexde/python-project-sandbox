@@ -296,6 +296,9 @@ jobs:
     needs: test-and-deploy-testmon
     if: contains(needs.test-and-deploy-testmon.result, 'success')
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-testmon-ghpages
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
@@ -364,6 +367,9 @@ jobs:
     needs: test-and-deploy-testmon
     if: contains(needs.test-and-deploy-testmon.result, 'success')
     runs-on: ubuntu-latest
+    concurrency:
+      group: deploy-reports-${{ github.ref }}
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
