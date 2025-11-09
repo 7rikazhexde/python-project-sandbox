@@ -172,7 +172,7 @@ jobs:
       # ======================================================================
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.1.57
+        uses: MishaKav/pytest-coverage-comment@v1.1.59
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
@@ -208,7 +208,7 @@ jobs:
       # 補足: 7日間保存、Dependabot専用の命名規則
       # ======================================================================
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v5
+        uses: actions/upload-artifact@v5.0.0
         if: always()
         with:
           name: dependabot-coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}
