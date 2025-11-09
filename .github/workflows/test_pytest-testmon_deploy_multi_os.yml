@@ -44,8 +44,8 @@ jobs:
       matrix:
         # pushトリガーの場合はこのデフォルト値を使用
         # repository_dispatchの場合もこの値を指定すること
-        os: [ubuntu-latest]
-        python-version: ['3.12']
+        os: [ubuntu-latest, macos-latest, windows-latest]
+        python-version: ['3.11', '3.12']
     runs-on: ${{ matrix.os }}
     env:
       TZ: "Asia/Tokyo"

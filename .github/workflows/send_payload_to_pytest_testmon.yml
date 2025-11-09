@@ -34,9 +34,9 @@ jobs:
         with:
           repository_name: '7rikazhexde/python-project-sandbox'
           event_type: 'test_pytest-testmon_deploy_multi_os'
-          ghpages_branch: 'ghpages_pytest-testmon'  # テスト用ブランチを指定
-          os_list: '[ubuntu-latest]'  # 最初は1つのOSでテスト
-          version_list: '[3.12]'  # 最初は1つのバージョンでテスト
+          ghpages_branch: 'ghpages_pytest-testmon'
+          os_list: '[ubuntu-latest, macos-latest, windows-latest]'
+          version_list: '[3.11, 3.12]'
           custom_param: 'custom_param_test_val'  # 省略可能
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
