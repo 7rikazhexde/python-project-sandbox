@@ -132,8 +132,6 @@ jobs:
           done
 
           if [ "${changes_made}" = true ]; then
-            # Commit前に最新の変更を取得（並行実行される他のワークフローとの競合を避けるため）
-            git pull origin "${ghpages_branch}" --rebase || true
             git commit -m "Update pytest-html reports on GitHub Pages"
 
             # Push with retry (他のワークフローとの競合に対応)
