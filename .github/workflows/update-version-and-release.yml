@@ -54,7 +54,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.1.2
+        uses: astral-sh/setup-uv@v7.1.3
         with:
           enable-cache: false
 
