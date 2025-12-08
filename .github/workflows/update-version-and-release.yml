@@ -33,7 +33,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0
           token: ${{ secrets.PAT_FOR_PUSHES }}
@@ -54,7 +54,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.1.4
+        uses: astral-sh/setup-uv@v7.1.5
         with:
           enable-cache: false
 
@@ -255,7 +255,7 @@ jobs:
       # 補足: タグ、チェンジログ、バージョン情報を含む
       # ======================================================================
       - name: Create Release
-        uses: softprops/action-gh-release@v2.4.2
+        uses: softprops/action-gh-release@v2.5.0
         with:
           tag_name: v${{ steps.new_version.outputs.version }}
           name: python-project-sandbox v${{ steps.new_version.outputs.version }}
