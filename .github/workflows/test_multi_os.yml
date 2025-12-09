@@ -37,7 +37,7 @@ jobs:
       ghpages_branch: ${{ steps.json2vars.outputs.ghpages_branch }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0
 
@@ -66,7 +66,7 @@ jobs:
     outputs:
       file_exists: ${{ steps.check_file.outputs.file_exists }}
     steps:
-      - uses: actions/checkout@v6.0.0
+      - uses: actions/checkout@v6.0.1
       - name: Check file existence
         id: check_file
         run: |
@@ -96,10 +96,10 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6.0.0
+      - uses: actions/checkout@v6.0.1
 
       - name: Set up Python
-        uses: actions/setup-python@v6.0.0
+        uses: actions/setup-python@v6.1.0
         with:
           python-version: ${{matrix.python-version}}
 
@@ -140,7 +140,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.1.4
+        uses: astral-sh/setup-uv@v7.1.5
         with:
           enable-cache: false
 
@@ -161,7 +161,7 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: Swatinem/rust-cache@v2.8.1
+      - uses: Swatinem/rust-cache@v2.8.2
 
       - name: Install just
         run: cargo install just --locked
@@ -267,7 +267,7 @@ jobs:
       contents: write
       pull-requests: write
     steps:
-      - uses: actions/checkout@v6.0.0
+      - uses: actions/checkout@v6.0.1
         with:
           fetch-depth: 0
 
