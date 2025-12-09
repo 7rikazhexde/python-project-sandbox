@@ -26,7 +26,7 @@ jobs:
       contents: write
     steps:
       - name: Checkout ghpages branch
-        uses: actions/checkout@v6.0.0
+        uses: actions/checkout@v6.0.1
         with:
           ref: ghpages
           fetch-depth: 0
