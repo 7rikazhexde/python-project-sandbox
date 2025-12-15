@@ -61,7 +61,7 @@ jobs:
           timezoneWindows: "Tokyo Standard Time"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.1.5
+        uses: astral-sh/setup-uv@v7.1.6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -94,7 +94,7 @@ jobs:
           uv run pytest --testmon --testmon-env "$ENV_ID" --cov=project_a --cov-report="html:${coverage_path}"
 
       - name: Upload pytest-cov results
-        uses: actions/upload-artifact@v5.0.0
+        uses: actions/upload-artifact@v6.0.0
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}
@@ -113,7 +113,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download pytest-cov artifacts
-        uses: actions/download-artifact@v6.0.0
+        uses: actions/download-artifact@v7.0.0
 
       - name: Setup Git
         run: |
