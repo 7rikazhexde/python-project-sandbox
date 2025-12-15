@@ -85,7 +85,7 @@ jobs:
           timezoneWindows: "Tokyo Standard Time"
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.1.5
+        uses: astral-sh/setup-uv@v7.1.6
         with:
           enable-cache: true
           cache-dependency-glob: "uv.lock"
@@ -265,7 +265,7 @@ jobs:
       # アーティファクトアップロード
       # ======================================================================
       - name: Upload testmon data
-        uses: actions/upload-artifact@v5.0.0
+        uses: actions/upload-artifact@v6.0.0
         if: always()
         with:
           name: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}
@@ -276,7 +276,7 @@ jobs:
 
       # テストが実行された場合のみHTMLレポートをアップロード
       - name: Upload pytest-html results
-        uses: actions/upload-artifact@v5.0.0
+        uses: actions/upload-artifact@v6.0.0
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
         with:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
@@ -285,7 +285,7 @@ jobs:
 
       # テストが実行された場合のみCoverageレポートをアップロード
       - name: Upload pytest-cov results
-        uses: actions/upload-artifact@v5.0.0
+        uses: actions/upload-artifact@v6.0.0
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
@@ -308,7 +308,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download testmon data
-        uses: actions/download-artifact@v6.0.0
+        uses: actions/download-artifact@v7.0.0
         with:
           path: downloaded-artifacts
 
@@ -379,7 +379,7 @@ jobs:
           fetch-depth: 0
 
       - name: Download pytest-html artifacts
-        uses: actions/download-artifact@v6.0.0
+        uses: actions/download-artifact@v7.0.0
         continue-on-error: true
 
       - name: Setup Git
