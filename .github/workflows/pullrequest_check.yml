@@ -80,7 +80,7 @@ jobs:
       # 補足: 全OS・Python版で統一キャッシュを使用
       # ======================================================================
       - name: Cache uv dependencies
-        uses: actions/cache@v4.3.0
+        uses: actions/cache@v5.0.1
         with:
           path: |
             ~/.cache/uv
@@ -88,7 +88,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.1.5
+        uses: astral-sh/setup-uv@v7.1.6
         with:
           enable-cache: false
 
@@ -206,7 +206,7 @@ jobs:
       # 補足: 7日間保存、マトリックス毎に個別保存
       # ======================================================================
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v5.0.0
+        uses: actions/upload-artifact@v6.0.0
         if: always()
         with:
           name: coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}
