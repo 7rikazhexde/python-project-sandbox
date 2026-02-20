@@ -29,7 +29,7 @@ repos:
 
   # GitHub Actions linting
   - repo: https://github.com/rhysd/actionlint
-    rev: v1.7.10
+    rev: v1.7.11
     hooks:
       - id: actionlint
         name: Lint GitHub Actions workflows
@@ -47,7 +47,7 @@ repos:
         args: ["--config", ".markdownlint.json", "README.md"]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.15.1
+    rev: v0.15.2
     hooks:
       - id: ruff
         args: ["--fix","project_a"]
