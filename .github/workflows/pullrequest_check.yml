@@ -88,7 +88,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v7.3.1
+        uses: astral-sh/setup-uv@v7.5.0
         with:
           enable-cache: false
 
@@ -111,7 +111,7 @@ jobs:
         with:
           toolchain: stable
 
-      - uses: Swatinem/rust-cache@v2.8.2
+      - uses: Swatinem/rust-cache@v2.9.1
 
       - name: Install just
         run: cargo install just --locked
@@ -172,7 +172,7 @@ jobs:
       # ======================================================================
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.6.0
+        uses: MishaKav/pytest-coverage-comment@v1.7.1
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
