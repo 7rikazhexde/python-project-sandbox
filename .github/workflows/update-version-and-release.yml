@@ -255,7 +255,7 @@ jobs:
       # 補足: タグ、チェンジログ、バージョン情報を含む
       # ======================================================================
       - name: Create Release
-        uses: softprops/action-gh-release@v2.6.1
+        uses: softprops/action-gh-release@v3.0.0
         with:
           tag_name: v${{ steps.new_version.outputs.version }}
           name: python-project-sandbox v${{ steps.new_version.outputs.version }}

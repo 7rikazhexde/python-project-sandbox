@@ -94,7 +94,7 @@ jobs:
           uv run pytest --testmon --testmon-env "$ENV_ID" --html="${report_path}/report_page.html" --css=css/style.css
 
       - name: Upload pytest-html results
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: test_results/${{ matrix.os }}/python/${{ matrix.python-version }}

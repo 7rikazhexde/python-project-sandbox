@@ -265,7 +265,7 @@ jobs:
       # アーティファクトアップロード
       # ======================================================================
       - name: Upload testmon data
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: testmon-data_${{ matrix.os }}_python_${{ matrix.python-version }}
@@ -276,7 +276,7 @@ jobs:
 
       # テストが実行された場合のみHTMLレポートをアップロード
       - name: Upload pytest-html results
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
         with:
           name: test-results-${{ matrix.os }}-python-${{ matrix.python-version }}
@@ -285,7 +285,7 @@ jobs:
 
       # テストが実行された場合のみCoverageレポートをアップロード
       - name: Upload pytest-cov results
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: steps.pytest-testmon.outputs.tests_executed == 'true'
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}

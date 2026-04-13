@@ -208,7 +208,7 @@ jobs:
       # 補足: 7日間保存、マトリックス毎に個別保存
       # ======================================================================
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}

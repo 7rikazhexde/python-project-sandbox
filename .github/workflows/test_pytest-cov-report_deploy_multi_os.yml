@@ -94,7 +94,7 @@ jobs:
           uv run pytest --testmon --testmon-env "$ENV_ID" --cov=project_a --cov-report="html:${coverage_path}"
 
       - name: Upload pytest-cov results
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-results-${{ matrix.os }}-python-${{ matrix.python-version }}
           path: htmlcov/${{ matrix.os }}/python/${{ matrix.python-version }}

@@ -210,7 +210,7 @@ jobs:
       # 補足: 7日間保存、Dependabot専用の命名規則
       # ======================================================================
       - name: Upload coverage reports
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         if: always()
         with:
           name: dependabot-coverage-reports-${{ matrix.os }}-${{ matrix.python-version }}
