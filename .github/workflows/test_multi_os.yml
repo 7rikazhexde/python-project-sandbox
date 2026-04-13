@@ -246,7 +246,7 @@ jobs:
       # 補足: マトリックス毎に個別保存、README生成で使用
       # ======================================================================
       - name: Upload coverage data
-        uses: actions/upload-artifact@v7.0.0
+        uses: actions/upload-artifact@v7.0.1
         with:
           name: coverage-data-${{ matrix.os }}-${{ matrix.python-version }}
           path: |
