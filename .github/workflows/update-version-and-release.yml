@@ -46,7 +46,7 @@ jobs:
       # 補足: 統一キャッシュ戦略を使用
       # ======================================================================
       - name: Cache uv dependencies
-        uses: actions/cache@v5.0.4
+        uses: actions/cache@v5.0.5
         with:
           path: |
             ~/.cache/uv
@@ -54,7 +54,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v8.0.0
+        uses: astral-sh/setup-uv@v8.1.0
         with:
           enable-cache: false
 
