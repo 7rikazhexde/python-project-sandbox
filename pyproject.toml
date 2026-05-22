@@ -23,7 +23,7 @@ dependencies = [
     "freezegun>=1.5.2",
     "tomlkit>=0.15.0",
     "pytz>=2026.2",
-    "types-pytz>=2026.2.0.20260506",
+    "types-pytz>=2026.2.0.20260518",
     "numpy>=2.4.6,<3.0.0",
     "pandas>=3.0.3",
 ]
