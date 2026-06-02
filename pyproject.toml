@@ -12,8 +12,8 @@ readme = "README.md"
 requires-python = ">=3.11"
 dependencies = [
     "requests>=2.34.2",
-    "dash>=3.1.0",
-    "aiohttp>=3.12.13",
+    "dash>=4.2.0",
+    "aiohttp>=3.14.0",
     "types-requests>=2.33.0.20260518",
     "dash-bootstrap-components>=2.0.3",
     "pytoniq-core>=0.1.43",
