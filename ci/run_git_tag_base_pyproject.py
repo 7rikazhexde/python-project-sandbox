@@ -137,14 +137,14 @@ def read_poetry_project_version() -> Tuple[bool, Optional[str]]:
         Tuple[bool, Optional[str]]: Acquisition decision result and [major]. [minor]. [pathch].
     """
     read_success_flag = False
-    curent_ver = ""
+    current_ver = ""
     try:
         # Load the pyproject.toml file
         toml = TOMLFile("pyproject.toml")
         toml_data = toml.read()
         toml_get_data = toml_data.get("tool", {})
         if "poetry" in toml_get_data:
-            curent_ver = toml_get_data["poetry"].get("version", "")
+            current_ver = toml_get_data["poetry"].get("version", "")
             read_success_flag = True
         else:
             error_message = (
@@ -154,7 +154,7 @@ def read_poetry_project_version() -> Tuple[bool, Optional[str]]:
     except Exception as e:
         error_message = f"Failed to update pyproject.toml. Error: {str(e)}"
         sys.exit(error_message)
-    return read_success_flag, curent_ver
+    return read_success_flag, current_ver
 
 
 def get_arg(tag: str) -> str:

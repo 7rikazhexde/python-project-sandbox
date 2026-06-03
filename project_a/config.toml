@@ -55,7 +55,7 @@ transaction_history_period = 365
 #   Please change Adjust Value to match the value of AMOUNT on the graph.
 staking_calculation_adjustment_value = 5
 
-# Use Hour Infomation for Tonhub API V4
+# Use Hour Information for Tonhub API V4
 # Note:
 #   Required when getting TON staking data.
 #   The timezone in this script is set to Japan Standard Time (JST).
