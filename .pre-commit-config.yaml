@@ -38,6 +38,18 @@ repos:
         files: ^\.github/workflows/.*\.ya?ml$
         verbose: true
 
+  # pyproject.toml schema validation
+  - repo: https://github.com/abravalheri/validate-pyproject
+    rev: v0.25
+    hooks:
+      - id: validate-pyproject
+
+  # Spell checking (config: [tool.typos] in pyproject.toml)
+  - repo: https://github.com/crate-ci/typos
+    rev: v1.47.1
+    hooks:
+      - id: typos
+
   # Reference: https://github.com/DavidAnson/markdownlint-cli2#overview
   # > markdownlint-cli is a traditional command-line interface for markdownlint.
   - repo: https://github.com/igorshubovych/markdownlint-cli
