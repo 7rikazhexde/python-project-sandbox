@@ -12,13 +12,11 @@
         <meta name="author" content="7rikazhexde">
       
       
-        <link rel="canonical" href="https://7rikazhexde.github.io/python-project-sandbox/docs/ci/">
+        <link rel="canonical" href="https://7rikazhexde.github.io/python-project-sandbox/docs/reports/">
       
       
-        <link rel="prev" href="../getting-started/">
+        <link rel="prev" href="../ci/">
       
-      
-        <link rel="next" href="../reports/">
       
       
         
@@ -29,7 +27,7 @@
     
     
       
-        <title>CI & Coverage - python-project-sandbox</title>
+        <title>Reports & coverage - python-project-sandbox</title>
       
     
     
@@ -85,7 +83,7 @@
     <div data-md-component="skip">
       
         
-        <a href="#ci-coverage" class="md-skip">
+        <a href="#reports-coverage" class="md-skip">
           Skip to content
         </a>
       
@@ -121,7 +119,7 @@
         <div class="md-header__topic" data-md-component="header-topic">
           <span class="md-ellipsis">
             
-              CI &amp; Coverage
+              Reports &amp; coverage
             
           </span>
         </div>
@@ -267,6 +265,32 @@
       
   
   
+  
+  
+    <li class="md-nav__item">
+      <a href="../ci/" class="md-nav__link">
+        
+  
+  
+  <span class="md-ellipsis">
+    
+  
+  CI & Coverage
+
+    
+  </span>
+  
+  
+
+      </a>
+    </li>
+  
+
+    
+      
+      
+  
+  
     
   
   
@@ -286,7 +310,7 @@
   <span class="md-ellipsis">
     
   
-  CI & Coverage
+  Reports & coverage
 
     
   </span>
@@ -303,7 +327,7 @@
   <span class="md-ellipsis">
     
   
-  CI & Coverage
+  Reports & coverage
 
     
   </span>
@@ -329,43 +353,38 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#workflows" class="md-nav__link">
+  <a href="#what-is-published-and-where" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Workflows
+        What is published, and where
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What is published, and where">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#live-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Live links
       </span>
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#branch-managed-reports" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Branch-managed reports
-      </span>
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#releases" class="md-nav__link">
+  <a href="#pytest-html-styling-custom-css" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Releases
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#coverage-pr-comments" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Coverage PR comments
+        pytest-html styling (custom CSS)
       </span>
     </span>
   </a>
@@ -376,32 +395,6 @@
   
 </nav>
       
-    </li>
-  
-
-    
-      
-      
-  
-  
-  
-  
-    <li class="md-nav__item">
-      <a href="../reports/" class="md-nav__link">
-        
-  
-  
-  <span class="md-ellipsis">
-    
-  
-  Reports & coverage
-
-    
-  </span>
-  
-  
-
-      </a>
     </li>
   
 
@@ -447,43 +440,38 @@
     <ul class="md-nav__list" data-md-component="toc" data-md-scrollfix>
       
         <li class="md-nav__item">
-  <a href="#workflows" class="md-nav__link">
+  <a href="#what-is-published-and-where" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Workflows
+        What is published, and where
+      </span>
+    </span>
+  </a>
+  
+    <nav class="md-nav" aria-label="What is published, and where">
+      <ul class="md-nav__list">
+        
+          <li class="md-nav__item">
+  <a href="#live-links" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Live links
       </span>
     </span>
   </a>
   
 </li>
-      
-        <li class="md-nav__item">
-  <a href="#branch-managed-reports" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Branch-managed reports
-      </span>
-    </span>
-  </a>
+        
+      </ul>
+    </nav>
   
 </li>
       
         <li class="md-nav__item">
-  <a href="#releases" class="md-nav__link">
+  <a href="#pytest-html-styling-custom-css" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
-        Releases
-      </span>
-    </span>
-  </a>
-  
-</li>
-      
-        <li class="md-nav__item">
-  <a href="#coverage-pr-comments" class="md-nav__link">
-    <span class="md-ellipsis">
-      <span class="md-typeset">
-        Coverage PR comments
+        pytest-html styling (custom CSS)
       </span>
     </span>
   </a>
@@ -505,81 +493,97 @@
                 
                   
 
-<h1 id="ci-coverage">CI &amp; Coverage<a class="headerlink" href="#ci-coverage" title="Permanent link">&para;</a></h1>
-<p>This project leans on GitHub Actions for testing and for <strong>publishing reports to
-dedicated branches</strong> — a core idea of this template.</p>
-<h2 id="workflows">Workflows<a class="headerlink" href="#workflows" title="Permanent link">&para;</a></h2>
+<h1 id="reports-coverage">Reports &amp; coverage<a class="headerlink" href="#reports-coverage" title="Permanent link">&para;</a></h1>
+<p>This project keeps <strong>report generation independent</strong> (each report is produced by
+a different tool across an OS / Python matrix) but uses this documentation site
+as the <strong>hub</strong> that links them together. Nothing is coupled at build time — the
+docs simply point at the published artifacts.</p>
+<h2 id="what-is-published-and-where">What is published, and where<a class="headerlink" href="#what-is-published-and-where" title="Permanent link">&para;</a></h2>
 <table>
 <thead>
 <tr>
-<th>Workflow</th>
-<th>Trigger</th>
-<th>Purpose</th>
+<th>Report</th>
+<th>Tool</th>
+<th>Location</th>
 </tr>
 </thead>
 <tbody>
 <tr>
-<td><code>PR Check (Except Dependabot)</code></td>
-<td>PR to <code>main</code></td>
-<td>Multi-OS / multi-Python tests, 90% coverage gate, coverage PR comment</td>
+<td>Coverage summary</td>
+<td><code>pytest-coverage-comment</code></td>
+<td><a href="https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary"><code>coverage</code> branch README</a></td>
 </tr>
 <tr>
-<td><code>Dependabot PR Check</code></td>
-<td>Dependabot PR</td>
-<td>Same checks for dependency-update PRs</td>
+<td>Coverage HTML</td>
+<td><code>pytest-cov</code></td>
+<td><code>ghpages</code> → <code>pytest-cov-report/&lt;os&gt;/python/&lt;version&gt;/</code></td>
 </tr>
 <tr>
-<td><code>Test Multi-OS</code></td>
-<td>push to <code>main</code></td>
-<td>Tests + publishes the coverage summary to the <code>coverage</code> branch</td>
-</tr>
-<tr>
-<td><code>Modern Quality (Preview)</code></td>
-<td>PR / push</td>
-<td><code>zizmor</code> / <code>ty</code> / <code>pip-audit</code> / <code>typos</code> / <code>validate-pyproject</code> (preview)</td>
-</tr>
-<tr>
-<td><code>Release Please</code></td>
-<td>push to <code>main</code></td>
-<td>Conventional-Commits release automation (opens a Release PR)</td>
-</tr>
-<tr>
-<td><code>Docs (Zensical)</code></td>
-<td>push / PR</td>
-<td>Build this site and deploy to <code>ghpages/docs/</code></td>
+<td>Test report HTML</td>
+<td><code>pytest-html</code></td>
+<td><code>ghpages</code> → <code>pytest-html-report/&lt;os&gt;/python/&lt;version&gt;/</code></td>
 </tr>
 </tbody>
 </table>
-<p>All test workflows install <code>just</code> from a <strong>prebuilt binary</strong>
-(<code>taiki-e/install-action</code>) and use <code>concurrency</code> to cancel superseded runs,
-keeping CI fast.</p>
-<h2 id="branch-managed-reports">Branch-managed reports<a class="headerlink" href="#branch-managed-reports" title="Permanent link">&para;</a></h2>
-<p>Rather than committing generated artifacts to <code>main</code>, reports live on their own
-branches:</p>
+<p>The HTML reports are driven by <a href="https://pypi.org/project/pytest-testmon/">pytest-testmon</a>
+incremental runs and deployed per OS / Python version. The canonical index — kept
+up to date with the current matrix — lives in the
+<a href="https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report"><code>ghpages</code> branch README</a>.</p>
+<h3 id="live-links">Live links<a class="headerlink" href="#live-links" title="Permanent link">&para;</a></h3>
 <ul>
-<li><strong><code>coverage</code></strong> — a generated <code>README.md</code> with the per-OS / per-Python coverage
-  summary. See the
-  <a href="https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary">coverage branch</a>.</li>
-<li><strong><code>ghpages</code></strong> — pytest <strong>HTML</strong> and <strong>coverage</strong> reports published to GitHub
-  Pages, driven by <a href="https://pypi.org/project/pytest-testmon/">pytest-testmon</a>
-  incremental runs. See the
-  <a href="https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report">reports</a>.</li>
+<li><strong>Indexes (recommended entry points):</strong><ul>
+<li>Coverage summary → <a href="https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary">https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary</a></li>
+<li>HTML / cov reports → <a href="https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report">https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report</a></li>
 </ul>
-<p>This documentation site is published to the <strong><code>docs/</code> subdirectory of the
-<code>ghpages</code> branch</strong>, so it coexists with the pytest reports served from the root.</p>
-<h2 id="releases">Releases<a class="headerlink" href="#releases" title="Permanent link">&para;</a></h2>
-<p>Releases are automated with
-<a href="https://github.com/googleapis/release-please">release-please</a> using
-<a href="https://www.conventionalcommits.org/">Conventional Commits</a>. On every push to
-<code>main</code>, release-please maintains a <strong>Release PR</strong> that updates <code>CHANGELOG.md</code> and
-the version in <code>pyproject.toml</code>. Merging that PR creates the git tag and GitHub
-Release — so nothing is released without an explicit human merge.</p>
-<h2 id="coverage-pr-comments">Coverage PR comments<a class="headerlink" href="#coverage-pr-comments" title="Permanent link">&para;</a></h2>
-<p>Pull requests receive a coverage comment from
-<a href="https://github.com/marketplace/actions/pytest-coverage-comment"><code>pytest-coverage-comment</code></a>.
-File links are resolved with <code>coverage-path-prefix: project_a/</code> so they point at
-real source paths, and a <code>cleanup_pr_comments</code> job removes stale comments on
-re-runs to avoid broken links.</p>
+</li>
+<li><strong>Direct URL pattern</strong> (replace <code>&lt;os&gt;</code> / <code>&lt;version&gt;</code>):<ul>
+<li>Test report: <code>…/python-project-sandbox/pytest-html-report/&lt;os&gt;/python/&lt;version&gt;/report_page.html</code></li>
+<li>Coverage:    <code>…/python-project-sandbox/pytest-cov-report/&lt;os&gt;/python/&lt;version&gt;/index.html</code></li>
+</ul>
+</li>
+<li><strong>Concrete example</strong> (ubuntu-latest / Python 3.11.9):<ul>
+<li><a href="https://7rikazhexde.github.io/python-project-sandbox/pytest-html-report/ubuntu-latest/python/3.11.9/report_page.html">Test report</a></li>
+<li><a href="https://7rikazhexde.github.io/python-project-sandbox/pytest-cov-report/ubuntu-latest/python/3.11.9/index.html">Coverage</a></li>
+</ul>
+</li>
+</ul>
+<div class="admonition note">
+<p class="admonition-title">Why not serve reports from this site?</p>
+<p>The reports are large, self-contained HTML generated independently for each
+of <code>ubuntu</code> / <code>macos</code> / <code>windows</code> × Python <code>3.12</code> / <code>3.13</code> (and more), using
+<code>pytest-testmon</code> incremental state. Keeping generation separate avoids
+coupling two pipelines and bloating the docs build — this page is the hub,
+the reports stay independent.</p>
+</div>
+<h2 id="pytest-html-styling-custom-css">pytest-html styling (custom CSS)<a class="headerlink" href="#pytest-html-styling-custom-css" title="Permanent link">&para;</a></h2>
+<p>The HTML test report is themed with a custom stylesheet at
+<a href="https://github.com/7rikazhexde/python-project-sandbox/blob/main/css/style.css"><code>css/style.css</code></a>.
+It is applied with pytest-html's <code>--css</code> option, and <code>--self-contained-html</code>
+inlines the CSS so the published <code>report_page.html</code> is a single portable file:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-0-1"><a id="__codelineno-0-1" name="__codelineno-0-1" href="#__codelineno-0-1"></a>uv<span class="w"> </span>run<span class="w"> </span>pytest<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-2"><a id="__codelineno-0-2" name="__codelineno-0-2" href="#__codelineno-0-2"></a><span class="w">  </span>--html<span class="o">=</span>htmlcov/report_page.html<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-3"><a id="__codelineno-0-3" name="__codelineno-0-3" href="#__codelineno-0-3"></a><span class="w">  </span>--self-contained-html<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-4"><a id="__codelineno-0-4" name="__codelineno-0-4" href="#__codelineno-0-4"></a><span class="w">  </span>--css<span class="o">=</span>css/style.css<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-5"><a id="__codelineno-0-5" name="__codelineno-0-5" href="#__codelineno-0-5"></a><span class="w">  </span>--capture<span class="o">=</span>no<span class="w"> </span><span class="se">\</span>
+</span><span id="__span-0-6"><a id="__codelineno-0-6" name="__codelineno-0-6" href="#__codelineno-0-6"></a><span class="w">  </span>project_a<span class="w"> </span>tests/
+</span></code></pre></div>
+<p>Or via the task runner:</p>
+<div class="language-bash highlight"><pre><span></span><code><span id="__span-1-1"><a id="__codelineno-1-1" name="__codelineno-1-1" href="#__codelineno-1-1"></a>just<span class="w"> </span>testhtml<span class="w">          </span><span class="c1"># -&gt; htmlcov/report_page.html (styled)</span>
+</span></code></pre></div>
+<p>In CI, the same <code>--css=css/style.css</code> is passed in
+<code>test_pytest-html-report_deploy_multi_os.yml</code> before the report is published to
+<code>ghpages</code>.</p>
+<div class="admonition tip">
+<p class="admonition-title">Reproduce this setup in your own project</p>
+<ol>
+<li>Add a stylesheet (e.g. <code>css/style.css</code>).</li>
+<li>Generate the report with <code>--html=… --self-contained-html --css=css/style.css</code>.</li>
+<li>Publish the per-matrix output to a <code>ghpages</code> subdirectory (this project
+   uses <code>pytest-&lt;html|cov&gt;-report/&lt;os&gt;/python/&lt;version&gt;/</code>), keeping existing
+   files so the reports and these docs coexist.</li>
+<li>Link everything from a single hub page — like this one.</li>
+</ol>
+</div>
 
 
 
@@ -619,7 +623,7 @@ re-runs to avoid broken links.</p>
       <nav class="md-footer__inner md-grid" aria-label="Footer" >
         
           
-          <a href="../getting-started/" class="md-footer__link md-footer__link--prev" aria-label="Previous: Getting started">
+          <a href="../ci/" class="md-footer__link md-footer__link--prev" aria-label="Previous: CI &amp; Coverage">
             <div class="md-footer__button md-icon">
               
               <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-left" viewBox="0 0 24 24"><path d="m12 19-7-7 7-7M19 12H5"/></svg>
@@ -629,27 +633,11 @@ re-runs to avoid broken links.</p>
                 Previous
               </span>
               <div class="md-ellipsis">
-                Getting started
+                CI & Coverage
               </div>
             </div>
           </a>
         
-        
-          
-          <a href="../reports/" class="md-footer__link md-footer__link--next" aria-label="Next: Reports &amp; coverage">
-            <div class="md-footer__title">
-              <span class="md-footer__direction">
-                Next
-              </span>
-              <div class="md-ellipsis">
-                Reports & coverage
-              </div>
-            </div>
-            <div class="md-footer__button md-icon">
-              
-              <svg xmlns="http://www.w3.org/2000/svg" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" class="lucide lucide-arrow-right" viewBox="0 0 24 24"><path d="M5 12h14M12 5l7 7-7 7"/></svg>
-            </div>
-          </a>
         
       </nav>
     
