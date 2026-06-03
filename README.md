@@ -1,8 +1,19 @@
 # python-project-sandbox
 
-An experimental project to test out various tools.
+A modern Python project base for experimenting with tooling — powered by [uv](https://docs.astral.sh/uv/), [Ruff](https://docs.astral.sh/ruff/), [mypy](https://mypy-lang.org/), and [pytest](https://docs.pytest.org/), with test coverage and HTML reports published to dedicated branches via GitHub Actions.
 
-[![Pytest_Coverages_Summary](https://img.shields.io/badge/Pytest_Coverages_Summary-gray?logo=python&logoColor=white)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary) [![Pytest_Reports](https://img.shields.io/badge/Pytest_Reports-gray?logo=python&logoColor=white)](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report)
+<!-- Status & Stack -->
+[![Test Multi-OS](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_multi_os.yml/badge.svg)](https://github.com/7rikazhexde/python-project-sandbox/actions/workflows/test_multi_os.yml)
+[![Python](https://img.shields.io/badge/python-3.11%20%7C%203.12%20%7C%203.13-blue?logo=python&logoColor=white)](https://www.python.org)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](https://github.com/7rikazhexde/python-project-sandbox/blob/main/LICENSE)
+[![uv](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/uv/main/assets/badge/v0.json)](https://github.com/astral-sh/uv)
+[![Ruff](https://img.shields.io/endpoint?url=https://raw.githubusercontent.com/astral-sh/ruff/main/assets/badge/v2.json)](https://github.com/astral-sh/ruff)
+[![Checked with mypy](https://www.mypy-lang.org/static/mypy_badge.svg)](https://mypy-lang.org/)
+[![pre-commit](https://img.shields.io/badge/pre--commit-enabled-brightgreen?logo=pre-commit&logoColor=white)](https://github.com/pre-commit/pre-commit)
+
+**Reports:**
+[![Pytest Coverages Summary](https://img.shields.io/badge/Pytest_Coverages_Summary-gray?logo=python&logoColor=white)](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage?tab=readme-ov-file#pytest-coverages-summary)
+[![Pytest Reports](https://img.shields.io/badge/Pytest_Reports-gray?logo=python&logoColor=white)](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages?tab=readme-ov-file#pytest-report)
 
 ## Table of Contents
 
