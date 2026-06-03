@@ -151,7 +151,8 @@ directory = "htmlcov"
 # typos(スペルチェック)設定
 # ドメイン固有語・暗号資産/TON関連の用語を誤検出させないための許可リスト
 [tool.typos.default.extend-words]
-# TON / 暗号資産ドメイン語
+# certifi はPythonパッケージ名(正しい綴り)
+certifi = "certifi"
 
 [tool.typos.files]
 extend-exclude = [

@@ -69,7 +69,7 @@ def save_json_file(data: List[Dict[str, Any]], filename: str) -> None:
     print(f"JSON file saved: {json_file_path}")
 
 
-def get_recieve_txn_tonapi(
+def get_receive_txn_tonapi(
     account_id: str, limit: int = 100, sort_order: str = "desc", save_json: bool = False
 ) -> List[Dict[str, Any]]:  # pragma: no cover
     """Retrieves transactions for a TON account using the TON API.
@@ -93,7 +93,7 @@ def get_recieve_txn_tonapi(
 
     Example:
         >>> account_id = "your_account_id(User-friendly address)"
-        >>> transactions = get_recieve_txn_tonapi(account_id, limit=50, save_json=True)
+        >>> transactions = get_receive_txn_tonapi(account_id, limit=50, save_json=True)
         >>> len(transactions)
         50
     """

@@ -107,10 +107,12 @@ jobs:
           enable-cache: false
       - name: Type check (ty, preview)
         continue-on-error: true
+        # uv run でプロジェクト環境(依存込み)にtyを注入して実行し、
+        # 第三者ライブラリのimportが解決できるようにする
         run: |
           echo "## ty (Astral type checker, preview)" >> "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
-          uvx ty check project_a 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
+          uv run --extra dev --with ty ty check project_a 2>&1 | tee -a "$GITHUB_STEP_SUMMARY"
           echo '```' >> "$GITHUB_STEP_SUMMARY"
 
   # ==========================================================================
