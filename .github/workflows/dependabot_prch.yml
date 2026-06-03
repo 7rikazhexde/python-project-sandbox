@@ -13,6 +13,11 @@ on:
     branches:
       - main
 
+# 同一PRへの連続プッシュ時は古い実行をキャンセルしてCI時間を節約
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   # ==========================================================================
   # 変数設定ジョブ
@@ -130,21 +135,16 @@ jobs:
           uv sync --extra dev
 
       # ======================================================================
-      # Rust環境とキャッシュ
+      # just(タスクランナー)セットアップ
       # ======================================================================
-      # 概要: Rustツールチェーンとjustコマンドのセットアップ
-      # 処理: Rustインストール、キャッシュ、justビルド
-      # 補足: OS別にキャッシュ、cargo install の高速化
+      # 概要: justコマンドのセットアップ
+      # 処理: プレビルドバイナリをダウンロード(Rustコンパイル不要)
+      # 補足: cargo installのコンパイル待ち(数分)を解消しCIを高速化
       # ======================================================================
-      - uses: dtolnay/rust-toolchain@stable
-        with:
-          toolchain: stable
-
-      - uses: Swatinem/rust-cache@v2.9.1
-
       - name: Install just
-        run: cargo install just --locked
-        shell: bash
+        uses: taiki-e/install-action@v2
+        with:
+          tool: just
 
       - name: Verify just
         run: just --version
