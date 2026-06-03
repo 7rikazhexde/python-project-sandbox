@@ -13,7 +13,8 @@ coverage and HTML reports published to dedicated branches via GitHub Actions.
   [`coverage`](https://github.com/7rikazhexde/python-project-sandbox/tree/coverage)
   branch and pytest HTML/cov reports to the
   [`ghpages`](https://github.com/7rikazhexde/python-project-sandbox/tree/ghpages)
-  branch. See [CI & Coverage](ci.md).
+  branch. See [Reports & coverage](reports.md) for live links and the
+  pytest-html styling setup, and [CI & Coverage](ci.md) for the pipeline.
 - **Modern tooling, adopted early** — `zizmor` (Actions security), `ty`
   (Astral type checker), `pip-audit`, `typos` and `validate-pyproject` run as a
   preview quality workflow.
