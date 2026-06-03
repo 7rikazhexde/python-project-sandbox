@@ -4,9 +4,10 @@
 # 概要: Conventional Commitsに基づくリリース自動化(Release PRモデル)
 # 処理: mainへのpushを解析し、CHANGELOG.mdとバージョン更新のRelease PRを作成。
 #       Release PRがマージされた時点でタグとGitHub Releaseを作成する。
-# 補足: 即時リリースせず人間のマージで確定する安全モデル。GITHUB_TOKENの
-#       最小権限で動作する。既存の手動 update-version-and-release.yml は
-#       フォールバックとして残置(二重リリースを避けるため通常はこちらを使用)。
+# 補足: 即時リリースせず人間のマージで確定する安全モデル。
+#       PR作成にはPAT_FOR_PUSHESを使用(repo設定でGITHUB_TOKENによるPR作成が
+#       無効のため)。既存の手動 update-version-and-release.yml はフォールバック
+#       として残置(二重リリースを避けるため通常はこちらを使用)。
 # =============================================================================
 
 name: Release Please
@@ -35,6 +36,7 @@ jobs:
       - name: Run release-please
         uses: googleapis/release-please-action@v4
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # repo設定でGITHUB_TOKENのPR作成が無効のためPATを使用
+          token: ${{ secrets.PAT_FOR_PUSHES }}
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
