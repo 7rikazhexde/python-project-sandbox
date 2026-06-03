@@ -216,6 +216,7 @@ jobs:
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
+          coverage-path-prefix: project_a/
           title: Coverage Report (${{ matrix.os }} / Python ${{ matrix.python-version }})
           badge-title: coverage
           hide-badge: false
@@ -343,10 +344,10 @@ jobs:
           } > README.md
 
           # カバレッジレポート内のリンクを有効にするためにファイルパスを修正する
+          # project_a/プレフィックスはcoverage-path-prefixでアクション側が付与するため、
+          # ここではコミットSHA未解決(undefined)の救済のみを行う
           sed -i '
-            s|/blob/undefined/\([^"]*\)|/blob/'"${commit_hash}"'/\1|g;
-            s|/blob/\([a-f0-9]*\)/\([^"]*\)|/blob/\1/project_a/\2|g;
-            s|/blob/\([a-f0-9]*\)/project_a/README\.md|/blob/\1/README.md|g
+            s|/blob/undefined/\([^"]*\)|/blob/'"${commit_hash}"'/\1|g
           ' README.md
 
       - name: Commit and push
