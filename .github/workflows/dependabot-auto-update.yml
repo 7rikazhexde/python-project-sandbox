@@ -1,0 +1,65 @@
+# =============================================================================
+# Dependabot Auto-Update Workflow
+# =============================================================================
+# 概要: 開いているDependabot PRのブランチを自動更新(マージは手動のまま)
+# 処理: mainへのpush時に、open状態のdependabot[bot] PRをupdateBranchで
+#       最新のmainに追従させる("Update branch"ボタン相当)。
+# 補足: あるPRをマージすると他のPRが古くなる問題に対応。マージはせず、
+#       更新のみ自動化する。更新により各PRのチェックが再実行される。
+# =============================================================================
+
+name: Dependabot Auto-Update
+
+on:
+  push:
+    branches:
+      - main
+  workflow_dispatch:
+
+# 既定は読み取りのみ
+permissions:
+  contents: read
+
+# 直列化(同時実行で競合させない)
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  update-dependabot-prs:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Update open Dependabot PR branches
+        uses: actions/github-script@v9
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { owner, repo } = context.repo;
+            const prs = await github.paginate(github.rest.pulls.list, {
+              owner,
+              repo,
+              state: 'open',
+              base: 'main',
+              per_page: 100,
+            });
+            const dependabotPrs = prs.filter(
+              (pr) => pr.user && pr.user.login === 'dependabot[bot]'
+            );
+            core.info(`Found ${dependabotPrs.length} open Dependabot PR(s).`);
+            for (const pr of dependabotPrs) {
+              try {
+                // "Update branch"相当: mainを取り込み最新化(マージはしない)
+                await github.rest.pulls.updateBranch({
+                  owner,
+                  repo,
+                  pull_number: pr.number,
+                });
+                core.info(`Updated #${pr.number}: ${pr.title}`);
+              } catch (error) {
+                // 既に最新(422)やコンフリクト等は警告に留めて継続
+                core.warning(`Skipped #${pr.number}: ${error.status} ${error.message}`);
+              }
+            }
