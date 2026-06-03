@@ -349,6 +349,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Releases
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#coverage-pr-comments" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -430,6 +441,17 @@
 </li>
       
         <li class="md-nav__item">
+  <a href="#releases" class="md-nav__link">
+    <span class="md-ellipsis">
+      <span class="md-typeset">
+        Releases
+      </span>
+    </span>
+  </a>
+  
+</li>
+      
+        <li class="md-nav__item">
   <a href="#coverage-pr-comments" class="md-nav__link">
     <span class="md-ellipsis">
       <span class="md-typeset">
@@ -488,6 +510,16 @@ dedicated branches</strong> — a core idea of this template.</p>
 <td>PR / push</td>
 <td><code>zizmor</code> / <code>ty</code> / <code>pip-audit</code> / <code>typos</code> / <code>validate-pyproject</code> (preview)</td>
 </tr>
+<tr>
+<td><code>Release Please</code></td>
+<td>push to <code>main</code></td>
+<td>Conventional-Commits release automation (opens a Release PR)</td>
+</tr>
+<tr>
+<td><code>Docs (Zensical)</code></td>
+<td>push / PR</td>
+<td>Build this site and deploy to <code>ghpages/docs/</code></td>
+</tr>
 </tbody>
 </table>
 <p>All test workflows install <code>just</code> from a <strong>prebuilt binary</strong>
@@ -507,6 +539,13 @@ branches:</p>
 </ul>
 <p>This documentation site is published to the <strong><code>docs/</code> subdirectory of the
 <code>ghpages</code> branch</strong>, so it coexists with the pytest reports served from the root.</p>
+<h2 id="releases">Releases<a class="headerlink" href="#releases" title="Permanent link">&para;</a></h2>
+<p>Releases are automated with
+<a href="https://github.com/googleapis/release-please">release-please</a> using
+<a href="https://www.conventionalcommits.org/">Conventional Commits</a>. On every push to
+<code>main</code>, release-please maintains a <strong>Release PR</strong> that updates <code>CHANGELOG.md</code> and
+the version in <code>pyproject.toml</code>. Merging that PR creates the git tag and GitHub
+Release — so nothing is released without an explicit human merge.</p>
 <h2 id="coverage-pr-comments">Coverage PR comments<a class="headerlink" href="#coverage-pr-comments" title="Permanent link">&para;</a></h2>
 <p>Pull requests receive a coverage comment from
 <a href="https://github.com/marketplace/actions/pytest-coverage-comment"><code>pytest-coverage-comment</code></a>.
