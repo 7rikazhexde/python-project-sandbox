@@ -1,11 +1,13 @@
 # =============================================================================
 # Dependabot Auto-Update Workflow
 # =============================================================================
-# 概要: 開いているDependabot PRのブランチを自動更新(マージは手動のまま)
-# 処理: mainへのpush時に、open状態のdependabot[bot] PRをupdateBranchで
-#       最新のmainに追従させる("Update branch"ボタン相当)。
-# 補足: あるPRをマージすると他のPRが古くなる問題に対応。マージはせず、
-#       更新のみ自動化する。更新により各PRのチェックが再実行される。
+# 概要: 開いているDependabot PRを自動でrebaseし最新mainに追従(マージは手動)
+# 処理: mainへのpush時に、更新が必要な(behind/dirty)dependabot[bot] PRへ
+#       「@dependabot rebase」コメントを投稿し、Dependabot自身にrebaseさせる。
+# 補足: あるPRをマージすると他PRが古くなる問題に対応。安全・正確を両立:
+#       - 安全: GITHUB_TOKENのみ(pull-requests: writeの最小権限、PAT不要)
+#       - 正確: rebaseはDependabot自身が実施(線形履歴 + CIが再実行される)
+#       マージは自動化せず手動のまま。
 # =============================================================================
 
 name: Dependabot Auto-Update
@@ -26,13 +28,13 @@ concurrency:
   cancel-in-progress: false
 
 jobs:
-  update-dependabot-prs:
+  rebase-dependabot-prs:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
+      # コメント投稿(=rebase要求)に必要な最小権限のみ
       pull-requests: write
     steps:
-      - name: Update open Dependabot PR branches
+      - name: Request rebase for outdated Dependabot PRs
         uses: actions/github-script@v9
         with:
           github-token: ${{ secrets.GITHUB_TOKEN }}
@@ -50,16 +52,23 @@ jobs:
             );
             core.info(`Found ${dependabotPrs.length} open Dependabot PR(s).`);
             for (const pr of dependabotPrs) {
-              try {
-                // "Update branch"相当: mainを取り込み最新化(マージはしない)
-                await github.rest.pulls.updateBranch({
+              // mergeable_stateは非同期計算のため個別取得する
+              const { data: full } = await github.rest.pulls.get({
+                owner,
+                repo,
+                pull_number: pr.number,
+              });
+              // behind: 対象ブランチに遅れている / dirty: 競合あり
+              // → Dependabot自身にrebaseさせて最新化(または再作成)する
+              if (full.mergeable_state === 'behind' || full.mergeable_state === 'dirty') {
+                await github.rest.issues.createComment({
                   owner,
                   repo,
-                  pull_number: pr.number,
+                  issue_number: pr.number,
+                  body: '@dependabot rebase',
                 });
-                core.info(`Updated #${pr.number}: ${pr.title}`);
-              } catch (error) {
-                // 既に最新(422)やコンフリクト等は警告に留めて継続
-                core.warning(`Skipped #${pr.number}: ${error.status} ${error.message}`);
+                core.info(`Requested rebase for #${pr.number} (state: ${full.mergeable_state}).`);
+              } else {
+                core.info(`Skipped #${pr.number} (state: ${full.mergeable_state}).`);
               }
             }
