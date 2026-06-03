@@ -63,8 +63,29 @@ lint-fix:
 type-check:
     uv run mypy project_a tests ci scripts
 
+# 型チェック(ty / Astral製・プレビュー)。mypyと併用して先行評価
+type-check-ty:
+    uvx ty check project_a
+
 format:
     uv run ruff format
+
+# スペルチェック(typos)。設定は pyproject.toml の [tool.typos]
+spell:
+    uvx typos
+
+# GitHub Actions セキュリティ監査(zizmor)
+audit-actions:
+    uvx zizmor --persona=regular .github/workflows
+
+# 依存関係の脆弱性スキャン(pip-audit)
+audit-deps:
+    uv export --format requirements-txt --no-emit-project --all-extras -o audit-requirements.txt
+    uvx pip-audit -r audit-requirements.txt
+
+# pyproject.toml のスキーマ検証
+validate-pyproject:
+    uvx validate-pyproject pyproject.toml
 
 # 総合的な品質チェック
 check: lint type-check test-coverage

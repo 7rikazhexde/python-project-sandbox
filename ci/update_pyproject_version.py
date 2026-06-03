@@ -70,7 +70,7 @@ def create_ver(input_ver: Optional[str]) -> Tuple[bool, str, TOMLFile]:
         input_ver (Optional[str]): [major].[minor].[pathch]
 
     Returns:
-        Tuple[bool, str, TOMLFile]: Infomation of [poetry].[version] in pyproject.toml
+        Tuple[bool, str, TOMLFile]: Information of [poetry].[version] in pyproject.toml
     """
     # Load the pyproject.toml file
     toml = TOMLFile("pyproject.toml")
