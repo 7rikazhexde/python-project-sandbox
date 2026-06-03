@@ -1,0 +1,40 @@
+# =============================================================================
+# Release Please Workflow
+# =============================================================================
+# 概要: Conventional Commitsに基づくリリース自動化(Release PRモデル)
+# 処理: mainへのpushを解析し、CHANGELOG.mdとバージョン更新のRelease PRを作成。
+#       Release PRがマージされた時点でタグとGitHub Releaseを作成する。
+# 補足: 即時リリースせず人間のマージで確定する安全モデル。GITHUB_TOKENの
+#       最小権限で動作する。既存の手動 update-version-and-release.yml は
+#       フォールバックとして残置(二重リリースを避けるため通常はこちらを使用)。
+# =============================================================================
+
+name: Release Please
+
+on:
+  push:
+    branches:
+      - main
+
+# 既定は読み取りのみ。必要な権限はジョブ側で最小付与する
+permissions:
+  contents: read
+
+# リリース処理は途中キャンセルしない(直列化)
+concurrency:
+  group: ${{ github.workflow }}
+  cancel-in-progress: false
+
+jobs:
+  release-please:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      pull-requests: write
+    steps:
+      - name: Run release-please
+        uses: googleapis/release-please-action@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          config-file: release-please-config.json
+          manifest-file: .release-please-manifest.json
