@@ -46,7 +46,7 @@ repos:
 
   # Spell checking (config: [tool.typos] in pyproject.toml)
   - repo: https://github.com/crate-ci/typos
-    rev: v1.47.1
+    rev: v1
     hooks:
       - id: typos
 
@@ -59,7 +59,7 @@ repos:
         args: ["--config", ".markdownlint.json", "README.md"]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.15.15
+    rev: v0.15.16
     hooks:
       - id: ruff
         args: ["--fix","project_a"]
