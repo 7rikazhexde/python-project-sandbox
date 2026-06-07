@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.1](https://github.com/7rikazhexde/python-project-sandbox/compare/v1.3.0...v1.3.1) (2026-06-06)
+
+
+### Dependencies
+
+* **deps:** bump ruff in the python-dependencies group ([34cea1a](https://github.com/7rikazhexde/python-project-sandbox/commit/34cea1a0918db980a26055664e2a80aaaf1a8a30))
+
 ## [1.3.0](https://github.com/7rikazhexde/python-project-sandbox/compare/v1.2.3...v1.3.0) (2026-06-03)
 
 
