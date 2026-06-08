@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.2](https://github.com/7rikazhexde/python-project-sandbox/compare/v1.3.1...v1.3.2) (2026-06-08)
+
+
+### Dependencies
+
+* **deps:** bump aiohttp in the python-dependencies group ([dfe5c32](https://github.com/7rikazhexde/python-project-sandbox/commit/dfe5c32b131db87c708b1b4ee379ce13ff581d54))
+
 ## [1.3.1](https://github.com/7rikazhexde/python-project-sandbox/compare/v1.3.0...v1.3.1) (2026-06-06)
 
 
