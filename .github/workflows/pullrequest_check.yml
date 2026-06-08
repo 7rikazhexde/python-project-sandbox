@@ -41,7 +41,7 @@ jobs:
 
       - name: Set variables from JSON
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@v1.2.0
+        uses: 7rikazhexde/json2vars-setter@v1.10.1
         with:
           json-file: .github/json2vars-setter/matrix.json
 
@@ -126,7 +126,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v8.1.0
+        uses: astral-sh/setup-uv@v8.2.0
         with:
           enable-cache: false
 

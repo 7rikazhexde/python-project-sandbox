@@ -34,7 +34,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Run release-please
-        uses: googleapis/release-please-action@v4
+        uses: googleapis/release-please-action@v5
         with:
           # repo設定でGITHUB_TOKENのPR作成が無効のためPATを使用
           token: ${{ secrets.PAT_FOR_PUSHES }}
