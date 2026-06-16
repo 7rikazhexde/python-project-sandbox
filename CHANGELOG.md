@@ -1,3 +1,9 @@
+## [1.3.3](https://github.com/7rikazhexde/python-project-sandbox/compare/v1.3.2...v1.3.3) (2026-06-16)
+
+### Bug Fixes
+
+* **test:** pytest 9.1で削除されたPytestRemovedIn9Warningのフィルタを除去 ([67cf2cb](https://github.com/7rikazhexde/python-project-sandbox/commit/67cf2cb3ae0f847131a4ba9e2ef31c6d75264b12))
+
 # Changelog
 
 ## [1.3.2](https://github.com/7rikazhexde/python-project-sandbox/compare/v1.3.1...v1.3.2) (2026-06-08)
