@@ -123,9 +123,6 @@ testpaths = ["project_a", "tests"]
 pythonpath = ["."]
 asyncio_mode = "auto"
 asyncio_default_fixture_loop_scope = "function"
-filterwarnings = [
-    "ignore::pytest.PytestRemovedIn9Warning"
-]
 
 # カバレッジ設定
 [tool.coverage.run]
