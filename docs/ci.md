@@ -11,7 +11,7 @@ dedicated branches** — a core idea of this template.
 | `Dependabot PR Check` | Dependabot PR | Same checks for dependency-update PRs |
 | `Test Multi-OS` | push to `main` | Tests + publishes the coverage summary to the `coverage` branch |
 | `Modern Quality (Preview)` | PR / push | `zizmor` / `ty` / `pip-audit` / `typos` / `validate-pyproject` (preview) |
-| `Release Please` | push to `main` | Conventional-Commits release automation (opens a Release PR) |
+| `semantic-release` | manual (`workflow_dispatch`) | Conventional-Commits release: version bump, CHANGELOG, tag + GitHub Release |
 | `Docs (Zensical)` | push / PR | Build this site and deploy to `ghpages/docs/` |
 
 All test workflows install `just` from a **prebuilt binary**
@@ -36,12 +36,15 @@ This documentation site is published to the **`docs/` subdirectory of the
 
 ## Releases
 
-Releases are automated with
-[release-please](https://github.com/googleapis/release-please) using
-[Conventional Commits](https://www.conventionalcommits.org/). On every push to
-`main`, release-please maintains a **Release PR** that updates `CHANGELOG.md` and
-the version in `pyproject.toml`. Merging that PR creates the git tag and GitHub
-Release — so nothing is released without an explicit human merge.
+Releases are **manually triggered** with
+[semantic-release](https://github.com/semantic-release/semantic-release) using
+[Conventional Commits](https://www.conventionalcommits.org/) (adapted from
+[json2vars-setter](https://github.com/7rikazhexde/json2vars-setter)). Run the
+`semantic-release` workflow from the Actions tab (`workflow_dispatch`); it then
+determines the next version from the commits since the last tag, bumps
+`pyproject.toml` (via `uv version`) and `uv.lock`, updates `CHANGELOG.md`,
+commits them back to `main` (`[skip ci]`), and creates the `vX.Y.Z` tag and
+GitHub Release. Nothing is released until you trigger the workflow.
 
 ## Coverage PR comments
 

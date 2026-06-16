@@ -1,0 +1,68 @@
+# =============================================================================
+# semantic-release Workflow (manual)
+# =============================================================================
+# 概要: 手動トリガーのリリース自動化(json2vars-setterのsemantic-releaseを参考)
+# 処理: 前回タグ以降のConventional Commitsから次バージョンを決定し、
+#       - pyproject.tomlのバージョンを更新(uv version)し uv.lock を再生成、
+#       - CHANGELOG.md を更新、
+#       - それらをmainへコミット([skip ci])、
+#       - vX.Y.Z タグと GitHub Release を作成する。
+# 補足: トリガーは workflow_dispatch(手動)。自動リリースはしない。
+#       json2vars-setterはgitmoji駆動だが、本リポジトリはConventional Commits
+#       のため commit-analyzer/release-notes-generator の preset を
+#       conventionalcommits に差し替えている。
+#       PAT_FOR_PUSHESを使用し、作成タグが後続ワークフローを起動できるように
+#       する(GITHUB_TOKEN作成のタグは他WFを起動しないため)。
+# =============================================================================
+
+name: semantic-release
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  issues: write
+  pull-requests: write
+
+concurrency:
+  group: semantic-release
+  cancel-in-progress: false
+
+jobs:
+  release:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6.0.3
+        with:
+          fetch-depth: 0
+          token: ${{ secrets.PAT_FOR_PUSHES }}
+          persist-credentials: true
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v8.2.0
+        with:
+          enable-cache: false
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v6.4.0
+        with:
+          # semantic-release@25 requires Node ^22.14.0 || >= 24.10.0
+          node-version: 22
+
+      - name: Configure Git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Run semantic-release
+        env:
+          GITHUB_TOKEN: ${{ secrets.PAT_FOR_PUSHES }}
+        run: |
+          npx --yes \
+            -p semantic-release@25.0.3 \
+            -p @semantic-release/exec@7.1.0 \
+            -p @semantic-release/git@10.0.1 \
+            -p @semantic-release/changelog@6.0.3 \
+            -p conventional-changelog-conventionalcommits@9.1.0 \
+            semantic-release
