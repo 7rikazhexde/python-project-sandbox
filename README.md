@@ -160,10 +160,10 @@ This project uses [pre-commit](https://github.com/pre-commit/pre-commit) for aut
    - [ruff](https://pypi.org/project/ruff/): Code linting and formatting for Python
    - [mypy](https://pypi.org/project/mypy/): Type checking with type annotations for Python
 
-2. **Automated Version Management**
+2. **Manual Release (semantic-release)**
 
 > [!NOTE]
-> Version updates are handled by the [UPDATE workflow (Version Update and Release)](https://github.com/7rikazhexde/python-project-sandbox/blob/main/.github/workflows/update-version-and-release.yml).
+> Releases are manually triggered via the [`semantic-release` workflow](https://github.com/7rikazhexde/python-project-sandbox/blob/main/.github/workflows/semantic-release.yml) (`workflow_dispatch`). It uses Conventional Commits to bump the version, update `CHANGELOG.md`, and create the tag + GitHub Release.
 
 ### Usage
 
@@ -277,6 +277,6 @@ This project uses GitHub Actions for continuous integration and deployment:
 - **PR Check**: Runs tests across multiple OS and Python versions
 - **Coverage Reports**: Generates and deploys coverage reports to GitHub Pages
 - **HTML Reports**: Generates and deploys test reports to GitHub Pages
-- **Automated Releases**: Handles version updates and releases
+- **Manual Releases**: `semantic-release` (manual `workflow_dispatch`) handles version bump, changelog, tag and GitHub Release
 
 View workflows in [.github/workflows/](.github/workflows/).
