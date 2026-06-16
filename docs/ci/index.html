@@ -25,7 +25,7 @@
       
       
       <link rel="icon" href="../assets/images/favicon.png">
-      <meta name="generator" content="zensical-0.0.44">
+      <meta name="generator" content="zensical-0.0.45">
     
     
       
@@ -539,9 +539,9 @@ dedicated branches</strong> — a core idea of this template.</p>
 <td><code>zizmor</code> / <code>ty</code> / <code>pip-audit</code> / <code>typos</code> / <code>validate-pyproject</code> (preview)</td>
 </tr>
 <tr>
-<td><code>Release Please</code></td>
-<td>push to <code>main</code></td>
-<td>Conventional-Commits release automation (opens a Release PR)</td>
+<td><code>semantic-release</code></td>
+<td>manual (<code>workflow_dispatch</code>)</td>
+<td>Conventional-Commits release: version bump, CHANGELOG, tag + GitHub Release</td>
 </tr>
 <tr>
 <td><code>Docs (Zensical)</code></td>
@@ -568,12 +568,15 @@ branches:</p>
 <p>This documentation site is published to the <strong><code>docs/</code> subdirectory of the
 <code>ghpages</code> branch</strong>, so it coexists with the pytest reports served from the root.</p>
 <h2 id="releases">Releases<a class="headerlink" href="#releases" title="Permanent link">&para;</a></h2>
-<p>Releases are automated with
-<a href="https://github.com/googleapis/release-please">release-please</a> using
-<a href="https://www.conventionalcommits.org/">Conventional Commits</a>. On every push to
-<code>main</code>, release-please maintains a <strong>Release PR</strong> that updates <code>CHANGELOG.md</code> and
-the version in <code>pyproject.toml</code>. Merging that PR creates the git tag and GitHub
-Release — so nothing is released without an explicit human merge.</p>
+<p>Releases are <strong>manually triggered</strong> with
+<a href="https://github.com/semantic-release/semantic-release">semantic-release</a> using
+<a href="https://www.conventionalcommits.org/">Conventional Commits</a> (adapted from
+<a href="https://github.com/7rikazhexde/json2vars-setter">json2vars-setter</a>). Run the
+<code>semantic-release</code> workflow from the Actions tab (<code>workflow_dispatch</code>); it then
+determines the next version from the commits since the last tag, bumps
+<code>pyproject.toml</code> (via <code>uv version</code>) and <code>uv.lock</code>, updates <code>CHANGELOG.md</code>,
+commits them back to <code>main</code> (<code>[skip ci]</code>), and creates the <code>vX.Y.Z</code> tag and
+GitHub Release. Nothing is released until you trigger the workflow.</p>
 <h2 id="coverage-pr-comments">Coverage PR comments<a class="headerlink" href="#coverage-pr-comments" title="Permanent link">&para;</a></h2>
 <p>Pull requests receive a coverage comment from
 <a href="https://github.com/marketplace/actions/pytest-coverage-comment"><code>pytest-coverage-comment</code></a>.
