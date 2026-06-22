@@ -15,13 +15,13 @@ jobs:
       versions_python: ${{ steps.json2vars.outputs.versions_python }}
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
 
       - name: Set variables from JSON
         id: json2vars
-        uses: 7rikazhexde/json2vars-setter@v1.12.1
+        uses: 7rikazhexde/json2vars-setter@v1.13.0
         with:
           json-file: .github/json2vars-setter/matrix.json
 
@@ -44,7 +44,7 @@ jobs:
       pull-requests: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
 
@@ -108,7 +108,7 @@ jobs:
       actions: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v6.0.3
+        uses: actions/checkout@v7.0.0
         with:
           fetch-depth: 0
 
