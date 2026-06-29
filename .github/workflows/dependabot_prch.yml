@@ -102,7 +102,7 @@ jobs:
           token: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Set up Python
-        uses: actions/setup-python@v6.2.0
+        uses: actions/setup-python@v6.3.0
         with:
           python-version: ${{ matrix.python-version }}
 
@@ -114,7 +114,7 @@ jobs:
       # 補足: 依存関係更新時は自動的に新しいキャッシュが作成される
       # ======================================================================
       - name: Cache uv dependencies
-        uses: actions/cache@v5.0.5
+        uses: actions/cache@v6.1.0
         with:
           path: |
             ~/.cache/uv
@@ -207,7 +207,7 @@ jobs:
       # ======================================================================
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.7.2
+        uses: MishaKav/pytest-coverage-comment@v1.8.0
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
