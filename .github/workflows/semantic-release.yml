@@ -45,7 +45,7 @@ jobs:
           enable-cache: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v6.4.0
+        uses: actions/setup-node@v7.0.0
         with:
           # semantic-release@25 requires Node ^22.14.0 || >= 24.10.0
           node-version: 22
