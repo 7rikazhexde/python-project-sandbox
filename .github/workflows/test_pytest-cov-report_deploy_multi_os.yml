@@ -103,6 +103,10 @@ jobs:
   deploy:
     needs: test-and-coverage
     runs-on: ubuntu-latest
+    # ghpagesへ書き込む全ジョブで共通グループを使い直列化する(push競合防止)
+    concurrency:
+      group: ghpages-deploy
+      cancel-in-progress: false
     permissions:
       contents: write
       actions: write

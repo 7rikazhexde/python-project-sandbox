@@ -296,8 +296,10 @@ jobs:
     needs: test-and-deploy-testmon
     if: contains(needs.test-and-deploy-testmon.result, 'success')
     runs-on: ubuntu-latest
+    # ghpagesへ書き込む全ジョブで共通グループを使い、リポジトリ全体で直列化する
+    # (push競合そのものを防ぐ多重防御)
     concurrency:
-      group: deploy-testmon-ghpages
+      group: ghpages-deploy
       cancel-in-progress: false
     permissions:
       contents: write
@@ -325,6 +327,8 @@ jobs:
           echo "Deploying testmon data to ${ghpages_branch}..."
           git fetch origin "${ghpages_branch}" || git checkout -b "${ghpages_branch}"
           git checkout "${ghpages_branch}"
+          # 他のデプロイジョブが先にpushしている可能性があるため最新化する
+          git pull origin "${ghpages_branch}" --rebase || true
 
           changes_made=false
 
@@ -348,8 +352,25 @@ jobs:
 
           if [ "${changes_made}" = true ]; then
             git commit -m "Update testmon data on GitHub Pages"
-            git push origin "${ghpages_branch}"
-            echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+
+            # Push with retry (他のワークフローとの競合に対応)
+            max_retries=5
+            retry_count=0
+            while [ $retry_count -lt $max_retries ]; do
+              if git push origin "${ghpages_branch}"; then
+                echo "deploy_status=updated" >> "$GITHUB_OUTPUT"
+                break
+              else
+                retry_count=$((retry_count + 1))
+                if [ $retry_count -lt $max_retries ]; then
+                  echo "Push failed, retrying ($retry_count/$max_retries)..."
+                  git pull origin "${ghpages_branch}" --rebase
+                else
+                  echo "Push failed after $max_retries retries"
+                  exit 1
+                fi
+              fi
+            done
           else
             echo "No changes to commit"
             echo "deploy_status=unchanged" >> "$GITHUB_OUTPUT"
@@ -368,7 +389,7 @@ jobs:
     if: contains(needs.test-and-deploy-testmon.result, 'success')
     runs-on: ubuntu-latest
     concurrency:
-      group: deploy-reports-${{ github.ref }}
+      group: ghpages-deploy
       cancel-in-progress: false
     permissions:
       contents: write

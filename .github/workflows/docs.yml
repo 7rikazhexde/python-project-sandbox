@@ -73,6 +73,10 @@ jobs:
     needs: build
     if: github.event_name != 'pull_request'
     runs-on: ubuntu-latest
+    # ghpagesへ書き込む全ジョブで共通グループを使い直列化する(push競合防止)
+    concurrency:
+      group: ghpages-deploy
+      cancel-in-progress: false
     permissions:
       contents: write
     steps:
