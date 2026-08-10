@@ -105,7 +105,7 @@ jobs:
       # 補足: cargo installのコンパイル待ち(数分)を解消しCIを高速化
       # ======================================================================
       - name: Install just
-        uses: taiki-e/install-action@v2.85.5
+        uses: taiki-e/install-action@v2.85.10
         with:
           tool: just
 

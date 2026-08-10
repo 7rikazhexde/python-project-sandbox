@@ -62,7 +62,7 @@ jobs:
     steps:
       - uses: actions/checkout@v7.0.1
       - name: Spell check (typos, preview)
-        uses: crate-ci/typos@v1.48.0
+        uses: crate-ci/typos@v1.49.0
         continue-on-error: true
 
   # ==========================================================================
