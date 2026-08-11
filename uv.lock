@@ -1757,7 +1757,7 @@ requires-dist = [
     { name = "pytest-testmon", marker = "extra == 'dev'", specifier = ">=2.1.3" },
     { name = "pytest-xdist", marker = "extra == 'dev'", specifier = ">=3.7.0" },
     { name = "python-dotenv", specifier = ">=1.1.1" },
-    { name = "pytoniq-core", specifier = ">=0.1.43" },
+    { name = "pytoniq-core", specifier = ">=0.2.0" },
     { name = "pytz", specifier = ">=2026.3.post1" },
     { name = "requests", specifier = ">=2.34.2" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.16.2" },
@@ -1770,7 +1770,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "pytoniq-core"
-version = "0.1.46"
+version = "0.2.0"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bitarray" },
@@ -1780,9 +1780,9 @@ dependencies = [
     { name = "setuptools" },
     { name = "x25519" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/a3/2c/7afbb9003a3aa72ccfe69711433fe36d2493db2c4acf66dde32f7b55799b/pytoniq_core-0.1.46.tar.gz", hash = "sha256:c8e3cf9ccb1852780a725cd51ba7a66a28122eb39c8b9bb97dcdc5bd02c24734", size = 101236, upload-time = "2025-11-28T10:23:21.887Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/54/36/680e533581f78ea781dd53812a908fb3056c76e3620a1270c6c160d5c8b2/pytoniq_core-0.2.0.tar.gz", hash = "sha256:1792b8fe99d47284f9b111bcf53de4c5db30ee668e66d4e2ce49cc94cd4cad07", size = 102083, upload-time = "2026-08-07T23:11:43.419Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/7b/0e/e27cf7ce1bebb47fb95e1d6deae5c91c6ffcb7851f156990e57079cbe8db/pytoniq_core-0.1.46-py3-none-any.whl", hash = "sha256:0a284c8b68f9fed9d54e4dad871238d844339183bf985a614796360e36e1b95e", size = 91400, upload-time = "2025-11-28T10:23:20.95Z" },
+    { url = "https://files.pythonhosted.org/packages/8e/e0/60cacdc654b036c7f0c8154f16e909a640be420f56e45cd8bbd44c24c9ac/pytoniq_core-0.2.0-py3-none-any.whl", hash = "sha256:a9693bbf6076cbfe27a8dbbfd25246b5a4b370065e629c4b447f3bcfd40fdb33", size = 92001, upload-time = "2026-08-07T23:11:42.032Z" },
 ]
 
 [[package]]
