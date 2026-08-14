@@ -31,7 +31,7 @@ dependencies = [
 # 開発用の追加依存関係
 [project.optional-dependencies]
 dev = [
-    "pre-commit>=4.6.1",
+    "pre-commit>=4.6.2",
     "mypy>=2.3.0",
     "pytest>=9.1.1",
     "pytest-cov>=6.2.1",
