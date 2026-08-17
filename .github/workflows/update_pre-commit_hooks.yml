@@ -78,7 +78,7 @@ jobs:
           key: uv-unified-${{ hashFiles('**/pyproject.toml', '**/uv.lock') }}
 
       - name: Install uv
-        uses: astral-sh/setup-uv@v9.0.0
+        uses: astral-sh/setup-uv@v10.0.1
         with:
           enable-cache: false
 
@@ -105,7 +105,7 @@ jobs:
       # 補足: cargo installのコンパイル待ち(数分)を解消しCIを高速化
       # ======================================================================
       - name: Install just
-        uses: taiki-e/install-action@v2.85.10
+        uses: taiki-e/install-action@v2.85.13
         with:
           tool: just
 
