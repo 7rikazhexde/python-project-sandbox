@@ -20,7 +20,7 @@ repos:
 
   # https://github.com/shellcheck-py/shellcheck-py?tab=readme-ov-file#usage
   - repo: https://github.com/shellcheck-py/shellcheck-py
-    rev: v0.11.0.1
+    rev: v0.11.0.1-1
     hooks:
       - id: shellcheck
         # Only check actual shell script files
@@ -40,7 +40,7 @@ repos:
 
   # pyproject.toml schema validation
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: v0.25
+    rev: '0.26'
     hooks:
       - id: validate-pyproject
 
@@ -59,14 +59,14 @@ repos:
         args: ["--config", ".markdownlint.json", "README.md"]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.16.3
+    rev: v0.16.4
     hooks:
       - id: ruff
         args: ["--fix","project_a"]
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.0
+    rev: v2.3.1
     hooks:
       - id: mypy
         additional_dependencies: [types-requests==2.32.0.20240622]
