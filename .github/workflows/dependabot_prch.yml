@@ -142,7 +142,7 @@ jobs:
       # 補足: cargo installのコンパイル待ち(数分)を解消しCIを高速化
       # ======================================================================
       - name: Install just
-        uses: taiki-e/install-action@v2.86.5
+        uses: taiki-e/install-action@v2.87.0
         with:
           tool: just
 
@@ -207,7 +207,7 @@ jobs:
       # ======================================================================
       - name: Pytest coverage comment
         id: coverageComment
-        uses: MishaKav/pytest-coverage-comment@v1.11.0
+        uses: MishaKav/pytest-coverage-comment@v1.11.2
         with:
           pytest-coverage-path: ./pytest-coverage.txt
           pytest-xml-coverage-path: ./coverage.xml
