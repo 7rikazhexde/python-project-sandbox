@@ -1869,7 +1869,7 @@ provides-extras = ["dev"]
 
 [[package]]
 name = "pytoniq-core"
-version = "0.2.0"
+version = "0.2.1"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "bitarray" },
@@ -1879,18 +1879,18 @@ dependencies = [
     { name = "setuptools" },
     { name = "x25519" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/54/36/680e533581f78ea781dd53812a908fb3056c76e3620a1270c6c160d5c8b2/pytoniq_core-0.2.0.tar.gz", hash = "sha256:1792b8fe99d47284f9b111bcf53de4c5db30ee668e66d4e2ce49cc94cd4cad07", size = 102083, upload-time = "2026-08-07T23:11:43.419Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/4d/50/b5352bcad0960bf7827f29584e8e49e13029a79f537e4bed87765cd61610/pytoniq_core-0.2.1.tar.gz", hash = "sha256:00b802d74dfb03bbc7d6cf994087e6ba287c6718d124ebe91b2e8ad2d2a83d75", size = 107938, upload-time = "2026-10-03T05:36:54.083Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/8e/e0/60cacdc654b036c7f0c8154f16e909a640be420f56e45cd8bbd44c24c9ac/pytoniq_core-0.2.0-py3-none-any.whl", hash = "sha256:a9693bbf6076cbfe27a8dbbfd25246b5a4b370065e629c4b447f3bcfd40fdb33", size = 92001, upload-time = "2026-08-07T23:11:42.032Z" },
+    { url = "https://files.pythonhosted.org/packages/7d/f0/20030af9705416d44320fec7b3e9d3d48aa51684e739889dbcc95911ee13/pytoniq_core-0.2.1-py3-none-any.whl", hash = "sha256:7e63ea6bdae8496d8e3d987286518dd968e9e770f960deb414100d568622bdc8", size = 96925, upload-time = "2026-10-03T05:36:52.99Z" },
 ]
 
 [[package]]
 name = "pytz"
-version = "2026.4"
+version = "2026.5"
 source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/b0/ed/fa23d28713004418bbf2407127f80f385bfb0bf4e677bef02c25c27b00ee/pytz-2026.4.tar.gz", hash = "sha256:464303645bafafd72418898368b2429458f709cf1eb6a15372fbcc396b64da63", size = 318444, upload-time = "2026-09-24T03:58:40.443Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/14/21/d83d6ef28c4c912c4bb4d1dcf591f7b8c6bde87b9c66f9f454677314e16d/pytz-2026.5.tar.gz", hash = "sha256:fa23724b9c486543b9ff54a327ee7569ac83ade54bb9afd0fc18676620401c86", size = 318572, upload-time = "2026-10-04T02:37:58.719Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/d5/11/e3df59614bebe0ca50c905442603eda64ae7ac19811d4e4f74aa2d51ca85/pytz-2026.4-py2.py3-none-any.whl", hash = "sha256:9d514388fbc89ca0833203464272ac485b8828568ab73532f5020f17e892a0ff", size = 506747, upload-time = "2026-09-24T03:58:38.629Z" },
+    { url = "https://files.pythonhosted.org/packages/4f/ef/c66110d46fb800dda0bf33164182dfadabe26a90e4476844d502a23dca8e/pytz-2026.5-py2.py3-none-any.whl", hash = "sha256:e658af3757f9e26a9d25dd2aff38335acd92bc9104f890a894b2c1ba28311b03", size = 506342, upload-time = "2026-10-04T02:37:56.814Z" },
 ]
 
 [[package]]
