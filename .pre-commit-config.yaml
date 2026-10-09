@@ -46,7 +46,7 @@ repos:
 
   # Spell checking (config: [tool.typos] in pyproject.toml)
   - repo: https://github.com/crate-ci/typos
-    rev: typos-dict-v0.14.2
+    rev: v1.51.1
     hooks:
       - id: typos
 
@@ -66,7 +66,7 @@ repos:
       - id: ruff-format
 
   - repo: https://github.com/pre-commit/mirrors-mypy
-    rev: v2.3.1
+    rev: v2.4.0
     hooks:
       - id: mypy
         additional_dependencies: [types-requests==2.32.0.20240622]
