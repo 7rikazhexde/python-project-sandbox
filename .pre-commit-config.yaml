@@ -40,7 +40,7 @@ repos:
 
   # pyproject.toml schema validation
   - repo: https://github.com/abravalheri/validate-pyproject
-    rev: '0.26'
+    rev: 'v0.27'
     hooks:
       - id: validate-pyproject
 
@@ -59,7 +59,7 @@ repos:
         args: ["--config", ".markdownlint.json", "README.md"]
 
   - repo: https://github.com/charliermarsh/ruff-pre-commit
-    rev: v0.17.1
+    rev: v0.17.2
     hooks:
       - id: ruff
         args: ["--fix","project_a"]
